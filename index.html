@@ -2823,6 +2823,7 @@ const GDRIVE = {clientId: "855504134871-ig774jo5lhcedqt2ng4dfqjobmekagcu.apps.go
 const DKEY = "command-zone-drive";
 const DS = {me: null, members: {}, perms: null, remote: null, token: null, exp: 0, user: null, file: null, canEdit: false, rev: null, status: "off", msg: "", last: 0, busy: false, again: false, pushT: 0, warnedView: false, link: ""};
 try { DS.file = JSON.parse(localStorage.getItem(DKEY) || "null"); } catch {}
+if (DS.file && /^command zone/i.test(DS.file.name || "")) DS.file.name = "MTG Deck Builder.json";
 const driveConfigured = () => !!(GDRIVE.clientId && GDRIVE.apiKey && GDRIVE.appId);
 const driveUsable = () => driveConfigured() && location.protocol === "https:";
 function saveDriveFile(){ try { DS.file ? localStorage.setItem(DKEY, JSON.stringify(DS.file)) : localStorage.removeItem(DKEY); } catch {} }
@@ -2882,7 +2883,7 @@ function useMeta(m){
     DS.renaming = true;
     dfetch(`/drive/v3/files/${m.id}?supportsAllDrives=true`, {method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({name: LIB_NAME})})
       .then(() => { if (DS.file && DS.file.id === m.id){ DS.file.name = LIB_NAME; saveDriveFile(); renderDrive(); } })
-      .catch(() => {}).finally(() => { DS.renaming = false; });
+      .catch(e => { if (e.message !== "reconnect") toast(`Couldn’t rename the library file in Drive (${e.message}). You can rename it there yourself.`); }).finally(() => { DS.renaming = false; });
     m = {...m, name: LIB_NAME};
   }
   DS.link = m.webViewLink || `https://drive.google.com/file/d/${m.id}/view`;
