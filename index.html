@@ -153,6 +153,14 @@ body.ro .name-wrap svg{display:none}
 .backup[open] summary::before{transform:rotate(90deg)}
 .backup summary:hover{color:var(--fg)}
 .backup-body{display:grid;gap:6px;padding-top:6px}
+.gate{gap:16px}
+.gate h1{font-size:26px}
+.gate-logo{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;background:var(--gold-soft);border:1px solid var(--gold-line);color:var(--gold);font-size:32px}
+.gate-note{margin:0;color:var(--muted);max-width:420px;line-height:1.55}
+.gate-btn{padding:11px 20px;font-size:15px}
+.gate-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.gate-spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .unsaved-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:auto;box-shadow:0 0 0 3px var(--gold-soft)}
 
 /* ---------- Buttons ---------- */
@@ -852,7 +860,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115105527";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115135643";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -939,7 +947,7 @@ UI.filter = ""; UI.ctype = "";
 /* Who is using this browser: their Google Drive identity (permissionId is stable and matches Drive sharing). */
 let LAST_ME = null;
 try { LAST_ME = JSON.parse(localStorage.getItem("command-zone-me") || "null"); } catch {}
-function meNow(){ return (typeof DS !== "undefined" && DS.me) || LAST_ME; }
+function meNow(){ return (typeof DS !== "undefined" && DS.me) || (typeof CLOUD === "function" && CLOUD() ? null : LAST_ME); }
 function isMine(d){ const me = meNow(); return !d || !d.owner || !!(me && d.owner.id === me.id); }
 function roDeck(d){ return !!d && !isMine(d); }
 function ownerName(d){ return d && d.owner ? (d.owner.name || "Someone") : ""; }
@@ -961,9 +969,11 @@ const idb = (() => {
     r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
   }));
   const run = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction("imgs", mode); const q = fn(t.objectStore("imgs")); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
+  const cloud = () => typeof CLOUD === "function" && CLOUD();
   return {
-    set: (k, v) => run("readwrite", st => st.put(v, k)).catch(() => {}),
-    del: k => run("readwrite", st => st.delete(k)).catch(() => {}),
+    set: (k, v) => cloud() ? Promise.resolve() : run("readwrite", st => st.put(v, k)).catch(() => {}),
+    del: k => cloud() ? Promise.resolve() : run("readwrite", st => st.delete(k)).catch(() => {}),
+    wipe: () => { try { indexedDB.deleteDatabase("commandzone"); } catch {} },
     loadAll: async () => { try { const keys = await run("readonly", st => st.getAllKeys()); const vals = await run("readonly", st => st.getAll()); keys.forEach((k, i) => IMG.set(k, vals[i])); } catch {} }
   };
 })();
@@ -1038,7 +1048,7 @@ async function sfSearch(q, page = 1, extras = false){
 let PRICES = {};
 try { PRICES = JSON.parse(localStorage.getItem(PKEY) || "{}"); } catch {}
 let pricesT;
-function savePrices(){ clearTimeout(pricesT); pricesT = setTimeout(() => { try { localStorage.setItem(PKEY, JSON.stringify(PRICES)); } catch {} }, 400); }
+function savePrices(){ clearTimeout(pricesT); pricesT = setTimeout(() => { try { if (CLOUD()) localStorage.removeItem(PKEY); else localStorage.setItem(PKEY, JSON.stringify(PRICES)); } catch {} }, 400); }
 function priceOf(card){
   const p = card && PRICES[card.id]; if (!p) return null;
   const want = UI.cur === "usd" ? "u" : "e", other = want === "u" ? "e" : "u";
@@ -1208,7 +1218,19 @@ function reportText(rep){
   if (rep.kept.length) parts.push(`${rep.kept.length} deleted in the file but you edited them since, so they were kept: ${rep.kept.join(", ")}`);
   return parts;
 }
+/* Website: decks come only from the Drive library, fresh at every sign-in, and are never kept in the browser.
+   (The downloaded file keeps working offline with the browser's storage, as before.) */
+const CLOUD = () => typeof GDRIVE !== "undefined" && driveUsable();
+const SESSION_KEY = "mtg-session";
+let LEGACY = null;        // decks this browser kept before: added to the library once, then removed here
+const gated = () => CLOUD() && !DS.loaded;
 function load(){
+  if (CLOUD()){
+    try { const loc = JSON.parse(localStorage.getItem(KEY) || "null"); if (loc && loc.decks && Object.values(loc.decks).some(d => !d.deleted)) LEGACY = {decks: loc.decks}; } catch {}
+    try { const s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); if (s){ S.active = s.active || null; if (typeof s.sidebarOpen === "boolean" && innerWidth > 820) S.sidebarOpen = s.sidebarOpen; } } catch {}
+    S.decks = {};
+    return;
+  }
   let emb = {};
   try { emb = JSON.parse($("#embedded-decks").textContent || "{}"); } catch {}
   let loc = null;
@@ -1227,6 +1249,10 @@ function load(){
 }
 function save(changed = true){
   if (changed){ S.lastChange = Date.now(); driveSchedule(); }
+  if (CLOUD()){
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify({active: S.active, sidebarOpen: S.sidebarOpen})); } catch {}
+    $("#unsavedDot").hidden = true; return;
+  }
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {}
   $("#unsavedDot").hidden = !(S.lastChange > S.lastFileSave && liveDecks().length) || !!(typeof DS !== "undefined" && DS.token && DS.file);
 }
@@ -1237,6 +1263,7 @@ function touch(d){
   d.ver = uid(); d.updated = Date.now(); save();
 }
 function newDeck(){
+  if (gated()){ toast("Sign in first: decks are saved to your Google Drive library"); return; }
   const d = ensureVer({id: uid(), name: "", created: Date.now(), updated: Date.now(), commander: null, partner: null, owner: meNow() || undefined,
     limits: {...DEFAULT_LIMITS}, typeOrder: [...TYPES], cards: []});
   S.decks[d.id] = d; S.active = d.id;
@@ -1348,6 +1375,7 @@ function deckItemHTML(d, mine){
    Each folder collapses on its own; the state is remembered per device. */
 function folderOpen(id, mineFolder){ const o = UI.openPeople || {}; return mineFolder ? o[id] !== false : o[id] === true; }
 function renderSidebar(){
+  if (gated()){ $("#deckList").innerHTML = `<div class="side-note people-hint">${DS.token ? "Loading your decks…" : "Sign in to see your decks."}</div>`; renderProfile(); return; }
   const list = liveDecks(), me = meNow();
   const people = new Map();
   const add = (id, p) => { if (!people.has(id)) people.set(id, {id, name: p.name || "Someone", photo: p.photo || "", decks: []}); const q = people.get(id); if (p.photo && !q.photo) q.photo = p.photo; return q; };
@@ -1591,7 +1619,21 @@ async function addBasics(n){
     } catch { toast("Couldn’t load the basic lands. Check your connection."); }
   });
 }
+function renderGate(){
+  const signed = !!DS.token;
+  let body;
+  if (!signed) body = `<h1>Sign in to see your decks</h1>
+      <p class="gate-note">Decks are kept in your group’s Google Drive file and only load after you sign in. Nothing is stored on this device.</p>
+      <button class="btn primary gate-btn" id="gateSignIn">Sign in with Google</button>`;
+  else if (!DS.file) body = `<h1>Choose your deck library</h1>
+      <p class="gate-note">Open the “MTG Deck Builder.json” file someone shared with you, or start a new library in your own Drive.</p>
+      <div class="gate-row"><button class="btn primary gate-btn" id="gateOpen">Open shared library</button><button class="btn gate-btn" id="gateCreate">Create a new library</button></div>`;
+  else if (DS.status === "error") body = `<h1>Couldn’t load your decks</h1><p class="gate-note">${esc(DS.msg)}</p><button class="btn primary gate-btn" id="gateRetry">Try again</button>`;
+  else body = `<h1>Loading your decks…</h1><p class="gate-note">From ${esc(DS.file.name)}</p><div class="gate-spin"></div>`;
+  $("#welcome").innerHTML = `<div class="welcome-card gate"><span class="gate-logo"><i class="ms ms-commander"></i></span>${body}</div>`;
+}
 function renderWelcome(){
+  if (gated()){ renderGate(); return; }
   const d = cur();
   $("#welcome").innerHTML = `<div class="welcome-card">
     <button class="big-slot" id="welcomeSlot"><span class="card-plus-ico">+</span>${d ? "Choose commander" : "New deck"}</button>
@@ -3432,24 +3474,65 @@ async function drivePull(){
   try { data = await (await dfetch(`/drive/v3/files/${DS.file.id}?alt=media&supportsAllDrives=true`)).json(); } catch (e){ if (e.message === "reconnect") throw e; }
   await storeImages(data.images);
   const sig = () => Object.values(S.decks).map(d => d.id + d.ver).sort().join();
-  const before = sig();
+  const fresh = CLOUD() && !DS.loaded;
+  if (fresh){ const keep = S.active; S.decks = {}; S.active = keep; }
+  const before = fresh ? "" : sig();
   mergeDecks(data.decks || {});
   if (!cur()) S.active = liveDecks()[0]?.id || null;
   DS.known = new Set(); for (const d of Object.values(data.decks || {})){ DS.known.add(d.ver); (d.past || []).forEach(v => DS.known.add(v)); }
   DS.remote = data.decks || {};
   DS.members = data.members || {};
   DS.rev = rev;
+  if (fresh){
+    DS.loaded = true;
+    if (LEGACY && DS.canEdit){
+      const rep2 = mergeDecks(LEGACY.decks); LEGACY = null;
+      try { localStorage.removeItem(KEY); } catch {}
+      if (rep2.added.length || rep2.conflicts.length) setTimeout(() => toast(`Decks that were only in this browser were added to the library: ${[...rep2.added, ...rep2.conflicts].join(", ")}`), 400);
+    }
+    if (!cur()) S.active = liveDecks()[0]?.id || null;
+    if (!LEGACY) setTimeout(() => { try { ["command-zone-me", PKEY, KEY].forEach(k => localStorage.removeItem(k)); } catch {} idb.wipe(); }, 3000);
+  }
   claimNewDecks();
-  if (sig() !== before){ save(false); render(); }
+  if (fresh || sig() !== before){ save(false); render(); }
   return {ahead: Object.values(S.decks).some(d => !DS.known.has(d.ver))};
 }
+/* Upload without losing anyone's work when several people save at once:
+   1. right before uploading, if the file changed since we last merged it, merge it again;
+   2. after uploading, look at the file's version history: if someone else's save landed just before ours,
+      merge that version too and upload again. Every deck carries its full version history, so merging is safe. */
 async function drivePushNow(){
-  const body = libraryPayload();
-  const r = await dfetch(`/upload/drive/v3/files/${DS.file.id}?uploadType=media&fields=${DMETA}&supportsAllDrives=true`, {method: "PATCH", headers: {"Content-Type": "application/json"}, body});
-  try { DS.remote = JSON.parse(body).decks; } catch {}
-  const m = await r.json(); useMeta(m);
-  DS.rev = m.headRevisionId || m.modifiedTime;
-  DS.known = new Set(); for (const d of Object.values(S.decks)){ DS.known.add(d.ver); (d.past || []).forEach(v => DS.known.add(v)); }
+  for (let attempt = 0; attempt < 4; attempt++){
+    const m0 = await (await dfetch(`/drive/v3/files/${DS.file.id}?fields=headRevisionId,modifiedTime&supportsAllDrives=true`)).json();
+    if ((m0.headRevisionId || m0.modifiedTime) !== DS.rev){ DS.rev = null; await drivePull(); }
+    const basedOn = DS.rev;
+    const body = libraryPayload();
+    const r = await dfetch(`/upload/drive/v3/files/${DS.file.id}?uploadType=media&fields=${DMETA}&supportsAllDrives=true`, {method: "PATCH", headers: {"Content-Type": "application/json"}, body});
+    try { DS.remote = JSON.parse(body).decks; } catch {}
+    const m = await r.json(); useMeta(m);
+    DS.rev = m.headRevisionId || m.modifiedTime;
+    DS.known = new Set(); for (const d of Object.values(S.decks)){ DS.known.add(d.ver); (d.past || []).forEach(v => DS.known.add(v)); }
+    // did anyone else save between our check and our upload?
+    let slipped = null;
+    try {
+      const revs = ((await (await dfetch(`/drive/v3/files/${DS.file.id}/revisions?fields=revisions(id)&pageSize=1000`)).json()).revisions || []).map(x => x.id);
+      const i = revs.indexOf(m.headRevisionId);
+      if (i > 0 && basedOn && revs[i - 1] !== basedOn && revs.indexOf(basedOn) < i - 1) slipped = revs.slice(Math.max(0, revs.indexOf(basedOn) + 1), i);
+    } catch (e){ if (e.message === "reconnect") throw e; }      // version history unavailable: the 40-second sync still repairs it
+    if (!slipped || !slipped.length) return;
+    let changed = false;
+    for (const rid of slipped){
+      try {
+        const data = await (await dfetch(`/drive/v3/files/${DS.file.id}/revisions/${rid}?alt=media`)).json();
+        await storeImages(data.images);
+        const rep = mergeDecks(data.decks || {});
+        if (rep.added.length || rep.updated.length || rep.conflicts.length || rep.restored.length) changed = true;
+        for (const [id, mm] of Object.entries(data.members || {})) if (!DS.members[id]) DS.members[id] = mm;
+      } catch (e){ if (e.message === "reconnect") throw e; }
+    }
+    if (!changed) return;
+    save(false); render();
+  }
 }
 async function driveSync(push){
   if (!DS.token || !DS.file) return;
@@ -3483,7 +3566,7 @@ async function driveConnect(){
     DS.user = j.user || null;
     if (DS.user && DS.user.permissionId){
       DS.me = {id: DS.user.permissionId, name: DS.user.displayName, photo: DS.user.photoLink || ""};
-      LAST_ME = DS.me; try { localStorage.setItem("command-zone-me", JSON.stringify(DS.me)); } catch {}
+      LAST_ME = DS.me; try { if (CLOUD()) localStorage.removeItem("command-zone-me"); else localStorage.setItem("command-zone-me", JSON.stringify(DS.me)); } catch {}
     }
     render();
     setDrive("ok");
@@ -3494,7 +3577,9 @@ async function driveCreate(){
   if (!DS.token) return;
   setDrive("syncing");
   try {
+    if (LEGACY){ mergeDecks(LEGACY.decks); LEGACY = null; try { localStorage.removeItem(KEY); } catch {} }
     if (DS.me) for (const d of Object.values(S.decks)) if (!d.owner && !d.deleted) d.owner = {...DS.me};
+    DS.loaded = true; if (!cur()) S.active = liveDecks()[0]?.id || null;
     save(false);
     const bd = "cz" + uid(), meta = {name: LIB_NAME, mimeType: "application/json", description: "Decks for MTG Deck Builder. Share this file to give friends access: Editor can edit decks, Viewer can only look."};
     const body = `--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${bd}\r\nContent-Type: application/json\r\n\r\n${libraryPayload()}\r\n--${bd}--`;
@@ -3528,14 +3613,18 @@ async function driveOpen(){
 }
 function driveSignOut(){
   try { if (DS.token && window.google) google.accounts.oauth2.revoke(DS.token, () => {}); } catch {}
-  DS.token = null; DS.user = null; setDrive("off"); toast("Signed out of Google Drive");
+  DS.token = null; DS.user = null;
+  if (CLOUD()){ S.decks = {}; DS.loaded = false; DS.known = null; DS.rev = null; DS.remote = null; closeAllViews(); }
+  setDrive("off"); render(); toast("Signed out");
 }
 function driveForget(){
-  confirmTwice([{title: "Stop syncing this library?", text: "Your decks stay on this device and in the Drive file. You can open the library again anytime.", yes: "Stop syncing", safe: true}], () => { DS.file = null; DS.rev = null; DS.known = null; saveDriveFile(); setDrive(DS.token ? "ok" : "off"); });
+  confirmTwice([{title: "Stop syncing this library?", text: "Your decks stay in the Drive file. You can open the library again anytime.", yes: "Stop syncing", safe: true}], () => { DS.file = null; DS.rev = null; DS.known = null; saveDriveFile(); if (CLOUD()){ S.decks = {}; DS.loaded = false; closeAllViews(); } setDrive(DS.token ? "ok" : "off"); render(); });
 }
+function closeAllViews(){ ["#addScrim", "#pdfScrim", "#confirmScrim"].forEach(s => { if (!$(s).hidden) $(s).hidden = true; }); if (V) closeDetail(true, {anim: false}); }
 function agoText(t){ const s = Math.round((Date.now() - t) / 1000); return s < 10 ? "just now" : s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} h ago`; }
 function renderDrive(){
   renderProfile();
+  if (gated() && !$("#welcome").hidden) renderGate();
   const box = $("#driveBox"); if (!box) return;
   const cloud = '<svg class="i" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 9.1 4.5 4.5 0 0 0 7 18z"/></svg>';
   let h = `<div class="drv-title">${cloud}Google Drive</div>`;
@@ -3668,7 +3757,13 @@ $("#combo").addEventListener("click", e => {
   }
   const m = e.target.closest("[data-open]"); if (m && findCard(m.dataset.open)) openDetail({kind: "item", uid: m.dataset.open}, m);
 });
-$("#welcome").addEventListener("click", e => { if (e.target.closest("#welcomeSlot")) cur() ? openCommanderPicker(true) : newDeck(); });
+$("#welcome").addEventListener("click", e => {
+  if (e.target.closest("#gateSignIn")){ driveConnect(); return; }
+  if (e.target.closest("#gateOpen")){ driveOpen(); return; }
+  if (e.target.closest("#gateCreate")){ driveCreate(); return; }
+  if (e.target.closest("#gateRetry")){ DS.rev = null; driveSync(false); return; }
+  if (e.target.closest("#welcomeSlot")) cur() ? openCommanderPicker(true) : newDeck();
+});
 $("#addAny").onclick = () => openAdd("Any", "options");
 function setMini(on){ UI.cmdMini = on; saveUI(); $("#top").classList.toggle("mini", on); applyZoom(); }
 $("#foldTop").onclick = () => setMini(true);
@@ -3692,7 +3787,7 @@ $("#total").addEventListener("change", e => {
   if (!(v >= 0)){ renderHeader(); return; }
   d.pricey = v; touch(d); renderBoard(); renderHeader();
 });
-window.addEventListener("storage", e => { if (e.key === KEY){ try { S.decks = JSON.parse(e.newValue).decks; render(); } catch {} } });
+window.addEventListener("storage", e => { if (e.key === KEY && !CLOUD()){ try { S.decks = JSON.parse(e.newValue).decks; render(); } catch {} } });
 
 /* Always run the newest version: GitHub Pages lets browsers cache the page for ~10 minutes,
    so ask for the current build number directly and switch when it's newer. */
