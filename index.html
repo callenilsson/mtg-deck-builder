@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Command Zone</title>
+<title>MTG Deck Builder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mana-font@1.17.0/css/mana.min.css">
 <style>
-/* Command Zone v4 — forest theme.
+/* MTG Deck Builder v4 — forest theme.
    Layout: deck list (left, collapsible) · header (commanders, combine cards, stats table, totals; shrinks to one line while you scroll)
    · toolbar (card size, sort, filter, move all) · two resizable panels: card pool and deck. */
 :root{
@@ -87,6 +87,34 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .drv-role.ed{color:var(--ok);border-color:rgba(85,196,143,.4)}
 .drv-role.vw{color:var(--gold);border-color:var(--gold-line)}
 .deck-meta .by{color:var(--leaf)}
+.avatar{width:28px;height:28px;border-radius:50%;flex:none;object-fit:cover;display:inline-grid;place-items:center;font-size:12px;font-weight:700;color:#fff;border:1px solid var(--line)}
+.avatar.xs{width:18px;height:18px;font-size:9px;margin-right:6px;vertical-align:-4px}
+.side-label{display:flex;align-items:center}
+.person{display:flex;align-items:center;gap:9px;width:calc(100% - 4px);margin:6px 2px 2px;padding:7px 8px;border-radius:10px;border:1px solid transparent;background:none;text-align:left}
+.person:hover{background:var(--surface-2);border-color:var(--line)}
+.person.open{background:var(--surface-2)}
+.person .p-name{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person .p-role{font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.person .p-count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.person svg.i{width:15px;height:15px;color:var(--faint);transition:transform .2s;transform:rotate(-90deg)}
+.person.open svg.i{transform:none}
+.person-decks{padding-left:10px;border-left:2px solid var(--line-soft);margin-left:16px;display:flex;flex-direction:column;gap:4px}
+.ro-banner{order:1;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(120,140,255,.08);border:1px solid rgba(140,160,255,.3)}
+.ro-banner span{display:flex;flex-direction:column;min-width:0;flex:1}
+.ro-banner b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ro-banner small{font-size:11.5px;color:var(--muted)}
+.ro-banner{flex-wrap:wrap}
+.ro-banner .btn{flex:1 1 100%;justify-content:center}
+body.ro .acts,body.ro .add-tile,body.ro #addAny,body.ro #wipeBtn,body.ro #tools .moves,body.ro .cmd-col .acts,body.ro #comboAdd,body.ro .mini .x,body.ro #useSugg,body.ro #addBasics,body.ro .cmd-slot.partner.empty{display:none!important}
+body.ro .box-grip{visibility:hidden}
+body.ro #stats input{pointer-events:none;opacity:.6}
+body.ro .name-wrap{border-style:solid;border-color:transparent;cursor:default}
+body.ro .name-wrap svg{display:none}
+.pricey-set{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);cursor:text}
+.pricey-set input{width:48px;background:var(--surface-3);border:1px solid transparent;border-radius:6px;padding:1px 4px;text-align:right;font-size:12px;color:#e2d3ff;-moz-appearance:textfield}
+.pricey-set input:focus{border-color:var(--pricey-line);outline:none}
+.pricey-set input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.pricey-set input:disabled{opacity:.7}
 .unsaved-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:auto;box-shadow:0 0 0 3px var(--gold-soft)}
 
 /* ---------- Buttons ---------- */
@@ -279,8 +307,11 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 :root{--pricey:#b48cff;--pricey-soft:rgba(160,110,255,.18);--pricey-line:rgba(180,140,255,.5)}
 .price.pricey{color:#e2d3ff!important;background:var(--pricey-soft);border:1px solid var(--pricey-line);border-radius:999px;padding:0 6px}
 .st-row .price.pricey{padding:0 5px}
-.cw.pricey .ct{box-shadow:0 0 0 1px var(--pricey-line),0 10px 20px -6px rgba(150,95,255,.75)}
-.cw.pricey.locked .ct{box-shadow:0 0 0 2px var(--gold),0 10px 20px -6px rgba(150,95,255,.75)}
+.cw.pricey .ct{outline:3px solid var(--pricey);outline-offset:-1px;box-shadow:0 0 18px -2px rgba(160,110,255,.65),0 3px 10px rgba(0,0,0,.45)}
+.cw.pricey.locked .ct{box-shadow:0 0 0 3px var(--gold),0 0 20px 0 rgba(160,110,255,.6)}
+.cw.over.pricey .ct{outline-color:var(--danger)}
+.pricey-tag{position:absolute;right:0;top:47%;z-index:2;padding:3px 8px 3px 9px;border-radius:999px 0 0 999px;background:linear-gradient(90deg,#7b4dff,#b06bff);color:#fff;font-size:11px;font-weight:700;letter-spacing:.02em;box-shadow:0 4px 12px rgba(110,60,255,.55);white-space:nowrap;font-variant-numeric:tabular-nums}
+@container (max-width:132px){.pricey-tag{font-size:9.5px;padding:2px 6px}}
 .cw.pricey .ct-stats .bar{box-shadow:0 2px 8px -2px rgba(150,95,255,.0)}
 .chip-st.price.pricey{border-color:var(--pricey-line);background:var(--pricey-soft)}
 .chip-st.price.pricey b{color:#e2d3ff}
@@ -660,15 +691,14 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 <div id="app">
   <aside id="sidebar" aria-label="Your decks">
     <div class="side-head">
-      <div class="brand"><i class="ms ms-commander"></i>Command Zone</div>
+      <div class="brand"><i class="ms ms-commander"></i>MTG Deck Builder</div>
       <button class="icon-btn" id="closeSide" title="Hide deck list"><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
     </div>
     <button class="new-deck" id="newDeck"><span class="card-plus-ico" style="width:16px;height:21px;font-size:13px">+</span>New deck</button>
-    <div class="side-label">Your decks</div>
-    <div id="deckList"></div>
+        <div id="deckList"></div>
     <div class="side-foot">
       <label class="side-row">Prices in<select id="curSel"><option value="eur">€ Euro (Cardmarket)</option><option value="usd">$ Dollar (TCGplayer)</option></select></label>
-      <label class="side-row" title="Cards at or above this price are marked in purple">Expensive from<input type="number" id="priceyIn" min="0" step="0.5" inputmode="decimal" aria-label="Expensive card threshold"><span id="priceySym">€</span></label>
+
       <div class="drive-box" id="driveBox"></div>
       <button class="btn" id="saveFile" title="Download a copy of this page with every deck saved inside it"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Save file with decks<span class="unsaved-dot" id="unsavedDot" hidden></span></button>
       <button class="btn" id="importBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg>Import decks from a file</button>
@@ -693,6 +723,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
           <button class="icon-btn fold-btn" id="foldTop" title="Fold this panel to show more cards"></button>
         </div>
       </div>
+      <div class="ro-banner" id="roBanner" hidden></div>
       <div class="combo" id="combo"></div>
       <div id="stats"></div>
       <div id="total"></div>
@@ -743,7 +774,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 <script>
 "use strict";
 /* ============================================================
-   Command Zone — EDH deck builder on top of EDHREC + Scryfall
+   MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
 const KEY = "commandzone.v1";
@@ -825,6 +856,19 @@ const UI = {sort: "manual", filter: "", ctype: "", split: .5, zoom: 100, cur: "e
 try { Object.assign(UI, JSON.parse(localStorage.getItem(UIKEY) || "{}")); } catch {}
 try { const z = localStorage.getItem("command-zone-card-size"); if (z && !localStorage.getItem(UIKEY)) UI.zoom = +z; } catch {}
 UI.filter = ""; UI.ctype = "";
+/* Who is using this browser: their Google Drive identity (permissionId is stable and matches Drive sharing). */
+let LAST_ME = null;
+try { LAST_ME = JSON.parse(localStorage.getItem("command-zone-me") || "null"); } catch {}
+function meNow(){ return (typeof DS !== "undefined" && DS.me) || LAST_ME; }
+function isMine(d){ const me = meNow(); return !d || !d.owner || !!(me && d.owner.id === me.id); }
+function roDeck(d){ return !!d && !isMine(d); }
+function ownerName(d){ return d && d.owner ? (d.owner.name || "Someone") : ""; }
+/* Stop changes to someone else's deck; returns true when blocked. */
+function guard(d = cur()){
+  if (!roDeck(d)) return false;
+  toast(`This is ${ownerName(d)}’s deck: you can look, not change. Use “Copy to my decks” to make your own version.`);
+  return true;
+}
 function saveUI(){ try { const {filter, ctype, ...keep} = UI; localStorage.setItem(UIKEY, JSON.stringify(keep)); } catch {} }
 
 /* ---------------- Custom images (kept in IndexedDB, embedded when saving the file) ---------------- */
@@ -921,7 +965,8 @@ function priceOf(card){
 }
 function fmtMoney(v, sym){ return sym + (v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2)); }
 function priceText(card){ const p = priceOf(card); return p ? fmtMoney(p.v, p.sym) : "–"; }
-function isPricey(card){ const p = priceOf(card); return !!(p && UI.pricey > 0 && p.v >= UI.pricey); }
+function priceyTh(d = cur()){ return d && d.pricey != null ? +d.pricey : 20; }
+function isPricey(card){ const p = priceOf(card), th = priceyTh(); return !!(p && th > 0 && p.v >= th); }
 function sumPrice(cards){
   let tot = 0, sym = UI.cur === "usd" ? "$" : "€", n = 0;
   for (const c of cards){ const p = priceOf(c); if (p){ tot += p.v; n++; } }
@@ -1109,7 +1154,7 @@ function touch(d){
   d.ver = uid(); d.updated = Date.now(); save();
 }
 function newDeck(){
-  const d = ensureVer({id: uid(), name: "", created: Date.now(), updated: Date.now(), commander: null, partner: null, by: DS.user ? DS.user.displayName : undefined,
+  const d = ensureVer({id: uid(), name: "", created: Date.now(), updated: Date.now(), commander: null, partner: null, owner: meNow() || undefined,
     limits: {...DEFAULT_LIMITS}, typeOrder: [...TYPES], cards: []});
   S.decks[d.id] = d; S.active = d.id;
   if (innerWidth <= 820) S.sidebarOpen = false;
@@ -1118,7 +1163,7 @@ function newDeck(){
 }
 function inDeckCount(d){ return d.cards.filter(c => c.zone === "deck").length + cmdrs(d).length; }
 function addCard(card, zone){
-  const d = cur(); if (!d) return null;
+  const d = cur(); if (!d || guard(d)) return null;
   if (cmdrs(d).some(k => k.name === card.name)){ toast(`${card.name} is your commander`); return null; }
   if (!canMulti(card) && d.cards.some(c => c.card.name === card.name)){ toast(`${card.name} is already in this deck`); return null; }
   const item = {uid: uid(), card: {...card}, bucket: bucketOf(card.type), zone, locked: false, focus: false};
@@ -1179,20 +1224,51 @@ function render(){
   $("#total").style.visibility = d ? "" : "hidden";
   $(".name-wrap").hidden = !d;
   $("#top").classList.toggle("mini", !!UI.cmdMini && ready);
+  const ro = roDeck(d);
+  document.body.classList.toggle("ro", ro);
+  $("#deckName").readOnly = ro;
+  $("#roBanner").hidden = !ro;
+  if (ro) $("#roBanner").innerHTML = `${personAvatar(d.owner)}<span><b>${esc(ownerName(d))}’s deck</b><small>View only</small></span><button class="btn sm" id="roCopy">${I.copy}Copy to my decks</button>`;
   renderSidebar(); renderHeader();
   if (ready){ renderBoard(); refreshPrices(d); } else renderWelcome();
 }
-function renderSidebar(){
-  const list = liveDecks();
-  $("#deckList").innerHTML = list.length ? list.map(d => {
-    const n = inDeckCount(d);
-    const thumb = d.commander && d.commander.art ? `style="background-image:url('${esc(d.commander.art)}')"` : "";
-    return `<div class="deck-item ${d.id === S.active ? "active" : ""}" data-deck="${d.id}" role="button" tabindex="0">
+function personAvatar(p, cls = ""){
+  const n = (p && p.name) || "?";
+  return p && p.photo ? `<img class="avatar ${cls}" src="${esc(p.photo)}" alt="" referrerpolicy="no-referrer">`
+    : `<span class="avatar ${cls}" style="background:hsl(${[...n].reduce((a, c) => a + c.charCodeAt(0), 0) % 360} 35% 32%)">${esc(n.trim()[0] || "?").toUpperCase()}</span>`;
+}
+function deckItemHTML(d, mine){
+  const n = inDeckCount(d);
+  const thumb = d.commander && d.commander.art ? `style="background-image:url('${esc(d.commander.art)}')"` : "";
+  const acts = mine
+    ? `<button data-renamedeck="${d.id}" title="Rename">${I.pencil}</button><button data-dupdeck="${d.id}" title="Duplicate">${I.copy}</button><button class="del" data-deldeck="${d.id}" title="Delete">${I.trash}</button>`
+    : `<button data-dupdeck="${d.id}" title="Copy to my decks">${I.copy}</button>`;
+  return `<div class="deck-item ${d.id === S.active ? "active" : ""}" data-deck="${d.id}" role="button" tabindex="0">
       <span class="deck-thumb" ${thumb}>${thumb ? "" : '<i class="ms ms-commander"></i>'}</span>
       <span class="deck-meta"><b>${esc(displayName(d))}</b>
-      <small><span class="pips">${d.commander ? pipsHTML(deckCI(d)) : ""}</span>${n}/100${d.by ? ` · <span class="by" title="Made by ${esc(d.by)}">${esc(String(d.by).split(" ")[0])}</span>` : " cards"}</small></span>
-      <span class="deck-acts"><button data-renamedeck="${d.id}" title="Rename">${I.pencil}</button><button data-dupdeck="${d.id}" title="Duplicate">${I.copy}</button><button class="del" data-deldeck="${d.id}" title="Delete">${I.trash}</button></span></div>`;
-  }).join("") : `<div class="side-note" style="padding:8px">No decks yet. Start one with “New deck”.</div>`;
+      <small><span class="pips">${d.commander ? pipsHTML(deckCI(d)) : ""}</span>${n}/100 cards</small></span>
+      <span class="deck-acts">${acts}</span></div>`;
+}
+/* Decks grouped by who made them: yours first, then everyone else in the library (also people without decks yet). */
+function renderSidebar(){
+  const list = liveDecks(), me = meNow();
+  const people = new Map();
+  const add = (id, p) => { if (!people.has(id)) people.set(id, {id, name: p.name || "Someone", photo: p.photo || "", decks: []}); const q = people.get(id); if (p.photo && !q.photo) q.photo = p.photo; return q; };
+  const mine = [];
+  for (const d of list){ if (isMine(d)) mine.push(d); else add(d.owner.id, d.owner).decks.push(d); }
+  for (const [id, m] of Object.entries(DS.members || {})) if (!me || id !== me.id) add(id, m);
+  for (const p of DS.perms || []) if (p.type === "user" && p.id && (!me || p.id !== me.id)) add(p.id, {name: p.displayName, photo: p.photoLink});
+  const roleOf = id => { const p = (DS.perms || []).find(x => x.id === id); return p ? (p.role === "owner" ? "Owner" : p.role === "writer" ? "Editor" : p.role === "commenter" || p.role === "reader" ? "Viewer" : "") : ""; };
+  const others = [...people.values()].sort((a, b) => a.name.localeCompare(b.name));
+  let h = `<div class="side-label">${others.length ? `${me ? personAvatar(me, "xs") : ""}My decks` : "Your decks"}</div>`;
+  h += mine.length ? mine.map(d => deckItemHTML(d, true)).join("") : `<div class="side-note" style="padding:4px 10px 8px">No decks yet. Start one with “New deck”.</div>`;
+  for (const p of others){
+    const open = !!(UI.openPeople || {})[p.id] || p.decks.some(d => d.id === S.active);
+    const role = roleOf(p.id);
+    h += `<button class="person ${open ? "open" : ""}" data-person="${esc(p.id)}" title="${open ? "Hide" : "Show"} ${esc(p.name)}’s decks">${personAvatar(p)}<span class="p-name">${esc(p.name)}</span>${role ? `<span class="p-role">${role}</span>` : ""}<span class="p-count">${p.decks.length}</span>${I.down}</button>`;
+    if (open) h += p.decks.length ? `<div class="person-decks">${p.decks.map(d => deckItemHTML(d, false)).join("")}</div>` : `<div class="side-note" style="padding:2px 12px 8px">No decks yet.</div>`;
+  }
+  $("#deckList").innerHTML = h;
 }
 function deckTotals(d){
   const deck = d.cards.filter(c => c.zone === "deck");
@@ -1206,7 +1282,7 @@ function renderHeader(){
   const {n, locked, value} = deckTotals(d);
   const tot = $("#total");
   tot.innerHTML = `<b>${n}<span>/100</span></b><small>${n > 100 ? `${n - 100} too many` : n === 100 ? "Complete" : "in deck"}</small>
-    ${d.commander ? `<div class="tot-sub"><span title="Locked final picks in the deck">${I.lock}<b>${locked}</b> locked</span><span title="Deck value, commander included (${value.n} of ${n} cards have a price)"><b>${fmtMoney(value.tot, value.sym)}</b> value</span></div>` : ""}`;
+    ${d.commander ? `<div class="tot-sub"><span title="Locked final picks in the deck">${I.lock}<b>${locked}</b> locked</span><span title="Deck value, commander included (${value.n} of ${n} cards have a price)"><b>${fmtMoney(value.tot, value.sym)}</b> value</span><label class="pricey-set" title="Cards at or above this price are marked in purple">💎 from <input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold">${UI.cur === "usd" ? "$" : "€"}</label></div>` : ""}`;
   tot.classList.toggle("full", n === 100); tot.classList.toggle("over", n > 100);
   if (!d.commander) return;
   // commanders
@@ -1371,7 +1447,7 @@ function basicSplit(d, n){
   return out.filter(o => o.count > 0).map(o => ({name: BASIC_OF[o.x], count: o.count}));
 }
 async function addBasics(n){
-  const d = cur(); const split = basicSplit(d, n);
+  const d = cur(); if (guard(d)) return; const split = basicSplit(d, n);
   confirmTwice([{title: `Add ${n} basic land${n > 1 ? "s" : ""}?`, text: `This adds ${split.map(s => `<b>${s.count} ${esc(s.name)}</b>`).join(" and ")} to the deck, split by the colored mana your spells need. Each copy can get its own artwork: click it and swipe through the art.`, yes: "Add lands", safe: true}], async () => {
     try {
       const added = [];
@@ -1453,6 +1529,7 @@ function tileHTML(c, over, d){
       <span class="ct-name">${esc(c.card.name)}</span>
       ${c.card.custom ? `<span class="custom-tag" title="Custom art or name">${I.brush}</span>` : ""}
       <img src="${esc(imgOf(c.card))}" ${srcsetAttr(c.card)} alt="${esc(c.card.name)}" loading="lazy" draggable="false" onerror="this.remove()">
+      ${isPricey(c.card) ? `<span class="pricey-tag" title="Expensive: ${esc(priceText(c.card))}">💎 ${esc(priceText(c.card))}</span>` : ""}
       <div class="ct-badges">${c.locked ? `<i title="Locked">${I.lock}</i>` : ""}${c.focus ? `<i title="Combined in recommendations">${I.focus}</i>` : ""}</div>
     </div>
     ${tileStatsHTML(c, d)}
@@ -1494,8 +1571,8 @@ function renderBoard(){
   const pv = sumPrice(pool.map(c => c.card)), dv = sumPrice(deck.map(c => c.card));
   const pc = list => list.filter(c => isPricey(c.card)).length, po = pc(pool), pd = pc(deck);
   const sym = UI.cur === "usd" ? "$" : "€";
-  $("#optMeta").innerHTML = `${pool.length} cards · ${fmtMoney(pv.tot, pv.sym)}${po ? ` · <span class="ph-pricey" title="${po} cards at ${sym}${UI.pricey} or more">💎 ${po}</span>` : ""}`;
-  $("#deckMeta").innerHTML = `${deck.length} cards · ${fmtMoney(dv.tot, dv.sym)}${pd ? ` · <span class="ph-pricey" title="${pd} cards at ${sym}${UI.pricey} or more">💎 ${pd}</span>` : ""}`;
+  $("#optMeta").innerHTML = `${pool.length} cards · ${fmtMoney(pv.tot, pv.sym)}${po ? ` · <span class="ph-pricey" title="${po} cards at ${sym}${priceyTh(d)} or more">💎 ${po}</span>` : ""}`;
+  $("#deckMeta").innerHTML = `${deck.length} cards · ${fmtMoney(dv.tot, dv.sym)}${pd ? ` · <span class="ph-pricey" title="${pd} cards at ${sym}${priceyTh(d)} or more">💎 ${pd}</span>` : ""}`;
   renderJump();
   renderTools(d);
 }
@@ -1546,17 +1623,17 @@ function renderTools(d){
 
 /* ---------------- Card actions ---------------- */
 function findCard(u){ const d = cur(); return d && d.cards.find(c => c.uid === u); }
-function toggleLock(u){ const c = findCard(u); if (!c) return; animateBoard(() => { c.locked = !c.locked; touch(cur()); renderBoard(); renderHeader(); }); }
-function toggleFocus(u){ const c = findCard(u); if (!c) return; c.focus = !c.focus; touch(cur()); renderBoard(); renderHeader(); toast(c.focus ? `Recommendations now combine ${c.card.name}` : `${c.card.name} no longer combined`); }
+function toggleLock(u){ const c = findCard(u); if (!c || guard()) return; animateBoard(() => { c.locked = !c.locked; touch(cur()); renderBoard(); renderHeader(); }); }
+function toggleFocus(u){ const c = findCard(u); if (!c || guard()) return; c.focus = !c.focus; touch(cur()); renderBoard(); renderHeader(); toast(c.focus ? `Recommendations now combine ${c.card.name}` : `${c.card.name} no longer combined`); }
 function moveOther(u){ const c = findCard(u); if (c) moveZone(u, c.zone === "deck" ? "options" : "deck"); }
 function moveZone(u, zone){
-  const d = cur(), c = findCard(u); if (!c || c.zone === zone) return;
+  const d = cur(), c = findCard(u); if (!c || c.zone === zone || guard(d)) return;
   if (c.locked && zone !== "deck"){ toast("Unlock this card to move it out of the deck"); return; }
   animateBoard(() => { c.zone = zone; d.cards.splice(d.cards.indexOf(c), 1); d.cards.push(c); touch(d); renderAll(); });
   limitWarn(c);
 }
 function moveAll(zone){
-  const d = cur(); if (!d) return;
+  const d = cur(); if (!d || guard(d)) return;
   const list = d.cards.filter(c => c.zone !== zone && !c.locked && (!(UI.filter.trim() || UI.ctype) || matchesFilter(c)));
   if (!list.length){ toast(zone === "deck" ? "The card pool is empty" : "No unlocked cards in the deck"); return; }
   animateBoard(() => { list.forEach(c => c.zone = zone); touch(d); renderAll(); });
@@ -1568,7 +1645,7 @@ function limitWarn(c){
   if (n > (d.limits[c.bucket] ?? 0)) toast(`Over your ${PLURAL[c.bucket].toLowerCase()} limit: ${n} of ${d.limits[c.bucket]}`);
 }
 function removeCard(u, ask = true){
-  const d = cur(), c = findCard(u); if (!c) return;
+  const d = cur(), c = findCard(u); if (!c || guard(d)) return;
   if (c.locked){ toast("Unlock this card before removing it"); return; }
   const go = () => { animateBoard(() => { d.cards.splice(d.cards.indexOf(c), 1); touch(d); renderAll(); }); toast(`${c.card.name} removed`); };
   if (!ask) return go();
@@ -1635,6 +1712,7 @@ document.addEventListener("contextmenu", e => { if (e.target.closest("#board .ct
 
 function startDrag(kind, el, x, y){
   press = null; if (!el) return;
+  if (roDeck(cur())){ guard(); return; }
   const src = kind === "box" ? el.querySelector(".box-head") : el.querySelector(".ct");
   const r = src.getBoundingClientRect();
   const ghost = src.cloneNode(true);
@@ -1797,6 +1875,7 @@ document.addEventListener("pointerdown", e => {
 document.addEventListener("click", e => { if (performance.now() < swallowClickUntil){ swallowClickUntil = 0; e.preventDefault(); e.stopPropagation(); } }, true);
 $("#stats").addEventListener("click", e => {
   if (e.target.closest("#useSugg")){
+    if (guard()) return;
     const d = cur(), sg = SUGG[suggestKey(d)]; if (!sg || !sg.counts) return;
     d.limits = {...sg.counts}; touch(d); renderBoard(); renderStats();
     toast("Limits updated to EDHREC’s numbers");
@@ -1806,6 +1885,7 @@ $("#stats").addEventListener("click", e => {
 });
 $("#stats").addEventListener("change", e => {
   const inp = e.target.closest("[data-lim]"); if (!inp) return;
+  if (guard()){ renderStats(); return; }
   const d = cur(); d.limits[inp.dataset.lim] = Math.max(0, Math.min(99, parseInt(inp.value, 10) || 0));
   touch(d); renderBoard(); renderStats();
 });
@@ -1842,7 +1922,7 @@ $("#allToPool").onclick = () => moveAll("options");
 /* ---------------- Add-cards modal: search always on top; empty search = EDHREC picks ---------------- */
 const A = {mode: "cards", bucket: "Any", side: "options", q: "", colors: true, results: [], loading: false, error: "", page: 1, more: false, token: 0, isNew: false, addedNow: new Set()};
 function openAdd(bucket, side){
-  const d = cur(); if (!d) return;
+  const d = cur(); if (!d || guard(d)) return;
   if (!d.commander){ openCommanderPicker(); return; }
   Object.assign(A, {mode: "cards", bucket: bucket || "Any", side: side || "options", q: "", results: [], error: "", addedNow: new Set()});
   showScrim("#addScrim"); renderAddShell(); loadAdd();
@@ -1975,7 +2055,7 @@ $("#addModal").addEventListener("click", e => {
   }
 });
 function setCommander(card){
-  const d = cur(); if (!d) return;
+  const d = cur(); if (!d || guard(d)) return;
   card = {...card}; delete card.custom;
   if (A.mode === "partner"){
     d.partner = card;
@@ -2027,7 +2107,7 @@ function initView(o){
     card: JSON.parse(JSON.stringify(card)), prints: V && V.prints && V.prints[0] && V.prints[0].name === card.name ? V.prints : [plainPrint(card)], fi: 0,
     base: null, user: null, mode: "frame", box: [...frameOf(card).box], zoom: 1, pan: {x: 0, y: 0},
     name: (card.custom && card.custom.name) || "", customBase: !!(card.custom && IMG.get(card.custom.key)),
-    dirty: false, back: false, editable: o.kind !== "add", token: ++vTok, flying: false, busy: false};
+    dirty: false, back: false, editable: o.kind !== "add" && !roDeck(cur()), token: ++vTok, flying: false, busy: false};
   const i = v.prints.findIndex(p => p.id === card.id); v.fi = i < 0 ? 0 : i;
   if (i < 0) v.prints = [plainPrint(card)];
   return v;
@@ -2158,7 +2238,9 @@ function renderDetailParts(){
     <div class="chip-row">${chips.join("")}</div>
     <div class="dv-links"><a href="https://edhrec.com/cards/${slugify(c.name)}" target="_blank" rel="noopener">EDHREC ↗</a><a href="https://scryfall.com/search?q=${encodeURIComponent(`!"${c.name.split(" // ")[0]}"`)}" target="_blank" rel="noopener">Scryfall ↗</a><a href="https://www.cardmarket.com/en/Magic/Products/Search?searchString=${encodeURIComponent(c.name.split(" // ")[0])}" target="_blank" rel="noopener">Cardmarket ↗</a></div>`;
   let acts = "";
-  if (V.kind === "commander"){
+  if (roDeck(d) && V.kind !== "add"){
+    acts = `<span class="note">${esc(ownerName(d))}’s deck · view only</span>`;
+  } else if (V.kind === "commander"){
     acts = `<button class="btn" data-d="changeCmd">Change commander</button>${d.partner ? "" : partnerQuery(d.commander) ? `<button class="btn" data-d="addPartner">+ Partner</button>` : ""}`;
   } else if (V.kind === "partner"){
     acts = `<button class="btn" data-d="changePartner">Change partner</button><button class="btn danger" data-d="removePartner">${I.trash}Remove</button>`;
@@ -2527,6 +2609,7 @@ async function closeDetail(discard, opts = {}){
   if (f) landFly(f, v);
 }
 async function commitView(v){
+  if (roDeck(cur())) return;
   // a flow position that wasn't applied yet still counts
   const p = v.prints[v.fi]; if (p && p.id !== v.card.id) Object.assign(v.card, {id: p.id, img: p.img, large: p.large, art: p.art, back: p.back, frame: p.frame, fullArt: p.fullArt, set: p.set, artist: p.artist, ill: p.ill});
   const d = cur(), orig = viewTarget(v); if (!d || !orig) return;
@@ -2582,7 +2665,7 @@ $("#confirmModal").addEventListener("click", async e => {
   hideScrim("#confirmScrim"); C.onYes();
 });
 function wipeDeck(){
-  const d = cur(); if (!d) return;
+  const d = cur(); if (!d || guard(d)) return;
   const n = d.cards.length;
   if (!n){ toast("This deck has no cards to wipe"); return; }
   confirmTwice([
@@ -2591,7 +2674,7 @@ function wipeDeck(){
   ], () => { d.cards = []; touch(d); render(); toast("Deck wiped"); });
 }
 function deleteDeck(id){
-  const d = S.decks[id]; if (!d) return;
+  const d = S.decks[id]; if (!d || guard(d)) return;
   confirmTwice([
     {title: "Delete this deck?", text: `<b>${esc(displayName(d))}</b> and all its cards will be removed from your deck list.`, yes: "Yes, delete it"},
     {title: "Are you really, really sure?", text: "This can’t be undone unless you still have a saved file with it.", yes: "Delete deck"}
@@ -2703,7 +2786,7 @@ function fileHTML(){
   return PRISTINE.replace(/(<script id="embedded-decks" type="application\/json">)[\s\S]*?(<\/script>)/, (_, a, b) => a + payload + b);
 }
 function saveFile(){
-  download(`command-zone-${new Date().toISOString().slice(0, 10)}.html`, fileHTML(), "text/html");
+  download(`mtg-deck-builder-${new Date().toISOString().slice(0, 10)}.html`, fileHTML(), "text/html");
   S.lastFileSave = Date.now(); save(false);
   toast("Saved. Send this one file to your partner.");
 }
@@ -2714,7 +2797,7 @@ async function importFile(file){
     if (/^\s*[{[]/.test(text)) data = JSON.parse(text);
     else { const m = text.match(/<script id="embedded-decks" type="application\/json">([\s\S]*?)<\/script>/); if (m) data = JSON.parse(m[1]); }
   } catch {}
-  if (!data || !data.decks){ toast("That file has no Command Zone decks in it"); return; }
+  if (!data || !data.decks){ toast("That file has no MTG Deck Builder decks in it"); return; }
   await storeImages(data.images);
   const parts = reportText(mergeDecks(data.decks));
   if (!cur()) S.active = liveDecks()[0]?.id || null;
@@ -2723,13 +2806,13 @@ async function importFile(file){
 }
 
 /* ---------------- Google Drive: one shared library file ----------------
-   The library is a single JSON file ("Command Zone decks.json") in the owner's Drive holding every deck and custom image.
+   The library is a single JSON file ("MTG Deck Builder.json") in the owner's Drive holding every deck and custom image.
    Access is managed only with Drive's Share button: Editor = can create and edit decks, Viewer = can only look.
    Scope drive.file: the app can only touch files it created or that the person picked in the Google file chooser. */
-// Public identifiers of the "Command Zone" Google Cloud project. Safe to publish: the key only works from this site and only for the file chooser.
+// Public identifiers of the "MTG Deck Builder" Google Cloud project. Safe to publish: the key only works from this site and only for the file chooser.
 const GDRIVE = {clientId: "855504134871-ig774jo5lhcedqt2ng4dfqjobmekagcu.apps.googleusercontent.com", apiKey: "AIzaSyBWAuF1yXIKPSONF6YZKedZU3qhNp7Esks", appId: "855504134871"};
 const DKEY = "command-zone-drive";
-const DS = {token: null, exp: 0, user: null, file: null, canEdit: false, rev: null, status: "off", msg: "", last: 0, busy: false, again: false, pushT: 0, warnedView: false, link: ""};
+const DS = {me: null, members: {}, perms: null, remote: null, token: null, exp: 0, user: null, file: null, canEdit: false, rev: null, status: "off", msg: "", last: 0, busy: false, again: false, pushT: 0, warnedView: false, link: ""};
 try { DS.file = JSON.parse(localStorage.getItem(DKEY) || "null"); } catch {}
 const driveConfigured = () => !!(GDRIVE.clientId && GDRIVE.apiKey && GDRIVE.appId);
 const driveUsable = () => driveConfigured() && location.protocol === "https:";
@@ -2764,7 +2847,23 @@ async function dfetch(path, opts = {}){
 const DMETA = "id,name,headRevisionId,modifiedTime,webViewLink,capabilities(canEdit,canShare),owners(displayName,me)";
 function libraryPayload(){
   const images = {}; for (const k of usedImageKeys()) if (IMG.has(k)) images[k] = IMG.get(k);
-  return JSON.stringify({version: 2, savedAt: Date.now(), app: "command-zone", decks: S.decks, images});
+  // never upload other people's decks as this browser has them: always send the library's own copy of those
+  const decks = {};
+  for (const [id, d] of Object.entries(S.decks)) decks[id] = (!isMine(d) && DS.remote && DS.remote[id]) ? DS.remote[id] : d;
+  const members = {...(DS.members || {})};
+  if (DS.me) members[DS.me.id] = {name: DS.me.name, photo: DS.me.photo, seen: Date.now()};
+  DS.members = members;
+  return JSON.stringify({version: 2, savedAt: Date.now(), app: "mtg-deck-builder", decks, images, members});
+}
+/* Decks made in this browser that the library hasn't seen yet belong to whoever is signed in. */
+function claimNewDecks(){
+  const me = DS.me; if (!me) return;
+  for (const d of Object.values(S.decks)) if (!d.owner && !d.deleted && !(DS.known && DS.known.has(d.ver))) d.owner = {...me};
+}
+async function loadPerms(){
+  try { const j = await (await dfetch(`/drive/v3/files/${DS.file.id}/permissions?fields=permissions(id,type,role,displayName,photoLink)&supportsAllDrives=true`)).json(); DS.perms = j.permissions || []; }
+  catch { DS.perms = DS.perms || null; }
+  renderSidebar();
 }
 function useMeta(m){
   DS.canEdit = !!(m.capabilities && m.capabilities.canEdit);
@@ -2786,12 +2885,17 @@ async function drivePull(){
   mergeDecks(data.decks || {});
   if (!cur()) S.active = liveDecks()[0]?.id || null;
   DS.known = new Set(); for (const d of Object.values(data.decks || {})){ DS.known.add(d.ver); (d.past || []).forEach(v => DS.known.add(v)); }
+  DS.remote = data.decks || {};
+  DS.members = data.members || {};
   DS.rev = rev;
+  claimNewDecks();
   if (sig() !== before){ save(false); render(); }
   return {ahead: Object.values(S.decks).some(d => !DS.known.has(d.ver))};
 }
 async function drivePushNow(){
-  const r = await dfetch(`/upload/drive/v3/files/${DS.file.id}?uploadType=media&fields=${DMETA}&supportsAllDrives=true`, {method: "PATCH", headers: {"Content-Type": "application/json"}, body: libraryPayload()});
+  const body = libraryPayload();
+  const r = await dfetch(`/upload/drive/v3/files/${DS.file.id}?uploadType=media&fields=${DMETA}&supportsAllDrives=true`, {method: "PATCH", headers: {"Content-Type": "application/json"}, body});
+  try { DS.remote = JSON.parse(body).decks; } catch {}
   const m = await r.json(); useMeta(m);
   DS.rev = m.headRevisionId || m.modifiedTime;
   DS.known = new Set(); for (const d of Object.values(S.decks)){ DS.known.add(d.ver); (d.past || []).forEach(v => DS.known.add(v)); }
@@ -2802,6 +2906,8 @@ async function driveSync(push){
   DS.busy = true; setDrive("syncing");
   try {
     const {ahead} = await drivePull();
+    if (!DS.permsAt || Date.now() - DS.permsAt > 120000){ DS.permsAt = Date.now(); loadPerms(); }
+    if (!DS.permsAt || Date.now() - DS.permsAt > 120000){ DS.permsAt = Date.now(); loadPerms(); }
     if ((push || ahead) && DS.canEdit) await drivePushNow();
     DS.last = Date.now(); setDrive("ok");
   } catch (e){ if (e.message !== "reconnect") setDrive("error", e.message); }
@@ -2822,8 +2928,13 @@ async function driveConnect(){
   const p = requestToken();                          // opened straight from the click
   try {
     await p;
-    const j = await (await dfetch("/drive/v3/about?fields=user(displayName,emailAddress)")).json();
+    const j = await (await dfetch("/drive/v3/about?fields=user(displayName,emailAddress,permissionId,photoLink)")).json();
     DS.user = j.user || null;
+    if (DS.user && DS.user.permissionId){
+      DS.me = {id: DS.user.permissionId, name: DS.user.displayName, photo: DS.user.photoLink || ""};
+      LAST_ME = DS.me; try { localStorage.setItem("command-zone-me", JSON.stringify(DS.me)); } catch {}
+    }
+    render();
     setDrive("ok");
     if (DS.file){ DS.rev = null; await driveSync(false); toast(`Synced with ${DS.file.name}`); }
   } catch (e){ if (e.message !== "reconnect") toast(e.message); renderDrive(); }
@@ -2832,10 +2943,12 @@ async function driveCreate(){
   if (!DS.token) return;
   setDrive("syncing");
   try {
-    const bd = "cz" + uid(), meta = {name: "Command Zone decks.json", mimeType: "application/json", description: "Decks for the Command Zone deck builder. Share this file to give friends access: Editor can edit decks, Viewer can only look."};
+    if (DS.me) for (const d of Object.values(S.decks)) if (!d.owner && !d.deleted) d.owner = {...DS.me};
+    save(false);
+    const bd = "cz" + uid(), meta = {name: "MTG Deck Builder.json", mimeType: "application/json", description: "Decks for MTG Deck Builder. Share this file to give friends access: Editor can edit decks, Viewer can only look."};
     const body = `--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${bd}\r\nContent-Type: application/json\r\n\r\n${libraryPayload()}\r\n--${bd}--`;
     const m = await (await dfetch(`/upload/drive/v3/files?uploadType=multipart&fields=${DMETA}`, {method: "POST", headers: {"Content-Type": `multipart/related; boundary=${bd}`}, body})).json();
-    useMeta(m); DS.rev = m.headRevisionId || m.modifiedTime; DS.known = null;
+    useMeta(m); DS.rev = m.headRevisionId || m.modifiedTime; DS.known = null; DS.remote = {...S.decks}; render(); loadPerms();
     DS.last = Date.now(); setDrive("ok");
     showReport("Your shared deck library is ready", [
       `It's a file called “${m.name}” in your Google Drive, and all your decks are in it.`,
@@ -2852,10 +2965,10 @@ async function driveOpen(){
     const picker = new google.picker.PickerBuilder()
       .addView(shared).addView(own)
       .setOAuthToken(DS.token).setDeveloperKey(GDRIVE.apiKey).setAppId(GDRIVE.appId)
-      .setTitle("Pick the “Command Zone decks” file")
+      .setTitle("Pick the “MTG Deck Builder” file")
       .setCallback(async d => {
         if (d.action !== google.picker.Action.PICKED || !d.docs || !d.docs[0]) return;
-        DS.file = {id: d.docs[0].id, name: d.docs[0].name}; DS.rev = null; DS.known = null; saveDriveFile();
+        DS.file = {id: d.docs[0].id, name: d.docs[0].name}; DS.rev = null; DS.known = null; DS.remote = null; DS.members = {}; DS.perms = null; DS.permsAt = 0; saveDriveFile();
         await driveSync(false);
         if (DS.status === "ok") toast(`Connected to ${DS.file.name}${DS.canEdit ? "" : " (view only)"}`);
       }).build();
@@ -2926,11 +3039,14 @@ $("#deckList").addEventListener("click", e => {
   const del = e.target.closest("[data-deldeck]"); if (del){ deleteDeck(del.dataset.deldeck); return; }
   const ren = e.target.closest("[data-renamedeck]"); if (ren){ renameInList(ren.dataset.renamedeck); return; }
   const dup = e.target.closest("[data-dupdeck]"); if (dup){ duplicateDeck(dup.dataset.dupdeck); return; }
+  const per = e.target.closest("[data-person]");
+  if (per){ UI.openPeople = UI.openPeople || {}; const k = per.dataset.person; if (UI.openPeople[k]) delete UI.openPeople[k]; else UI.openPeople[k] = true; saveUI(); renderSidebar(); return; }
   if (e.target.closest(".deck-rename")) return;
   const it = e.target.closest("[data-deck]"); if (!it) return;
   S.active = it.dataset.deck; if (innerWidth <= 820) S.sidebarOpen = false; save(false); render();
 });
 function renameInList(id){
+  if (guard(S.decks[id])) return;
   const d = S.decks[id]; const b = document.querySelector(`.deck-item[data-deck="${id}"] .deck-meta b`); if (!d || !b) return;
   const inp = document.createElement("input"); inp.className = "deck-rename"; inp.value = d.name || displayName(d); inp.setAttribute("aria-label", "Deck name");
   b.replaceWith(inp); inp.focus(); inp.select();
@@ -2943,16 +3059,18 @@ function duplicateDeck(id){
   const src = S.decks[id]; if (!src) return;
   const d = JSON.parse(JSON.stringify(src));
   d.id = uid(); d.ver = uid(); d.past = []; d.created = d.updated = Date.now();
-  d.name = displayName(src) + " (copy)";
-  if (DS.user) d.by = DS.user.displayName;
+  d.name = isMine(src) ? displayName(src) + " (copy)" : `${displayName(src)} (from ${ownerName(src).split(" ")[0]})`;
+  d.owner = meNow() || undefined; delete d.by;
+  d.cards.forEach(c => { c.locked = c.locked && isMine(src); });
   d.cards.forEach(c => c.uid = uid());
   S.decks[d.id] = d; S.active = d.id; save(); render();
-  toast(`Made a copy: ${d.name}`);
+  toast(`Copied to your decks: ${d.name}`);
 }
 $("#deckList").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.dataset.deck) e.target.click(); });
 let nameT;
+$("#roBanner").addEventListener("click", e => { if (e.target.closest("#roCopy")) duplicateDeck(S.active); });
 $("#deckName").addEventListener("input", e => {
-  const d = cur(); if (!d) return; d.name = e.target.value; renderSidebar();
+  const d = cur(); if (!d || roDeck(d)) return; d.name = e.target.value; renderSidebar();
   clearTimeout(nameT); nameT = setTimeout(() => touch(d), 400);
 });
 $("#cmds").addEventListener("click", e => {
@@ -2996,10 +3114,14 @@ $("#saveFile").onclick = saveFile;
 $("#importBtn").onclick = () => $("#importFile").click();
 $("#importFile").onchange = e => { const f = e.target.files[0]; if (f) importFile(f); e.target.value = ""; };
 $("#curSel").value = UI.cur;
-$("#curSel").onchange = e => { UI.cur = e.target.value; saveUI(); $("#priceySym").textContent = UI.cur === "usd" ? "$" : "€"; renderAll(); };
-$("#priceyIn").value = UI.pricey; $("#priceySym").textContent = UI.cur === "usd" ? "$" : "€";
-let priceyT;
-$("#priceyIn").addEventListener("input", e => { const v = parseFloat(String(e.target.value).replace(",", ".")); if (!(v >= 0)) return; UI.pricey = v; saveUI(); clearTimeout(priceyT); priceyT = setTimeout(renderAll, 200); });
+$("#curSel").onchange = e => { UI.cur = e.target.value; saveUI(); renderAll(); };
+$("#total").addEventListener("change", e => {
+  if (e.target.id !== "priceyIn") return;
+  const d = cur(); if (!d || guard(d)){ renderHeader(); return; }
+  const v = parseFloat(String(e.target.value).replace(",", "."));
+  if (!(v >= 0)){ renderHeader(); return; }
+  d.pricey = v; touch(d); renderBoard(); renderHeader();
+});
 window.addEventListener("storage", e => { if (e.key === KEY){ try { S.decks = JSON.parse(e.newValue).decks; render(); } catch {} } });
 
 applyZoom(); applySplit(); applyUiZoom();

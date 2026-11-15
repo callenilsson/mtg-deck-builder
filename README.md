@@ -1,4 +1,4 @@
-# Command Zone
+# MTG Deck Builder
 
 A Commander (EDH) deck builder that runs entirely in the browser. It uses EDHREC for recommendations and Scryfall for card search, artwork and prices.
 
