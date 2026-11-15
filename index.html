@@ -94,6 +94,9 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .person:hover{background:var(--surface-2);border-color:var(--line)}
 .person.open{background:var(--surface-2)}
 .person .p-name{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person.me{cursor:default;background:var(--gold-soft);border-color:var(--gold-line);margin-top:2px}
+.person .p-role.you{color:var(--gold);border-color:var(--gold-line)}
+.people-hint{padding:8px 10px 4px;font-size:11.5px}
 .person .p-role{font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
 .person .p-count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .person svg.i{width:15px;height:15px;color:var(--faint);transition:transform .2s;transform:rotate(-90deg)}
@@ -110,6 +113,12 @@ body.ro .box-grip{visibility:hidden}
 body.ro #stats input{pointer-events:none;opacity:.6}
 body.ro .name-wrap{border-style:solid;border-color:transparent;cursor:default}
 body.ro .name-wrap svg{display:none}
+.pricey-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;padding:6px 9px;border-radius:9px;background:var(--pricey-soft);border:1px solid var(--pricey-line);color:#e2d3ff;font-size:12.5px;font-weight:600;cursor:text;white-space:nowrap}
+.pricey-row .pr-count{color:var(--muted);font-weight:500}
+.pricey-row input{width:56px;background:rgba(0,0,0,.25);border:1px solid var(--pricey-line);border-radius:6px;padding:2px 5px;text-align:right;font-size:13px;font-weight:700;color:#fff;-moz-appearance:textfield}
+.pricey-row input:focus{outline:none;border-color:#d7c2ff}
+.pricey-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.pricey-row input:disabled{opacity:.75}
 .pricey-set{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);cursor:text}
 .pricey-set input{width:48px;background:var(--surface-3);border:1px solid transparent;border-radius:6px;padding:1px 4px;text-align:right;font-size:12px;color:#e2d3ff;-moz-appearance:textfield}
 .pricey-set input:focus{border-color:var(--pricey-line);outline:none}
@@ -661,10 +670,11 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
   .cmds .cmd-col{width:min(var(--tile,180px),284px)}
   .cmds .cmd-slot{width:100%}
   .cmds .cmd-slot.partner.empty{width:92px;flex:none}
-  #total{order:3;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"num sub" "lbl sub";align-items:center;column-gap:12px;min-width:0;padding:10px 14px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px}
+  #total{order:3;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"num sub" "lbl sub" "pr pr";align-items:center;column-gap:12px;min-width:0;padding:10px 14px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px}
   #total b{grid-area:num}
   #total small{grid-area:lbl}
   #total .tot-sub{grid-area:sub;justify-self:end;margin:0}
+  #total .pricey-row{grid-area:pr;justify-self:stretch;margin-top:8px}
   .combo{order:4}
   .combo-lbl{max-width:none;flex-basis:100%}
   #stats{order:5;border-left:0;padding-left:0;border-top:1px solid var(--line-soft);padding-top:12px}
@@ -789,7 +799,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115085857";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115090522";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1273,8 +1283,10 @@ function renderSidebar(){
   for (const p of DS.perms || []) if (p.type === "user" && p.id && (!me || p.id !== me.id)) add(p.id, {name: p.displayName, photo: p.photoLink});
   const roleOf = id => { const p = (DS.perms || []).find(x => x.id === id); return p ? (p.role === "owner" ? "Owner" : p.role === "writer" ? "Editor" : p.role === "commenter" || p.role === "reader" ? "Viewer" : "") : ""; };
   const others = [...people.values()].sort((a, b) => a.name.localeCompare(b.name));
-  let h = `<div class="side-label">${others.length ? `${me ? personAvatar(me, "xs") : ""}My decks` : "Your decks"}</div>`;
+  let h = me ? `<div class="person me open" title="Your decks">${personAvatar(me)}<span class="p-name">${esc(me.name || "You")}</span><span class="p-role you">You</span><span class="p-count">${mine.length}</span></div>`
+             : `<div class="side-label">Your decks</div>`;
   h += mine.length ? mine.map(d => deckItemHTML(d, true)).join("") : `<div class="side-note" style="padding:4px 10px 8px">No decks yet. Start one with “New deck”.</div>`;
+  if (me && !others.length) h += `<div class="side-note people-hint">${DS.file ? (DS.permErr ? `Couldn’t read who the library is shared with (${esc(DS.permErr)}).` : "When friends join your library, their decks show up here, one folder per person.") : "Create or open a shared library (Google Drive below) to see friends’ decks here."}</div>`;
   for (const p of others){
     const open = !!(UI.openPeople || {})[p.id] || p.decks.some(d => d.id === S.active);
     const role = roleOf(p.id);
@@ -1295,7 +1307,8 @@ function renderHeader(){
   const {n, locked, value} = deckTotals(d);
   const tot = $("#total");
   tot.innerHTML = `<b>${n}<span>/100</span></b><small>${n > 100 ? `${n - 100} too many` : n === 100 ? "Complete" : "in deck"}</small>
-    ${d.commander ? `<div class="tot-sub"><span title="Locked final picks in the deck">${I.lock}<b>${locked}</b> locked</span><span title="Deck value, commander included (${value.n} of ${n} cards have a price)"><b>${fmtMoney(value.tot, value.sym)}</b> value</span><label class="pricey-set" title="Cards at or above this price are marked in purple">💎 from <input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold">${UI.cur === "usd" ? "$" : "€"}</label></div>` : ""}`;
+    ${d.commander ? `<div class="tot-sub"><span title="Locked final picks in the deck">${I.lock}<b>${locked}</b> locked</span><span title="Deck value, commander included (${value.n} of ${n} cards have a price)"><b>${fmtMoney(value.tot, value.sym)}</b> value</span></div>
+    <label class="pricey-row" title="Cards at or above this price get a purple outline and price tag">💎 Expensive from <input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold"><span class="sym">${UI.cur === "usd" ? "$" : "€"}</span><span class="pr-count">· ${[...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length} cards</span></label>` : ""}`;
   tot.classList.toggle("full", n === 100); tot.classList.toggle("over", n > 100);
   if (!d.commander) return;
   // commanders
@@ -2875,8 +2888,8 @@ function claimNewDecks(){
   for (const d of Object.values(S.decks)) if (!d.owner && !d.deleted && !(DS.known && DS.known.has(d.ver))) d.owner = {...me};
 }
 async function loadPerms(){
-  try { const j = await (await dfetch(`/drive/v3/files/${DS.file.id}/permissions?fields=permissions(id,type,role,displayName,photoLink)&supportsAllDrives=true`)).json(); DS.perms = j.permissions || []; }
-  catch { DS.perms = DS.perms || null; }
+  try { const j = await (await dfetch(`/drive/v3/files/${DS.file.id}/permissions?fields=permissions(id,type,role,displayName,photoLink)&supportsAllDrives=true`)).json(); DS.perms = j.permissions || []; DS.permErr = ""; }
+  catch (e){ DS.perms = DS.perms || null; if (e.message !== "reconnect") DS.permErr = e.message; }
   renderSidebar();
 }
 const LIB_NAME = "MTG Deck Builder.json";
