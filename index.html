@@ -741,8 +741,8 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
     </header>
 
     <div id="tools" hidden>
-      <label class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><span class="z-ico"></span><input type="range" id="zoom" min="50" max="250" step="5" value="100" aria-label="Card size"><span class="z-ico big"></span><output id="zoomVal">100%</output></label>
-      <label class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click to reset."><span class="tl">Interface</span><span class="a-ico sm">A</span><input type="range" id="uiZoom" min="80" max="140" step="5" value="100" aria-label="Interface size"><span class="a-ico">A</span><output id="uiZoomVal">100%</output></label>
+      <label class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><span class="z-ico"></span><input type="range" id="zoom" min="30" max="400" step="5" value="100" aria-label="Card size"><span class="z-ico big"></span><output id="zoomVal">100%</output></label>
+      <label class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click to reset."><span class="tl">Interface</span><span class="a-ico sm">A</span><input type="range" id="uiZoom" min="60" max="200" step="5" value="100" aria-label="Interface size"><span class="a-ico">A</span><output id="uiZoomVal">100%</output></label>
       <label class="tool"><span class="tl">Sort</span><select id="sortSel">
         <option value="manual">Your order</option><option value="incl">Most played (EDHREC %)</option><option value="syn">Synergy</option>
         <option value="price">Price, high to low</option><option value="cheap">Price, low to high</option><option value="cmc">Mana value</option>
@@ -789,7 +789,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115085526";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115085857";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1918,7 +1918,7 @@ $("#zoom").addEventListener("input", e => { UI.zoom = +e.target.value; applyZoom
 $("#zoom").closest("label").addEventListener("dblclick", () => { UI.zoom = 100; applyZoom(); saveUI(); });
 addEventListener("resize", applyZoom);
 function applyUiZoom(){
-  const z = Math.max(.8, Math.min(1.4, (+UI.uiz || 100) / 100));
+  const z = Math.max(.6, Math.min(2, (+UI.uiz || 100) / 100));
   document.documentElement.style.setProperty("--uiz", z);
   $("#uiZoom").value = Math.round(z * 100); $("#uiZoomVal").textContent = Math.round(z * 100) + "%";
   if (V) layoutFlow();
