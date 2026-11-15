@@ -1,0 +1,2789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Command Zone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mana-font@1.17.0/css/mana.min.css">
+<style>
+/* Command Zone v4 — forest theme.
+   Layout: deck list (left, collapsible) · header (commanders, combine cards, stats table, totals; shrinks to one line while you scroll)
+   · toolbar (card size, sort, filter, move all) · two resizable panels: card pool and deck. */
+:root{
+  --bg:#0d0e14; --surface:#151722; --surface-2:#1c1f2d; --surface-3:#252939;
+  --line:#2b2f43; --line-soft:#212436;
+  --fg:#ece7da; --muted:#9a9cb3; --faint:#6b6e86;
+  --gold:#d9ab4f; --gold-soft:rgba(217,171,79,.14); --gold-line:rgba(217,171,79,.45);
+  --leaf:#a9c4ea; --ok:#55c48f; --danger:#ef5a5f; --danger-soft:rgba(239,90,95,.14);
+  --display:"Cinzel","Trajan Pro",Georgia,serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --radius-card:4.6%;
+  --tile:180px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+select{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+img{max-width:100%}
+svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#app{display:flex;height:100%;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+
+/* ---------- Sidebar ---------- */
+#sidebar{width:272px;flex:none;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;transition:margin .22s ease;z-index:30}
+#app.side-closed #sidebar{margin-left:-272px}
+.side-head{padding:18px 16px 12px;display:flex;align-items:center;gap:10px}
+.brand{font-family:var(--display);font-weight:700;letter-spacing:.05em;font-size:16px;white-space:nowrap;color:var(--gold);display:flex;align-items:center;gap:8px}
+.brand .ms{font-size:20px}
+.side-head .icon-btn{margin-left:auto}
+.side-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);padding:8px 16px 6px}
+#deckList{flex:1;overflow-y:auto;padding:0 8px 8px;display:flex;flex-direction:column;gap:4px}
+.deck-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;border:1px solid transparent;cursor:pointer}
+.deck-item:hover{background:var(--surface-2)}
+.deck-item.active{background:var(--gold-soft);border-color:var(--gold-line)}
+.deck-thumb{width:44px;height:44px;border-radius:8px;background:var(--surface-3) center/cover;flex:none;display:grid;place-items:center;color:var(--faint)}
+.deck-meta{min-width:0;flex:1}
+.deck-meta b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.deck-meta small{color:var(--muted);font-size:12px;display:flex;gap:6px;align-items:center;white-space:nowrap}
+.deck-meta .pips{display:inline-flex;gap:1px;font-size:10px}
+.deck-acts{display:flex;gap:0}
+.deck-item:not(:hover):not(.active) .deck-acts{display:none}
+.deck-acts button{color:var(--faint);background:none;border:0;padding:5px;border-radius:6px;display:grid;place-items:center}
+.deck-acts button:hover{color:var(--fg);background:var(--surface-3)}
+.deck-acts button.del:hover{color:var(--danger);background:var(--danger-soft)}
+.deck-acts svg.i{width:16px;height:16px}
+.deck-rename{width:100%;background:var(--surface-3);border:1px solid var(--gold-line);border-radius:6px;padding:3px 6px;font-weight:600}
+.new-deck{margin:4px 8px 8px;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border-radius:10px;border:1px dashed var(--gold-line);background:none;color:var(--gold);font-weight:600}
+.new-deck:hover{background:var(--gold-soft)}
+.side-foot{border-top:1px solid var(--line);padding:12px;display:grid;gap:6px}
+.side-foot .btn{justify-content:flex-start}
+.side-note{font-size:11.5px;color:var(--faint);line-height:1.4;padding:2px 4px 0}
+.side-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);padding:2px 4px}
+.side-row select{flex:1;font-size:12.5px;padding:4px 6px}
+.unsaved-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:auto;box-shadow:0 0 0 3px var(--gold-soft)}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);font-weight:500;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
+.btn:hover{border-color:var(--gold-line);background:var(--surface-3)}
+.btn:active{transform:translateY(1px)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.primary{background:var(--gold);color:#1b1407;border-color:var(--gold);font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--danger)}
+.btn.danger:hover{border-color:var(--danger);background:var(--danger-soft)}
+.btn.danger.solid{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn.on{color:var(--gold);border-color:var(--gold-line);background:var(--gold-soft)}
+.btn:disabled{opacity:.45;cursor:default}
+.icon-btn{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:9px;border:1px solid transparent;background:none;color:var(--muted);flex:none}
+.icon-btn:hover{color:var(--fg);background:var(--surface-2);border-color:var(--line)}
+.icon-btn.on{color:var(--gold)}
+.card-plus-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:10px;border:1px solid var(--gold-line);background:var(--gold-soft);color:var(--gold);font-weight:600;white-space:nowrap}
+.card-plus-btn:hover{background:rgba(217,171,79,.24)}
+.card-plus-ico{width:20px;height:27px;border:1.8px solid currentColor;border-radius:3px;display:grid;place-items:center;font-size:16px;line-height:1;font-weight:700;flex:none}
+
+/* ---------- Header ---------- */
+#main{flex:1;min-width:0;display:flex;flex-direction:column;height:100%}
+#top{flex:none;position:relative;background:linear-gradient(180deg,#171a27,#12141d);border-bottom:1px solid var(--line);padding:12px max(18px,env(safe-area-inset-right,0px)) 12px max(18px,env(safe-area-inset-left,0px));
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-areas:"cmds name stats total" "cmds combo stats total";grid-template-rows:auto 1fr;column-gap:20px;row-gap:10px;align-items:start}
+.cmds{grid-area:cmds;display:flex;gap:8px;align-items:flex-start}
+.cmd-col{display:flex;flex-direction:column;gap:6px;min-width:0;flex:0 1 auto}
+.cmd-col .acts{width:100%}
+.cmd-slot{width:118px;flex:none;aspect-ratio:63/88;border-radius:6px;overflow:hidden;position:relative;background:var(--surface-2);border:1px solid var(--line);padding:0;box-shadow:0 8px 22px rgba(0,0,0,.5);transition:transform .15s}
+.cmd-slot:hover{transform:translateY(-2px)}
+.cmd-slot img{width:100%;height:100%;object-fit:cover;display:block}
+.cmd-slot.empty{border:1.5px dashed var(--gold-line);background:var(--gold-soft);color:var(--gold);display:grid;place-items:center;text-align:center;font-size:12px;font-weight:600;box-shadow:none}
+.cmd-slot.empty .card-plus-ico{width:26px;height:35px;font-size:20px;margin:0 auto 6px}
+.cmd-slot.partner.empty{width:84px;font-size:11px}
+.cmd-lbl{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#f1ead5;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:14px 4px 4px;text-align:center}
+.name-row{grid-area:name;display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.name-wrap{flex:1 1 220px;min-width:0;max-width:440px;display:flex;align-items:center;gap:6px;border:1px dashed var(--line);border-radius:9px;padding:0 10px 0 0;cursor:text}
+.name-wrap:hover,.name-wrap:focus-within{border:1px solid var(--gold-line);background:var(--surface)}
+.name-wrap svg{color:var(--muted)}
+.name-wrap:hover svg,.name-wrap:focus-within svg{color:var(--gold)}
+#deckName{flex:1;min-width:0;background:transparent;border:0;outline:none;padding:6px 8px;font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:.02em}
+.top-actions{display:flex;gap:6px;align-items:center}
+.combo{grid-area:combo;display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;min-width:0}
+.combo-lbl{display:flex;flex-direction:column;gap:2px;max-width:190px}
+.eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.combo-lbl small{font-size:11.5px;color:var(--muted);line-height:1.35}
+.mini{width:58px;aspect-ratio:63/88;border-radius:4px;overflow:hidden;position:relative;border:1px solid var(--gold-line);background:var(--surface-2);padding:0;flex:none}
+.mini img{width:100%;height:100%;object-fit:cover;display:block}
+.mini .x{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.78);display:grid;place-items:center;font-size:12px;line-height:1;color:#fff}
+.mini.empty{border:1.5px dashed var(--gold-line);background:var(--gold-soft);color:var(--gold);display:grid;place-items:center;font-size:20px;font-weight:600}
+.mini.empty:hover{background:rgba(217,171,79,.24)}
+#total{grid-area:total;display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:92px}
+#total b{font-family:var(--display);font-size:28px;line-height:1;font-variant-numeric:tabular-nums}
+#total b span{color:var(--faint);font-size:16px}
+#total small{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+#total.full b{color:var(--ok)}
+#total.over b{color:var(--danger)}
+.tot-sub{display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-top:6px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tot-sub span{display:inline-flex;align-items:center;gap:5px}
+.tot-sub svg.i{width:13px;height:13px;color:var(--gold)}
+.tot-sub b{font-family:var(--body);font-size:13px;color:var(--fg)}
+
+/* stats table */
+#stats{grid-area:stats;border-left:1px solid var(--line);padding-left:16px;min-width:0}
+.stbl{border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.stbl th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;padding:0 6px 3px;text-align:center;white-space:nowrap}
+.stbl th.l{text-align:left}
+.stbl td{padding:0 6px;height:21px;white-space:nowrap}
+.stbl td.ic{width:18px;padding:0 2px;text-align:center;color:var(--muted)}
+.stbl td.sname{color:#d9d4c3}
+.stbl td.num{text-align:center}
+.stbl td.lk{color:var(--gold)}
+.stbl tr.over td.dn{color:var(--danger);font-weight:700}
+.stbl tr.over{background:var(--danger-soft)}
+.stbl tr.met td.dn{color:var(--ok);font-weight:600}
+.stbl tr.sub td{height:18px;font-size:11.5px;color:var(--muted)}
+.stbl tr.sub td.sname{padding-left:14px;color:var(--muted)}
+.stbl input{width:40px;height:19px;background:var(--surface-3);border:1px solid transparent;border-radius:5px;padding:0 2px;text-align:center;font-size:12px;color:var(--muted);-moz-appearance:textfield}
+.stbl input::-webkit-inner-spin-button,.stbl input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.stbl input:focus{border-color:var(--gold-line);outline:none;color:var(--fg)}
+.stbl td.edh{text-align:left;color:var(--leaf)}
+.delta{display:inline-block;min-width:22px;font-size:10.5px;text-align:center;border-radius:5px;margin-left:4px;color:var(--faint);font-style:normal}
+.delta.up{color:var(--ok);background:rgba(85,196,143,.12)}
+.delta.down{color:var(--gold);background:var(--gold-soft)}
+.stats-foot{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;margin-top:5px;font-size:11.5px;color:var(--muted);max-width:380px}
+.colors{display:flex;gap:8px;align-items:center}
+.colors span{display:inline-flex;align-items:center;gap:3px;color:var(--fg)}
+.sumline.bad{color:var(--danger)}
+.sumline.good{color:var(--ok)}
+.basis-line{flex-basis:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help}
+.pill-btn{border:1px solid var(--gold-line);background:var(--gold-soft);color:var(--gold);border-radius:6px;padding:2px 9px;font-size:11.5px;font-weight:600}
+.pill-btn:hover{background:rgba(217,171,79,.24)}
+.pill-btn:disabled{border-color:transparent;background:none;color:var(--ok);cursor:default}
+
+/* ---------- Toolbar ---------- */
+#tools{flex:none;display:flex;align-items:center;gap:8px 14px;padding:8px max(18px,env(safe-area-inset-right,0px)) 8px max(18px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:#11131c;flex-wrap:wrap}
+.tool{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);white-space:nowrap}
+.tool .tl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.tool select{font-size:13px}
+.tool.size{background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:999px;padding:4px 12px 4px 12px;color:var(--gold);cursor:pointer}
+.tool.size .tl{color:var(--gold)}
+.z-ico{width:9px;height:12px;border:1.6px solid currentColor;border-radius:2px;flex:none}
+.z-ico.big{width:13px;height:18px}
+.tool.size input{width:120px;accent-color:var(--gold);margin:0;cursor:pointer}
+.tool.size output{min-width:38px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.tool.filter{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:0 4px 0 9px}
+.tool.filter:focus-within{border-color:var(--gold-line)}
+.tool.filter input{width:120px;background:none;border:0;outline:none;padding:6px 0;font-size:13px}
+.tool.filter select{border:0;background:var(--surface-3);max-width:140px;font-size:12.5px;padding:3px 6px}
+.tool.filter.on{border-color:var(--gold)}
+.tool.moves .btn{padding:5px 10px;font-size:12.5px}
+.tools-gap{flex:1}
+
+/* ---------- Board ---------- */
+#board{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,var(--sp,50%)) 10px minmax(0,1fr)}
+.panel{display:flex;flex-direction:column;min-height:0;min-width:0}
+.panel-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px 60px;overscroll-behavior:contain}
+.panel-head{position:sticky;top:0;z-index:6;height:42px;margin:0 -14px;padding:0 14px;display:flex;align-items:center;gap:10px;background:rgba(13,14,20,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line-soft)}
+.panel-head h2{margin:0;font-family:var(--display);font-size:15px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.ph-meta,.box-right,.box-count{white-space:nowrap}
+.ph-meta{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.box-head h3{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ph-meta{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums}
+.jump{margin-left:auto;display:flex;justify-content:flex-end;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:1 1 0}
+.panel-head .ph-meta{flex:0 0 auto}
+.jump::-webkit-scrollbar{display:none}
+.jump button{flex:none;width:28px;height:28px;border-radius:7px;border:1px solid transparent;background:none;color:var(--faint);display:grid;place-items:center;padding:0;transition:color .15s,background .15s,border-color .15s}
+.jump button .ms{font-size:14px}
+.jump button:hover{color:var(--fg);background:var(--surface-2);border-color:var(--line)}
+.jump button.on{color:var(--gold);background:var(--gold-soft);border-color:var(--gold-line)}
+.panel.drop-target .panel-scroll{background:rgba(217,171,79,.03)}
+.splitter{position:relative;cursor:col-resize;touch-action:none;display:grid;place-items:center}
+.splitter::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--line)}
+.splitter i{position:relative;width:6px;height:46px;border-radius:4px;background:var(--surface-3);border:1px solid var(--line);transition:background .15s}
+.splitter:hover i,.splitter.on i{background:var(--gold)}
+
+.box{border:1px solid var(--line-soft);border-radius:12px;background:var(--surface);margin-top:12px;position:relative}
+.box-head{position:sticky;top:42px;z-index:4;display:flex;align-items:center;gap:8px;padding:6px 12px 6px 4px;border-bottom:1px solid var(--line-soft);min-height:42px;background:rgba(21,23,34,.97);border-radius:12px 12px 0 0;backdrop-filter:blur(6px)}
+.box-grip{display:grid;place-items:center;width:28px;height:30px;border-radius:6px;color:var(--faint);cursor:grab;touch-action:none;background:none;border:0;padding:0}
+.box-grip:hover{color:var(--fg);background:var(--surface-3)}
+.box-head .ms{font-size:16px;color:var(--gold)}
+.box-head{cursor:pointer;user-select:none;-webkit-user-select:none}
+.box-head:hover h3{color:var(--gold)}
+.box-fold{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;color:var(--muted);transition:transform .2s ease,color .15s}
+.box-head:hover .box-fold{color:var(--gold);background:var(--surface-3)}
+.box.collapsed .box-fold{transform:rotate(-90deg)}
+.box-fold svg.i{width:16px;height:16px}
+.box.collapsed .grid{display:none}
+.box.collapsed .box-head{border-bottom-color:transparent;border-radius:12px}
+.box.collapsed{background:rgba(21,23,34,.6)}
+.jump button.folded{opacity:.45}
+.box-head h3{margin:0;font-size:13.5px;font-weight:600;letter-spacing:.04em}
+.box-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.box-lk{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--gold);font-variant-numeric:tabular-nums}
+.box-lk svg.i{width:13px;height:13px}
+.box-count{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.box-count.over{color:var(--danger);font-weight:600}
+.box-count.met{color:var(--ok)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,var(--tile));justify-content:start;gap:16px 12px;padding:12px}
+.box.ins-top::before,.box.ins-bottom::after{content:"";position:absolute;left:8px;right:8px;height:3px;border-radius:3px;background:var(--gold)}
+.box.ins-top::before{top:-8px}.box.ins-bottom::after{bottom:-8px}
+.box.target{border-color:var(--gold-line);box-shadow:0 0 0 3px var(--gold-soft)}
+.lock-sep{grid-column:1/-1;height:0;border-top:1px dashed var(--gold-line);margin:-4px 0;opacity:.6}
+
+.cw{display:flex;flex-direction:column;gap:5px;min-width:0;position:relative;container-type:inline-size}
+.cw.ins-before::before,.cw.ins-after::before{content:"";position:absolute;top:2%;height:calc(var(--tile)*1.3);max-height:80%;width:4px;border-radius:3px;background:var(--gold);z-index:3}
+.cw.ins-before::before{left:-8px}.cw.ins-after::before{right:-8px}
+.cw.dragging{opacity:.28}
+.ct{position:relative;aspect-ratio:63/88;border-radius:var(--radius-card);background:var(--surface-3);overflow:hidden;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;box-shadow:0 3px 10px rgba(0,0,0,.45);transition:transform .14s ease,box-shadow .14s ease}
+@media (hover:hover){.ct:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(0,0,0,.55),0 0 0 1px rgba(217,171,79,.25)}}
+.ct img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.ct-name{position:absolute;inset:0;padding:8px;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted)}
+.cw.over .ct{outline:3px solid var(--danger);outline-offset:-1px}
+.cw.over .ct::after{content:"Over limit";position:absolute;left:0;right:0;bottom:0;background:var(--danger);color:#fff;font-size:10px;font-weight:700;text-align:center;letter-spacing:.06em;text-transform:uppercase;padding:2px 0}
+.cw.locked .ct{box-shadow:0 0 0 2px var(--gold),0 3px 10px rgba(0,0,0,.45)}
+.cw.lifted .ct{transform:scale(1.06);box-shadow:0 0 0 3px var(--gold),0 12px 26px rgba(0,0,0,.6)}
+.ct-badges{position:absolute;top:47%;left:6px;display:flex;flex-direction:column;gap:3px;z-index:2}
+.ct-badges i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:rgba(10,10,14,.85);color:var(--gold);border:1px solid var(--gold-line)}
+.ct-badges svg.i{width:13px;height:13px}
+.custom-tag{position:absolute;right:5px;top:5px;z-index:2;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:rgba(10,10,14,.85);color:var(--gold);border:1px solid var(--gold-line)}
+.custom-tag svg.i{width:12px;height:12px}
+/* stats under each card */
+.ct-stats{display:grid;gap:3px;font-size:11px;line-height:1.15;color:var(--muted);font-variant-numeric:tabular-nums;padding:0 1px}
+.st-row{display:flex;align-items:baseline;gap:4px;white-space:nowrap;overflow:hidden}
+.st-row b{color:var(--fg);font-weight:700}
+.st-row .syn.pos{color:var(--ok)}
+.st-row .syn.neg{color:var(--danger)}
+.st-row .price{margin-left:auto;color:#e9d9a8;font-weight:600}
+/* expensive cards: purple */
+:root{--pricey:#b48cff;--pricey-soft:rgba(160,110,255,.18);--pricey-line:rgba(180,140,255,.5)}
+.price.pricey{color:#e2d3ff!important;background:var(--pricey-soft);border:1px solid var(--pricey-line);border-radius:999px;padding:0 6px}
+.st-row .price.pricey{padding:0 5px}
+.cw.pricey .ct{box-shadow:0 0 0 1px var(--pricey-line),0 10px 20px -6px rgba(150,95,255,.75)}
+.cw.pricey.locked .ct{box-shadow:0 0 0 2px var(--gold),0 10px 20px -6px rgba(150,95,255,.75)}
+.cw.pricey .ct-stats .bar{box-shadow:0 2px 8px -2px rgba(150,95,255,.0)}
+.chip-st.price.pricey{border-color:var(--pricey-line);background:var(--pricey-soft)}
+.chip-st.price.pricey b{color:#e2d3ff}
+.ph-pricey{color:#d7c2ff}
+.side-row input{width:64px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:4px 6px;font-size:12.5px;margin-left:auto;text-align:right}
+.side-row input:focus{border-color:var(--pricey-line);outline:none}
+.st-row.faint{color:var(--faint)}
+.ct-stats .bar{margin:0}
+.sh{display:none}
+@container (max-width:132px){.lg{display:none}.sh{display:inline}.ct-stats{font-size:10px}}
+.acts{display:flex;gap:3px}
+.acts button{flex:1;height:28px;border-radius:7px;border:1px solid var(--line-soft);background:var(--surface-2);display:grid;place-items:center;color:var(--muted);padding:0;min-width:0}
+.acts button:hover{color:var(--fg);border-color:var(--gold-line)}
+.acts button.on{color:var(--gold);border-color:var(--gold-line);background:var(--gold-soft)}
+.acts button.move{color:var(--gold)}
+.acts button.del:hover{color:var(--danger);border-color:var(--danger)}
+.acts button:disabled{opacity:.3;cursor:default}
+.acts svg.i{width:15px;height:15px}
+body.pulse-focus .acts [data-act="focus"]{animation:pulse 1.1s ease 2}
+@keyframes pulse{50%{background:var(--gold-soft);border-color:var(--gold);color:var(--gold)}}
+.add-tile{aspect-ratio:63/88;border-radius:var(--radius-card);border:1.5px dashed var(--gold-line);background:none;color:var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:600;padding:6px;text-align:center;transition:background .15s}
+.add-tile:hover{background:var(--gold-soft)}
+.add-tile .card-plus-ico{width:28px;height:38px;font-size:20px}
+.bar{height:4px;border-radius:4px;background:var(--surface-3);overflow:hidden;margin:3px 0}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#b99447,var(--gold))}
+.bar.syn i{background:linear-gradient(90deg,#3f9a70,var(--ok))}
+.empty-note{padding:16px 12px;color:var(--faint);font-size:13px}
+
+.ghost{position:fixed;top:0;left:0;z-index:1000;pointer-events:none;box-shadow:0 18px 40px rgba(0,0,0,.6);opacity:.95}
+.ghost,.ghost *{transition:none!important;animation:none!important}
+.fly{position:fixed;z-index:400;transform-origin:0 0;border-radius:4.6%/3.3%;box-shadow:0 18px 44px rgba(0,0,0,.6);pointer-events:none;object-fit:cover}
+body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!important}
+body.is-dragging .panel-scroll{touch-action:none}
+body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!important}
+#hoverPrev{position:fixed;z-index:900;width:300px;aspect-ratio:63/88;border-radius:14px;pointer-events:none;box-shadow:0 20px 50px rgba(0,0,0,.7);background:var(--surface-3);top:0;left:0}
+
+/* ---------- Welcome ---------- */
+#welcome{flex:1;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));overflow:auto}
+.welcome-card{max-width:540px;text-align:center;display:grid;gap:14px;justify-items:center}
+.welcome-card h1{margin:0;font-family:var(--display);font-size:28px;letter-spacing:.04em;text-wrap:balance}
+.steps{display:grid;gap:8px;text-align:left;margin:6px 0 4px;padding:0;list-style:none;counter-reset:s}
+.steps li{display:flex;gap:10px;align-items:flex-start;color:#d9d4c3;font-size:14px}
+.steps li::before{counter-increment:s;content:counter(s);flex:none;width:22px;height:22px;border-radius:50%;border:1px solid var(--gold-line);color:var(--gold);display:grid;place-items:center;font-size:12px;font-weight:600}
+.big-slot{width:160px;aspect-ratio:63/88;border-radius:10px;border:1.5px dashed var(--gold-line);background:var(--gold-soft);color:var(--gold);display:grid;place-items:center;align-content:center;gap:10px;font-weight:600}
+.big-slot .card-plus-ico{width:40px;height:54px;font-size:28px}
+
+/* ---------- Modals ---------- */
+.scrim{position:fixed;inset:0;background:rgba(5,6,10,.72);backdrop-filter:blur(3px);z-index:200;display:grid;place-items:center;padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.scrim:not([hidden]){animation:fade .16s ease-out}
+.scrim:not([hidden])>.modal{animation:rise .22s cubic-bezier(.2,.8,.2,1)}
+#detailScrim:not([hidden])>.modal{animation:none}
+#detailScrim{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(5,6,10,.84)}
+.fly{will-change:transform,opacity;backface-visibility:hidden}
+.fly-r{-webkit-box-reflect:below 4px linear-gradient(transparent 78%,rgba(255,255,255,.18))}
+@keyframes fade{from{opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(12px) scale(.985)}}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:16px;width:min(1140px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.6);min-height:0}
+#addModal{height:100%}
+.modal-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);min-width:0}
+.modal-head h2{margin:0;font-family:var(--display);font-size:19px;letter-spacing:.03em;display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.modal-head .icon-btn{margin-left:auto}
+.modal-top{padding:12px 16px 0;display:grid;gap:10px}
+.modal-body{padding:12px 16px 18px;overflow-y:auto;min-height:0;flex:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);font-size:13px;flex:none}
+.chip .ms{color:var(--muted)}
+.chip:hover{border-color:var(--gold-line)}
+.chip.on{background:var(--gold-soft);border-color:var(--gold);color:var(--gold)}
+.chip.on .ms{color:var(--gold)}
+.searchrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.search{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:0 6px 0 12px}
+.search:focus-within{border-color:var(--gold-line)}
+.search input{flex:1;min-width:0;background:none;border:0;padding:11px 0;outline:none;font-size:15px}
+.search input::-webkit-search-cancel-button{display:none}
+.search .clear{border:0;background:none;color:var(--muted);padding:6px;border-radius:6px;display:grid;place-items:center}
+.search .clear:hover{color:var(--fg)}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.toggle input{accent-color:var(--gold);width:16px;height:16px}
+.basis{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.basis b{color:var(--fg);font-weight:600}
+.basis select{margin-left:auto;font-size:12.5px}
+.namefield{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.namefield input{flex:1;min-width:200px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--display);font-weight:700;font-size:15px}
+.namefield input:focus{border-color:var(--gold-line);outline:none}
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:18px 14px}
+.rt{display:flex;flex-direction:column;gap:6px;min-width:0;animation:fade .25s ease-out}
+.rt-img{aspect-ratio:63/88;border-radius:var(--radius-card);overflow:hidden;background:var(--surface-3);border:0;padding:0;position:relative;box-shadow:0 4px 12px rgba(0,0,0,.4);transition:transform .14s}
+.rt-img:hover{transform:translateY(-3px)}
+.rt-img img{width:100%;height:100%;object-fit:cover;display:block}
+.rt-img .tag{position:absolute;left:6px;bottom:6px;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(10,10,14,.85);color:var(--gold);border:1px solid var(--gold-line)}
+.rt-meta{font-size:12px;color:var(--muted);line-height:1.35;min-height:32px}
+.rt-meta b{color:var(--fg);font-weight:600;display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt-meta .price{float:right;color:#e9d9a8;font-weight:600}
+.rt-acts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.rt-acts .btn{justify-content:center;padding:7px 6px;font-size:12.5px}
+.rt-acts .done{grid-column:1/-1;justify-content:center;color:var(--ok);background:none;border-color:transparent}
+.skel{aspect-ratio:63/88;border-radius:var(--radius-card);background:linear-gradient(100deg,var(--surface-2) 30%,var(--surface-3) 50%,var(--surface-2) 70%);background-size:300% 100%;animation:sh 1.4s infinite linear}
+@keyframes sh{to{background-position:-150% 0}}
+.notice{padding:18px;border-radius:10px;background:var(--surface-2);color:var(--muted);text-align:center;line-height:1.55}
+.more{display:flex;justify-content:center;margin-top:16px}
+
+/* ---------- Card view: cover flow on top, details and edits below ---------- */
+.detail{width:min(960px,100%);max-height:100%}
+.dv-scroll{overflow-y:auto;min-height:0;flex:1}
+.flow{--flw:250px;position:relative;height:calc(var(--flw) * 1.397 * 1.2 + 34px);perspective:1100px;overflow:hidden;background:radial-gradient(ellipse at 50% 28%,#20243a,#0b0c12 72%);outline:none;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}
+.flow:focus-visible{box-shadow:inset 0 0 0 2px var(--gold)}
+.flow-stage{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+.flow-stage.instant .fl{transition:none!important}
+.fl{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;border:0;padding:0;background:none;transition:transform .38s cubic-bezier(.2,.7,.2,1),filter .38s;cursor:pointer;-webkit-box-reflect:below 4px linear-gradient(transparent 78%,rgba(255,255,255,.18))}
+.fl img{width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;display:block;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6)}
+.fl:not(.center){filter:brightness(.5) saturate(.85)}
+.fl-over{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;transform:translateX(-50%);pointer-events:none;z-index:150}
+.fl-over canvas{width:100%;height:100%;border-radius:4.6%/3.3%;display:none;pointer-events:none;-webkit-box-reflect:below 4px linear-gradient(transparent 78%,rgba(255,255,255,.18));box-shadow:0 14px 34px rgba(0,0,0,.6)}
+.fl-over.custom canvas{display:block}
+.fl-over.user canvas{pointer-events:auto;cursor:move;touch-action:none}
+.fl-over.stale canvas,.fl-over.stale .name-over,.fl-over.stale .name-pen{display:none}
+.name-over{position:absolute;left:7.2%;top:5.1%;width:63%;height:5%;pointer-events:auto;font:700 calc(var(--flw) * .047) Georgia,"Times New Roman",serif;padding:0 5px;border-radius:4px;border:1px dashed transparent;background:transparent;color:transparent;caret-color:var(--gold);cursor:text}
+.name-over{border-color:rgba(217,171,79,.6)!important}
+.name-over:focus{border-color:var(--gold)!important}
+.name-over::placeholder{color:transparent}
+.name-pen{position:absolute;left:-14px;top:4.4%;width:28px;height:28px;border-radius:50%;background:var(--gold);color:#1b1407;border:2px solid var(--bg);display:grid;place-items:center;pointer-events:auto;padding:0;box-shadow:0 4px 12px rgba(0,0,0,.5);transition:transform .15s}
+.name-pen:hover{transform:scale(1.1)}
+.name-pen svg.i{width:14px;height:14px;stroke-width:2.2}
+.name-over:hover{border-color:var(--gold);background:rgba(10,10,14,.25)}
+.name-over:focus{outline:none;border-style:solid;border-color:var(--gold);background:rgba(10,10,14,.92);color:#f2ecd9}
+.name-over:focus::placeholder{color:#8a8ca3}
+@media (hover:none){.name-over{border-color:rgba(217,171,79,.55)}}
+.flow-empty{display:grid;place-items:center;height:100%;color:var(--muted)}
+.flow-foot{display:flex;align-items:center;gap:12px;padding:8px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.flow-cap{font-size:12.5px;color:var(--muted);min-width:0;flex:1 1 260px}
+.flow-cap b{color:var(--fg);font-weight:600}
+.flow-cap .price{color:#e9d9a8;font-weight:600}
+.flow-scrub{flex:2 1 220px;accent-color:var(--gold);height:20px;cursor:pointer;margin:0}
+.dv-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;padding:16px 18px 18px;align-items:start}
+.dv-info{display:flex;flex-direction:column;gap:10px;min-width:0}
+.type-line{color:var(--muted);font-size:14px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.oracle{white-space:pre-line;line-height:1.6;font-size:14.5px;color:#e0dacb}
+.oracle .ms{font-size:.85em}
+.mana .ms{font-size:15px;margin-right:1px}
+.pt{font-weight:700;font-size:15px}
+.note{color:var(--muted);font-size:13px}
+.dv-stats{display:grid;gap:8px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px}
+.dv-stat{display:grid;grid-template-columns:92px 1fr 64px;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.dv-stat b{color:var(--fg);text-align:right;font-variant-numeric:tabular-nums}
+.dv-stat .bar{height:6px;margin:0}
+.dv-links{display:flex;gap:14px;flex-wrap:wrap}
+.dv-links a{color:var(--gold);font-size:13px;text-decoration:none}
+.dv-links a:hover{text-decoration:underline}
+.dv-side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.dv-acts{display:flex;flex-wrap:wrap;gap:8px}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px}
+.chip-st{display:inline-flex;align-items:baseline;gap:5px;padding:5px 11px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:13px;color:var(--muted);cursor:help;font-variant-numeric:tabular-nums}
+.chip-st b{color:var(--fg)}
+.chip-st b.pos{color:var(--ok)}.chip-st b.neg{color:var(--danger)}
+.chip-st.price b{color:#e9d9a8}
+.dv-edit{position:relative;display:grid;gap:12px;padding:14px 16px;border-radius:14px;border:1px solid rgba(217,171,79,.28);
+  background:radial-gradient(120% 140% at 0% 0%,rgba(217,171,79,.10),transparent 55%),linear-gradient(180deg,#1f2232,#191b28);
+  box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .25s,box-shadow .25s}
+.dv-edit.dirty{border-color:var(--gold-line);box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 0 3px rgba(217,171,79,.10),inset 0 1px 0 rgba(255,255,255,.05)}
+.ed-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.ed-title{font-family:var(--display);font-weight:700;letter-spacing:.08em;color:var(--gold);font-size:14px;text-shadow:0 0 14px rgba(217,171,79,.35)}
+.ed-hint{font-size:12px;color:var(--faint)}
+.dv-edit.dirty .ed-hint{color:var(--gold)}
+.ed-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line-soft);padding-top:12px;margin-top:2px}
+.ed-save{display:flex;gap:8px;margin-left:auto}
+.link-btn{border:0;background:none;color:var(--muted);font-size:12.5px;padding:4px 0;text-decoration:underline;text-underline-offset:3px}
+.link-btn:hover{color:var(--danger)}
+.save-btn{background:var(--surface-3);color:var(--faint);border-color:var(--line);font-weight:600}
+.save-btn:not(:disabled){background:linear-gradient(180deg,#e6bd62,var(--gold));color:#1b1407;border-color:var(--gold);box-shadow:0 0 18px rgba(217,171,79,.35);animation:glow 2.4s ease-in-out infinite}
+.save-btn:not(:disabled):hover{filter:brightness(1.08)}
+@keyframes glow{50%{box-shadow:0 0 26px rgba(217,171,79,.55)}}
+.ed-row{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center}
+.ed-lbl{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.ed-lbl svg.i{width:14px;height:14px}
+.ed-field{display:flex;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:0 4px 0 10px;min-width:0}
+.ed-field:focus-within{border-color:var(--gold-line)}
+.ed-field input{flex:1;min-width:0;background:none;border:0;outline:none;padding:8px 0;font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:14px}
+.ed-field input::placeholder{color:var(--faint);font-weight:400}
+.ed-field .x{border:0;background:none;color:var(--muted);font-size:18px;line-height:1;padding:2px 6px}
+.ed-btns{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.ed-btns input[type=range]{flex:1;min-width:90px;accent-color:var(--gold)}
+
+.art-sec{display:grid;gap:8px;padding-top:14px;border-top:1px solid var(--line-soft)}
+.art-sec h3{margin:0;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.art-sec p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.5}
+.art-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.art-row input[type=range]{flex:1;min-width:120px;accent-color:var(--gold)}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:9px;padding:3px;gap:2px}
+.seg button{border:0;background:none;color:var(--muted);padding:6px 11px;border-radius:7px;font-size:12.5px;font-weight:600}
+.seg button.on{background:var(--surface-3);color:var(--fg)}
+.dv-foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--line-soft)}
+.save-state{font-size:12px;color:var(--faint);margin-right:auto}
+.save-state.dirty{color:var(--gold)}
+
+/* confirm, report, pdf */
+.confirm{width:min(460px,100%)}
+.confirm .modal-body{display:grid;gap:12px}
+.confirm h2{font-family:var(--display);margin:0;font-size:19px}
+.confirm p{margin:0;color:var(--muted);line-height:1.55}
+.confirm .row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;flex-wrap:wrap}
+.step-dots{display:flex;gap:6px}.step-dots i{width:22px;height:4px;border-radius:3px;background:var(--surface-3)}.step-dots i.on{background:var(--danger)}
+.progress{height:8px;border-radius:6px;background:var(--surface-3);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--gold);width:0;transition:width .2s}
+.report{margin:0;padding-left:18px;color:var(--fg);line-height:1.6}
+.pdfm{width:min(1100px,100%);height:100%}
+.pdf-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.pdf-top p{margin:0;color:var(--muted);font-size:13px;line-height:1.5;flex:1 1 360px}
+.pdf-top b{color:var(--fg)}
+.pdf-pages{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:22px;padding:20px;background:radial-gradient(ellipse at 50% 0%,#1b1e2e,#0b0c12 70%)}
+.a4{position:relative;aspect-ratio:210/297;background:#fbfaf6;border-radius:3px;box-shadow:0 14px 34px rgba(0,0,0,.55);overflow:hidden;animation:rise .3s cubic-bezier(.2,.8,.2,1) both}
+.a4 img,.a4 .ph{position:absolute;width:30%;height:29.63%;object-fit:cover;border-radius:1.2%/0.9%}
+.a4 .ph{background:#e7e4da;display:grid;place-items:center;font-size:9px;color:#555;text-align:center;padding:4px}
+.a4 .cut{position:absolute;background:#9a9a9a}
+.a4 .pg{position:absolute;right:5%;top:1%;font-size:9px;color:#666}
+.a4 .ruler{position:absolute;left:5%;bottom:1.6%;width:23.8%;height:2px;background:#555}
+.pdf-cap{text-align:center;color:var(--muted);font-size:12px;margin-top:8px}
+.pdf-foot{display:flex;gap:10px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+.pdf-foot .progress{flex:1;min-width:120px}
+#pdfMsg{font-size:13px;color:var(--muted);flex:1 1 200px}
+
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--surface-3);border:1px solid var(--line);padding:10px 16px;border-radius:10px;opacity:0;transition:.2s;z-index:500;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
+#toast.show{opacity:1;transform:translateX(-50%)}
+#sideScrim{display:none}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1100px){
+  :root{--tile:150px}
+  .cmd-slot{width:100px}
+  #top{column-gap:14px}
+  .combo-lbl{max-width:150px}
+}
+@media (max-width:820px){
+  :root{--tile:88px}
+  body{font-size:14px}
+  #sidebar{position:fixed;left:0;top:0;bottom:0;box-shadow:20px 0 50px rgba(0,0,0,.5);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  #sideScrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:25}
+  #app.side-closed #sideScrim{display:none}
+  .label-wide,.top-actions .label{display:none}
+  #top{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"name name name" "cmds combo total" "stats stats stats";grid-template-rows:auto auto auto;column-gap:10px;row-gap:8px;padding:8px 10px}
+  .name-row{flex-wrap:nowrap;gap:4px}
+  .name-wrap{flex:1 1 auto}
+  #deckName{font-size:15px;padding:6px 4px}
+  .top-actions{gap:4px}
+  .top-actions .btn,.top-actions .card-plus-btn{padding:6px 8px}
+  .top-actions .card-plus-ico{width:16px;height:22px;font-size:13px}
+  .cmd-slot{width:62px}
+  .cmd-col{width:62px}
+  .cmd-col .acts button{height:22px}
+  .cmd-col .acts svg.i{width:12px;height:12px}
+  .cmd-slot.partner.empty{width:50px;font-size:9.5px}
+  .cmd-slot.empty .card-plus-ico{width:18px;height:24px;font-size:14px;margin-bottom:3px}
+  .cmd-lbl{display:none}
+  .combo-lbl{max-width:120px}
+  .combo-lbl small{display:none}
+  .mini{width:40px}
+  #total b{font-size:21px}
+  .tot-sub{font-size:11.5px;margin-top:3px}
+  #stats{border-left:0;padding-left:0;border-top:1px solid var(--line-soft);padding-top:6px}
+  .stbl{width:100%;font-size:11.5px}
+  .stbl td.sname,.stbl th.sname{display:none}
+  .stbl td,.stbl th{padding:0 3px}
+  .stbl input{width:34px}
+  .stats-foot{max-width:none}
+  #tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:10px;padding:6px 10px}
+  #tools::-webkit-scrollbar{display:none}
+  .tool .tl.opt{display:none}
+  .tool.size input{width:96px}
+  .tool.filter input{width:96px}
+  .tools-gap{display:none}
+  #board{grid-template-columns:minmax(0,var(--sp,50%)) 12px minmax(0,1fr)}
+  .panel-scroll{padding:0 6px 60px}
+  .panel-head{margin:0 -6px;padding:0 8px;height:38px}
+  .box-head{top:38px;min-height:36px;padding:4px 8px 4px 2px}
+  .ph-meta{display:none}
+  .jump button{width:22px;height:24px}
+  .jump button .ms{font-size:12px}
+  .panel-head h2{font-size:13px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(var(--tile),1fr));gap:12px 6px;padding:8px 6px}
+  .box-head h3{font-size:12px}
+  .box-head .ms{display:none}
+  .box-grip{width:20px}
+  .box-right{gap:6px}
+  .acts{gap:2px}
+  .acts button{height:25px;border-radius:5px}
+  .acts svg.i{width:13px;height:13px}
+  .ct-name{font-size:9px;padding:3px}
+  .cw.over .ct::after{font-size:8px}
+  .results{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px 10px}
+  .modal-top{padding:10px 12px 0}
+  .modal-body{padding:10px 12px 14px}
+  .modal .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .dv-body{grid-template-columns:1fr;padding:14px;gap:18px}
+  .dv-stat{grid-template-columns:78px 1fr 56px}
+  .pdf-pages{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:14px}
+}
+/* ---------- folded commander panel (rail) ---------- */
+#rail{display:none;gap:10px;align-items:center}
+#top.mini>*:not(#rail){display:none!important}
+#top.mini #rail{display:flex}
+.r-thumb{padding:0;border:0;background:none;border-radius:5px;overflow:hidden;flex:none;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.r-thumb img{display:block;width:62px;aspect-ratio:63/88;object-fit:cover}
+.r-tot{font-variant-numeric:tabular-nums;white-space:nowrap}
+.r-tot b{font-family:var(--display);font-size:22px}
+.r-tot span{color:var(--faint);font-size:12px}
+.r-tot.full b{color:var(--ok)}.r-tot.over b{color:var(--danger)}
+.r-meta{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.r-meta svg.i{width:12px;height:12px;color:var(--gold)}
+.r-types{display:flex;gap:4px}
+.r-chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:2px 7px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line-soft);white-space:nowrap;font-variant-numeric:tabular-nums}
+.r-chip .ms{color:var(--muted);font-size:11px}
+.r-chip.over{color:var(--danger);border-color:rgba(239,90,95,.4)}
+.r-chip.met{color:var(--ok)}
+.r-open{color:var(--gold)}
+/* ---------- computers: the commander panel is a vertical column on the left ---------- */
+@media (min-width:821px){
+  #main{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  #top{grid-column:1;grid-row:1/3;display:flex;flex-direction:column;align-items:stretch;gap:14px;width:316px;padding:14px 16px 24px;overflow-y:auto;border-bottom:0;border-right:1px solid var(--line);background:linear-gradient(180deg,#171a27,#11131b)}
+  #top.mini{width:92px;padding:12px 8px;align-items:center}
+  #top{align-self:stretch;height:100%;min-height:0;max-height:100%}
+  #rail{flex-direction:column}
+  #rail .r-types{flex-direction:column;align-items:stretch}
+  #rail .r-chip{justify-content:space-between}
+  #tools{grid-column:2;grid-row:1}
+  #board,#welcome{grid-column:2;grid-row:2;min-height:0}
+  .name-row{order:1;flex-wrap:wrap;gap:8px}
+  .name-wrap{flex:1 1 200px;max-width:none}
+  #deckName{font-size:17px}
+  .name-row{padding-right:40px}
+  .top-actions{width:100%;flex-wrap:nowrap;gap:6px}
+  .name-row{flex-wrap:wrap}
+  .name-wrap{flex:1 1 120px}
+  .top-actions .btn{flex:none;padding:6px 9px;gap:5px;font-size:13.5px}
+  .top-actions .btn svg.i{width:16px;height:16px}
+  .top-actions .card-plus-btn{flex:1 1 auto;min-width:max-content;justify-content:center;padding:6px 10px 6px 8px;font-size:13.5px;gap:6px}
+  .top-actions .card-plus-ico{width:17px;height:23px;font-size:14px}
+  .top-actions .fold-btn{position:absolute;top:14px;right:10px}
+  .cmds{order:2;justify-content:center}
+  .cmds{gap:8px}
+  .cmds .cmd-col{width:min(var(--tile,180px),284px)}
+  .cmds .cmd-slot{width:100%}
+  .cmds .cmd-slot.partner.empty{width:92px;flex:none}
+  #total{order:3;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"num sub" "lbl sub";align-items:center;column-gap:12px;min-width:0;padding:10px 14px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px}
+  #total b{grid-area:num}
+  #total small{grid-area:lbl}
+  #total .tot-sub{grid-area:sub;justify-self:end;margin:0}
+  .combo{order:4}
+  .combo-lbl{max-width:none;flex-basis:100%}
+  #stats{order:5;border-left:0;padding-left:0;border-top:1px solid var(--line-soft);padding-top:12px}
+  .stbl{width:100%;font-size:12px}
+  .stbl td,.stbl th{padding:0 4px}
+  .stbl input{width:36px}
+  .stats-foot{max-width:none}
+}
+/* ---------- phones: folded panel is one compact row ---------- */
+@media (max-width:820px){
+  #top.mini{display:block;padding:6px 10px;width:100%;align-self:stretch;height:auto;max-height:64px;overflow:hidden}
+  #top.mini #rail{width:100%}
+  #rail .r-thumb img{width:30px}
+  #rail .r-types{overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+  #rail .r-types::-webkit-scrollbar{display:none}
+  #rail .r-tot b{font-size:18px}
+  #rail #railMenu{width:30px;height:30px}
+  .top-actions .fold-btn{width:32px;height:32px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar" aria-label="Your decks">
+    <div class="side-head">
+      <div class="brand"><i class="ms ms-commander"></i>Command Zone</div>
+      <button class="icon-btn" id="closeSide" title="Hide deck list"><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+    </div>
+    <button class="new-deck" id="newDeck"><span class="card-plus-ico" style="width:16px;height:21px;font-size:13px">+</span>New deck</button>
+    <div class="side-label">Your decks</div>
+    <div id="deckList"></div>
+    <div class="side-foot">
+      <label class="side-row">Prices in<select id="curSel"><option value="eur">€ Euro (Cardmarket)</option><option value="usd">$ Dollar (TCGplayer)</option></select></label>
+      <label class="side-row" title="Cards at or above this price are marked in purple">Expensive from<input type="number" id="priceyIn" min="0" step="0.5" inputmode="decimal" aria-label="Expensive card threshold"><span id="priceySym">€</span></label>
+      <button class="btn" id="saveFile" title="Download a copy of this page with every deck saved inside it"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Save file with decks<span class="unsaved-dot" id="unsavedDot" hidden></span></button>
+      <button class="btn" id="importBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg>Import decks from a file</button>
+      <input type="file" id="importFile" accept=".html,.htm,.json,.txt" hidden>
+      <div class="side-note">“Save file with decks” makes a copy of this page with all your decks inside. Send that one file to your partner. Opening it, or importing it, adds the decks. If you both edited the same deck, you keep both versions.</div>
+    </div>
+  </aside>
+  <div id="sideScrim"></div>
+
+  <div id="main">
+    <header id="top">
+      <div id="rail"></div>
+      <div class="cmds" id="cmds"></div>
+      <div class="name-row">
+        <button class="icon-btn" id="openSide" title="Show or hide your decks"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <label class="name-wrap" title="Click to rename this deck"><input id="deckName" placeholder="Name your deck" aria-label="Deck name" autocomplete="off"><svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></label>
+        <div class="top-actions">
+          <button class="card-plus-btn" id="addAny" title="Add cards: EDHREC picks for your commander, or search any card"><span class="card-plus-ico">+</span><span class="label-wide">Add cards</span></button>
+          <button class="btn" id="pdfBtn" title="Preview and print proxies at real card size"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg><span class="label">PDF</span></button>
+          
+          <button class="btn danger" id="wipeBtn" title="Remove every card from this deck"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span class="label">Wipe</span></button>
+          <button class="icon-btn fold-btn" id="foldTop" title="Fold this panel to show more cards"></button>
+        </div>
+      </div>
+      <div class="combo" id="combo"></div>
+      <div id="stats"></div>
+      <div id="total"></div>
+    </header>
+
+    <div id="tools" hidden>
+      <label class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><span class="z-ico"></span><input type="range" id="zoom" min="50" max="250" step="5" value="100" aria-label="Card size"><span class="z-ico big"></span><output id="zoomVal">100%</output></label>
+      <label class="tool"><span class="tl">Sort</span><select id="sortSel">
+        <option value="manual">Your order</option><option value="incl">Most played (EDHREC %)</option><option value="syn">Synergy</option>
+        <option value="price">Price, high to low</option><option value="cheap">Price, low to high</option><option value="cmc">Mana value</option>
+        <option value="ctype">Creature type</option><option value="name">Name</option></select></label>
+      <div class="tool filter" id="filterBox"><svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="filterQ" type="search" placeholder="Filter cards" autocomplete="off" aria-label="Filter cards by name, type or rules text"><select id="ctypeSel" aria-label="Creature type"></select></div>
+      <span class="tools-gap"></span>
+      <div class="tool moves"><span class="tl opt">Move all</span><button class="btn" id="allToPool" title="Move every unlocked deck card to the card pool">← To pool</button><button class="btn" id="allToDeck" title="Move every card pool card to the deck">To deck →</button></div>
+    </div>
+
+    <div id="welcome" hidden></div>
+
+    <section id="board">
+      <div class="panel" data-zone="options">
+        <div class="panel-scroll">
+          <div class="panel-head"><h2>Card pool</h2><span class="ph-meta" id="optMeta"></span><nav class="jump" id="optJump" aria-label="Jump to a type"></nav></div>
+          <div id="optBoxes"></div>
+        </div>
+      </div>
+      <div class="splitter" id="splitter" title="Drag to resize. Double-click to center."><i></i></div>
+      <div class="panel" data-zone="deck">
+        <div class="panel-scroll">
+          <div class="panel-head"><h2>Deck</h2><span class="ph-meta" id="deckMeta"></span><nav class="jump" id="deckJump" aria-label="Jump to a type"></nav></div>
+          <div id="deckBoxes"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<img id="hoverPrev" alt="" hidden>
+<div class="scrim" id="addScrim" hidden><div class="modal" id="addModal" role="dialog" aria-modal="true"></div></div>
+<div class="scrim" id="detailScrim" hidden><div class="modal detail" id="detailModal" role="dialog" aria-modal="true"></div></div>
+<div class="scrim" id="pdfScrim" hidden><div class="modal pdfm" id="pdfModal" role="dialog" aria-modal="true"></div></div>
+<div class="scrim" id="confirmScrim" hidden><div class="modal confirm" id="confirmModal" role="alertdialog" aria-modal="true"></div></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- Your decks live here when you use "Save file with decks". -->
+<script id="embedded-decks" type="application/json">{"version":2,"savedAt":0,"decks":{}}</script>
+
+<script>
+"use strict";
+/* ============================================================
+   Command Zone — EDH deck builder on top of EDHREC + Scryfall
+   ============================================================ */
+const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+const KEY = "commandzone.v1";
+const UIKEY = "command-zone-ui";
+const PKEY = "command-zone-prices";
+const TYPES = ["Creature","Instant","Sorcery","Artifact","Enchantment","Planeswalker","Battle","Land"];
+const PLURAL = {Creature:"Creatures",Instant:"Instants",Sorcery:"Sorceries",Artifact:"Artifacts",Enchantment:"Enchantments",Planeswalker:"Planeswalkers",Battle:"Battles",Land:"Lands",Any:"All types"};
+const MS = {Creature:"ms-creature",Instant:"ms-instant",Sorcery:"ms-sorcery",Artifact:"ms-artifact",Enchantment:"ms-enchantment",Planeswalker:"ms-planeswalker",Battle:"ms-battle",Land:"ms-land",Any:"ms-multicolor"};
+const DEFAULT_LIMITS = {Creature:28,Instant:10,Sorcery:8,Artifact:10,Enchantment:6,Planeswalker:1,Battle:0,Land:36};
+const EDH_TAGS = {
+  Creature:["creatures"], Instant:["instants"], Sorcery:["sorceries"],
+  Artifact:["manaartifacts","utilityartifacts"], Enchantment:["enchantments"],
+  Planeswalker:["planeswalkers"], Battle:["battles"], Land:["lands","utilitylands"],
+  Any:["topcards","highliftcards","newcards","creatures","instants","sorceries","manaartifacts","utilityartifacts","enchantments","planeswalkers","battles","lands","utilitylands"]
+};
+const COLORS = ["W","U","B","R","G"];
+const COLOR_NAME = {W:"white",U:"blue",B:"black",R:"red",G:"green",C:"colorless"};
+const BASIC_OF = {W:"Plains",U:"Island",B:"Swamp",R:"Mountain",G:"Forest",C:"Wastes"};
+const HOVER = matchMedia("(hover: hover) and (pointer: fine)");
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
+const EASE = "cubic-bezier(.2,.8,.2,1)";
+
+const I = {
+  lock:'<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  unlock:'<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>',
+  focus:'<svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M10.5 7.5v6M7.5 10.5h6"/></svg>',
+  close:'<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  grip:'<svg class="i" viewBox="0 0 24 24" style="stroke-width:2.6"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/></svg>',
+  trash:'<svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  search:'<svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+  flip:'<svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>',
+  right:'<svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  left:'<svg class="i" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+  pencil:'<svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  copy:'<svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',
+  brush:'<svg class="i" viewBox="0 0 24 24"><path d="M14 4l6 6-9 9H5v-6z"/><path d="M12 6l6 6"/></svg>',
+  pin:'<svg class="i" viewBox="0 0 24 24"><path d="M9 4h6l-1 6 4 3v2H6v-2l4-3z"/><path d="M12 15v6"/></svg>',
+  down:'<svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+  upload:'<svg class="i" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>',
+  foldL:'<svg class="i" viewBox="0 0 24 24"><path d="M11 7l-5 5 5 5M18 7l-5 5 5 5"/></svg>',
+  foldR:'<svg class="i" viewBox="0 0 24 24"><path d="M6 7l5 5-5 5M13 7l5 5-5 5"/></svg>',
+  foldU:'<svg class="i" viewBox="0 0 24 24"><path d="M7 13l5-5 5 5M7 19l5-5 5 5"/></svg>',
+  foldD:'<svg class="i" viewBox="0 0 24 24"><path d="M7 5l5 5 5-5M7 11l5 5 5-5"/></svg>',
+  swap:'<svg class="i" viewBox="0 0 24 24"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>',
+  menu:'<svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+  undo:'<svg class="i" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>'
+};
+
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const slugify = name => String(name).split(" // ")[0].toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+  .replace(/[^a-z0-9\s-]/g,"").trim().replace(/[\s-]+/g,"-");
+function bucketOf(typeLine){
+  const t = String(typeLine || "").split("//")[0];
+  for (const k of ["Creature","Land","Planeswalker","Battle","Instant","Sorcery","Artifact","Enchantment"]) if (t.includes(k)) return k;
+  return "Artifact";
+}
+function manaHTML(str){
+  return esc(str).replace(/\{([^}]+)\}/g, (_, s) => {
+    let k = s.toLowerCase().replace(/\//g, "");
+    if (k === "t") k = "tap"; else if (k === "q") k = "untap";
+    return `<i class="ms ms-${k} ms-cost ms-shadow"></i>`;
+  });
+}
+function pipsHTML(ci){
+  if (!ci || !ci.length) return '<i class="ms ms-c ms-cost"></i>';
+  return ci.map(c => `<i class="ms ms-${c.toLowerCase()} ms-cost"></i>`).join("");
+}
+let toastT;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2800); }
+/* Basic lands, and cards like Nazgûl or Relentless Rats, may appear more than once. */
+function canMulti(card){ return !!(card && (card.basic || /deck can have (any number|up to \w+) cards named/i.test(card.text || ""))); }
+function subtypes(card){ const t = String(card.type || "").split("//")[0].split("—")[1]; return t ? t.trim().split(/\s+/) : []; }
+
+/* ---------------- Per-screen preferences (not part of saved decks) ---------------- */
+const UI = {sort: "manual", filter: "", ctype: "", split: .5, zoom: 100, cur: "eur", pin: false, addSort: "best", pricey: 20, collapsed: {}};
+try { Object.assign(UI, JSON.parse(localStorage.getItem(UIKEY) || "{}")); } catch {}
+try { const z = localStorage.getItem("command-zone-card-size"); if (z && !localStorage.getItem(UIKEY)) UI.zoom = +z; } catch {}
+UI.filter = ""; UI.ctype = "";
+function saveUI(){ try { const {filter, ctype, ...keep} = UI; localStorage.setItem(UIKEY, JSON.stringify(keep)); } catch {} }
+
+/* ---------------- Custom images (kept in IndexedDB, embedded when saving the file) ---------------- */
+const IMG = new Map();
+const idb = (() => {
+  let p;
+  const open = () => p || (p = new Promise((res, rej) => {
+    const r = indexedDB.open("commandzone", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("imgs");
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  }));
+  const run = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction("imgs", mode); const q = fn(t.objectStore("imgs")); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
+  return {
+    set: (k, v) => run("readwrite", st => st.put(v, k)).catch(() => {}),
+    del: k => run("readwrite", st => st.delete(k)).catch(() => {}),
+    loadAll: async () => { try { const keys = await run("readonly", st => st.getAllKeys()); const vals = await run("readonly", st => st.getAll()); keys.forEach((k, i) => IMG.set(k, vals[i])); } catch {} }
+  };
+})();
+const imgOf = c => (c.custom && IMG.get(c.custom.key)) || c.img;
+const largeOf = c => (c.custom && IMG.get(c.custom.key)) || c.large || c.img;
+function usedImageKeys(){
+  const keys = new Set();
+  for (const d of Object.values(S.decks)){ if (d.deleted) continue;
+    for (const k of [d.commander, d.partner]) if (k && k.custom) keys.add(k.custom.key);
+    for (const c of d.cards || []) if (c.card.custom) keys.add(c.card.custom.key); }
+  return keys;
+}
+async function storeImages(images){
+  let n = 0;
+  for (const [k, v] of Object.entries(images || {})) if (!IMG.has(k) && typeof v === "string" && v.startsWith("data:image/")){ IMG.set(k, v); await idb.set(k, v); n++; }
+  return n;
+}
+
+/* ---------------- Card data (Scryfall) ---------------- */
+function toCard(sc){
+  const f = sc.card_faces || [];
+  const front = sc.image_uris || (f[0] && f[0].image_uris) || {};
+  const back = (!sc.image_uris && f[1] && f[1].image_uris) ? f[1].image_uris : null;
+  const text = sc.oracle_text != null ? sc.oracle_text
+    : f.map(x => `${x.name} — ${x.type_line}\n${x.oracle_text || ""}${x.power != null ? `\n${x.power}/${x.toughness}` : ""}`).join("\n\n");
+  const pr = sc.prices || {};
+  if (sc.id) PRICES[sc.id] = {e: pr.eur != null ? +pr.eur : null, u: pr.usd != null ? +pr.usd : null, t: Date.now()};
+  return {
+    id: sc.id, name: sc.name, mana: sc.mana_cost != null ? sc.mana_cost : f.map(x => x.mana_cost).filter(Boolean).join(" // "),
+    cmc: sc.cmc || 0, type: sc.type_line || (f[0] && f[0].type_line) || "", text,
+    ci: sc.color_identity || [], colors: sc.colors || (f[0] && f[0].colors) || [],
+    pt: sc.power != null ? `${sc.power}/${sc.toughness}` : (sc.loyalty ? `Loyalty ${sc.loyalty}` : ""),
+    img: front.normal || "", large: front.large || front.normal || "", art: front.art_crop || "",
+    back: back ? {img: back.normal, large: back.large || back.normal} : null,
+    basic: /Basic/.test(sc.type_line || ""),
+    frame: sc.frame || "2015", fullArt: !!(sc.full_art || sc.border_color === "borderless" || (sc.frame_effects || []).includes("extendedart")),
+    set: sc.set_name || "", artist: sc.artist || "", ill: sc.illustration_id || (f[0] && f[0].illustration_id) || ""
+  };
+}
+let sfLast = 0;
+async function sf(path, opts){
+  const wait = Math.max(0, sfLast + 110 - Date.now());
+  sfLast = Date.now() + wait;
+  if (wait) await sleep(wait);
+  const r = await fetch("https://api.scryfall.com" + path, opts);
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error("Scryfall answered " + r.status);
+  return r.json();
+}
+const cardCache = new Map();
+async function sfCollection(ids){
+  const need = ids.filter(id => !cardCache.has(id));
+  for (let i = 0; i < need.length; i += 75){
+    const chunk = need.slice(i, i + 75);
+    const j = await sf("/cards/collection", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({identifiers: chunk.map(id => ({id}))})});
+    for (const c of (j && j.data) || []) cardCache.set(c.id, toCard(c));
+  }
+  savePrices();
+  return ids.map(id => cardCache.get(id)).filter(Boolean);
+}
+async function sfSearch(q, page = 1){
+  const j = await sf(`/cards/search?q=${encodeURIComponent(q)}&order=edhrec&unique=cards&page=${page}`);
+  if (!j) return {cards: [], more: false};
+  const cards = j.data.map(toCard); cards.forEach(c => cardCache.set(c.id, c)); savePrices();
+  return {cards, more: !!j.has_more};
+}
+
+/* ---------------- Prices (Scryfall: € from Cardmarket, $ from TCGplayer), cached 3 days ---------------- */
+let PRICES = {};
+try { PRICES = JSON.parse(localStorage.getItem(PKEY) || "{}"); } catch {}
+let pricesT;
+function savePrices(){ clearTimeout(pricesT); pricesT = setTimeout(() => { try { localStorage.setItem(PKEY, JSON.stringify(PRICES)); } catch {} }, 400); }
+function priceOf(card){
+  const p = card && PRICES[card.id]; if (!p) return null;
+  const want = UI.cur === "usd" ? "u" : "e", other = want === "u" ? "e" : "u";
+  if (p[want] != null) return {v: p[want], sym: want === "u" ? "$" : "€"};
+  if (p[other] != null) return {v: p[other], sym: other === "u" ? "$" : "€", alt: true};
+  return null;
+}
+function fmtMoney(v, sym){ return sym + (v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2)); }
+function priceText(card){ const p = priceOf(card); return p ? fmtMoney(p.v, p.sym) : "–"; }
+function isPricey(card){ const p = priceOf(card); return !!(p && UI.pricey > 0 && p.v >= UI.pricey); }
+function sumPrice(cards){
+  let tot = 0, sym = UI.cur === "usd" ? "$" : "€", n = 0;
+  for (const c of cards){ const p = priceOf(c); if (p){ tot += p.v; n++; } }
+  return {tot, sym, n};
+}
+const priceAsked = new Set();
+async function refreshPrices(d){
+  if (!d) return;
+  const now = Date.now();
+  const ids = [...new Set([d.commander, d.partner, ...d.cards.map(c => c.card)].filter(Boolean).map(c => c.id))]
+    .filter(id => id && !priceAsked.has(id) && (!PRICES[id] || now - PRICES[id].t > 3 * 864e5));
+  if (!ids.length) return;
+  ids.forEach(id => priceAsked.add(id));
+  try {
+    for (let i = 0; i < ids.length; i += 75){
+      const j = await sf("/cards/collection", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({identifiers: ids.slice(i, i + 75).map(id => ({id}))})});
+      for (const sc of (j && j.data) || []){ const pr = sc.prices || {}; PRICES[sc.id] = {e: pr.eur != null ? +pr.eur : null, u: pr.usd != null ? +pr.usd : null, t: Date.now()}; }
+    }
+    savePrices();
+    if (cur() === d){ renderBoard(); renderHeader(); }
+  } catch { ids.forEach(id => priceAsked.delete(id)); }
+}
+
+/* ---------------- Commanders (one, or two partners) ---------------- */
+function cmdrs(d){ return [d.commander, d.partner].filter(Boolean); }
+function deckCI(d){ const s = new Set(); cmdrs(d).forEach(c => (c.ci || []).forEach(x => s.add(x))); return COLORS.filter(x => s.has(x)); }
+function cmdKey(d){ return cmdrs(d).map(c => c.name).join(" + "); }
+function partnerQuery(cmd){
+  if (!cmd) return null;
+  const t = cmd.text || "", ty = cmd.type || "";
+  const m = t.match(/Partner with ([^\n(]+?)\s*(?:\(|\n|$)/);
+  if (m) return `!"${m[1].trim()}"`;
+  if (/Choose a Background/i.test(t)) return `t:background`;
+  if (/\bBackground\b/.test(ty)) return `is:commander o:"choose a background"`;
+  if (/Friends forever/i.test(t)) return `is:commander o:"friends forever"`;
+  if (/Doctor's companion/i.test(t)) return `is:commander t:"time lord" t:doctor`;
+  if (/Time Lord Doctor/.test(ty)) return `is:commander o:"doctor's companion"`;
+  if (/\bPartner\b/.test(t)) return `is:commander keyword:partner -o:"partner with"`;
+  return null;
+}
+
+/* ---------------- EDHREC ---------------- */
+const edhCache = {}, recCache = {};
+function edh(path){
+  if (!edhCache[path]) edhCache[path] = fetch(`https://json.edhrec.com/pages/${path}.json`)
+    .then(r => r.ok ? r.json() : null).catch(() => { delete edhCache[path]; return null; });
+  return edhCache[path];
+}
+function edhLists(json){ return (json && json.container && json.container.json_dict && json.container.json_dict.cardlists) || []; }
+/* Partners have their own EDHREC page (names sorted alphabetically); fall back to the main commander. */
+async function cmdPage(d){
+  const single = `commanders/${slugify(d.commander.name)}`;
+  const paths = d.partner ? [`commanders/${[slugify(d.commander.name), slugify(d.partner.name)].sort().join("-")}`, single] : [single];
+  for (const p of paths){ const j = await edh(p); if (j) return {j, path: p, pair: p !== single}; }
+  return {j: null, path: single, pair: false};
+}
+/* Inclusion % and synergy for every card on the commander's EDHREC page */
+const edhStatCache = {};
+function edhStats(d){
+  if (!d || !d.commander) return null;
+  const k = cmdKey(d);
+  if (!(k in edhStatCache)){
+    edhStatCache[k] = null;
+    cmdPage(d).then(({j}) => {
+      const m = new Map();
+      for (const list of edhLists(j)) for (const cv of list.cardviews || []){
+        const v = {incl: cv.potential_decks ? cv.num_decks / cv.potential_decks : 0, syn: cv.synergy ?? null};
+        if (!m.has(cv.name)) m.set(cv.name, v);
+        const front = cv.name.split(" // ")[0]; if (!m.has(front)) m.set(front, v);
+      }
+      edhStatCache[k] = m;
+      if (cur() && cmdKey(cur()) === k){ renderBoard(); }
+    });
+  }
+  return edhStatCache[k];
+}
+function statFor(m, name){ return m && (m.get(name) || m.get(String(name).split(" // ")[0])) || null; }
+function recommend(d, bucket){
+  const focus = d.cards.filter(c => c.focus).map(c => c.card.name);
+  const key = [cmdKey(d), bucket, ...focus].join("|");
+  if (!recCache[key]) recCache[key] = buildRecs(d, bucket, focus).catch(e => { delete recCache[key]; throw e; });
+  return recCache[key];
+}
+async function buildRecs(d, bucket, focus){
+  const page = await cmdPage(d);
+  if (!page.j) throw new Error(`EDHREC has no page for ${cmdKey(d)} yet. You can still search for cards above.`);
+  const sources = [{kind:"cmd", name: cmdKey(d), json: page.j}];
+  const fj = await Promise.all(focus.map(n => edh(`cards/${slugify(n)}`)));
+  focus.forEach((n, i) => sources.push({kind:"card", name: n, json: fj[i]}));
+  const tags = EDH_TAGS[bucket];
+  const skip = new Set(cmdrs(d).map(c => c.name));
+  const map = new Map();
+  for (const src of sources){
+    if (!src.json) continue;
+    const seen = new Set();
+    for (const list of edhLists(src.json)){
+      if (!tags.includes(list.tag)) continue;
+      for (const cv of list.cardviews || []){
+        if (seen.has(cv.name) || skip.has(cv.name)) continue; seen.add(cv.name);
+        let e = map.get(cv.name);
+        if (!e){ e = {name: cv.name, id: cv.id, score: 0, incl: null, syn: null, pairs: []}; map.set(cv.name, e); }
+        const incl = cv.potential_decks ? cv.num_decks / cv.potential_decks : 0;
+        if (src.kind === "cmd"){ e.incl = incl; e.syn = cv.synergy ?? null; e.score += incl + Math.max(0, cv.synergy || 0) * 1.2 + 0.25; }
+        else { e.pairs.push(src.name); e.score += 0.35 + incl * 0.6; }
+      }
+    }
+  }
+  const ranked = [...map.values()].sort((a, b) => b.score - a.score).slice(0, 140);
+  const cards = await sfCollection(ranked.map(e => e.id));
+  const byId = new Map(cards.map(c => [c.id, c]));
+  const ci = new Set(deckCI(d));
+  return ranked.map(e => ({...e, card: byId.get(e.id)}))
+    .filter(e => e.card && e.card.ci.every(x => ci.has(x)) && (bucket === "Any" || bucketOf(e.card.type) === bucket));
+}
+
+/* ---------------- State & versioned merging ---------------- */
+let S = {decks:{}, active:null, sidebarOpen: innerWidth > 820, lastFileSave:0, lastChange:0};
+function ensureVer(d){ if (!d.ver) d.ver = uid(); if (!Array.isArray(d.past)) d.past = []; return d; }
+function displayName(d){ return d.name || (d.commander ? cmdKey(d) : "Untitled deck"); }
+/* Each deck carries its version id plus the ids of every earlier version.
+   Incoming deck is: already known -> skip; a newer descendant of ours -> replace;
+   otherwise both sides changed -> keep both, as "Name 1" (ours) and "Name 2" (theirs). */
+function mergeDecks(incoming){
+  const rep = {added: [], updated: [], conflicts: [], restored: [], kept: []};
+  for (const raw of Object.values(incoming || {})){
+    if (!raw || !raw.id) continue;
+    const inc = ensureVer(JSON.parse(JSON.stringify(raw)));
+    const all = Object.values(S.decks);
+    if (all.some(L => L.ver === inc.ver || (L.past || []).includes(inc.ver))) continue;
+    const L = S.decks[inc.id];
+    if (!L){ if (!inc.deleted){ S.decks[inc.id] = inc; rep.added.push(displayName(inc)); } else S.decks[inc.id] = inc; continue; }
+    ensureVer(L);
+    if (inc.past.includes(L.ver)){
+      S.decks[inc.id] = inc;
+      if (inc.deleted) rep.updated.push(displayName(L) + " (deleted)"); else rep.updated.push(displayName(inc));
+      continue;
+    }
+    if (L.deleted){ if (!inc.deleted){ S.decks[inc.id] = inc; rep.restored.push(displayName(inc)); } continue; }
+    if (inc.deleted){ L.past.push(inc.ver); rep.kept.push(displayName(L)); continue; }
+    const base = displayName(L).replace(/ [12]$/, "");
+    const same = displayName(L) === displayName(inc);
+    const mine = {...L, id: uid(), name: same ? base + " 1" : L.name};
+    if (same) inc.name = base + " 2";
+    S.decks[mine.id] = mine; S.decks[inc.id] = inc;
+    if (S.active === inc.id) S.active = mine.id;
+    rep.conflicts.push(base);
+  }
+  return rep;
+}
+function reportText(rep){
+  const parts = [];
+  if (rep.added.length) parts.push(`${rep.added.length} new deck${rep.added.length > 1 ? "s" : ""}: ${rep.added.join(", ")}`);
+  if (rep.updated.length) parts.push(`${rep.updated.length} updated: ${rep.updated.join(", ")}`);
+  if (rep.restored.length) parts.push(`${rep.restored.length} brought back because they were edited after you deleted them: ${rep.restored.join(", ")}`);
+  if (rep.conflicts.length) parts.push(`${rep.conflicts.length} edited by both of you, so both versions were kept (same names get “1” for yours and “2” for theirs): ${rep.conflicts.join(", ")}`);
+  if (rep.kept.length) parts.push(`${rep.kept.length} deleted in the file but you edited them since, so they were kept: ${rep.kept.join(", ")}`);
+  return parts;
+}
+function load(){
+  let emb = {};
+  try { emb = JSON.parse($("#embedded-decks").textContent || "{}"); } catch {}
+  let loc = null;
+  try { loc = JSON.parse(localStorage.getItem(KEY) || "null"); } catch {}
+  if (loc){
+    S.decks = loc.decks || {}; S.active = loc.active; S.lastFileSave = loc.lastFileSave || 0; S.lastChange = loc.lastChange || 0;
+    if (typeof loc.sidebarOpen === "boolean" && innerWidth > 820) S.sidebarOpen = loc.sidebarOpen;
+  }
+  Object.values(S.decks).forEach(ensureVer);
+  storeImages(emb.images).then(n => { if (n) render(); });
+  const rep = mergeDecks(emb.decks);
+  const parts = reportText(rep);
+  if (parts.length && loc) setTimeout(() => showReport("Decks from this file", parts), 300);
+  if (!cur()) S.active = liveDecks()[0]?.id || null;
+  save(false);
+}
+function save(changed = true){
+  if (changed) S.lastChange = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {}
+  $("#unsavedDot").hidden = !(S.lastChange > S.lastFileSave && liveDecks().length);
+}
+function liveDecks(){ return Object.values(S.decks).filter(d => !d.deleted).sort((a, b) => (b.updated || 0) - (a.updated || 0)); }
+function cur(){ return S.decks[S.active] && !S.decks[S.active].deleted ? S.decks[S.active] : null; }
+function touch(d){
+  ensureVer(d); d.past.push(d.ver); if (d.past.length > 1500) d.past.splice(0, d.past.length - 1500);
+  d.ver = uid(); d.updated = Date.now(); save();
+}
+function newDeck(){
+  const d = ensureVer({id: uid(), name: "", created: Date.now(), updated: Date.now(), commander: null, partner: null,
+    limits: {...DEFAULT_LIMITS}, typeOrder: [...TYPES], cards: []});
+  S.decks[d.id] = d; S.active = d.id;
+  if (innerWidth <= 820) S.sidebarOpen = false;
+  save(); render();
+  openCommanderPicker(true);
+}
+function inDeckCount(d){ return d.cards.filter(c => c.zone === "deck").length + cmdrs(d).length; }
+function addCard(card, zone){
+  const d = cur(); if (!d) return null;
+  if (cmdrs(d).some(k => k.name === card.name)){ toast(`${card.name} is your commander`); return null; }
+  if (!canMulti(card) && d.cards.some(c => c.card.name === card.name)){ toast(`${card.name} is already in this deck`); return null; }
+  const item = {uid: uid(), card: {...card}, bucket: bucketOf(card.type), zone, locked: false, focus: false};
+  delete item.card.custom;
+  d.cards.push(item);
+  touch(d); renderAll();
+  return item.uid;
+}
+
+/* ---------------- Board animation: cards glide to their new place (FLIP) ---------------- */
+function snapshot(){
+  const m = new Map(), vh = innerHeight;
+  document.querySelectorAll("#board .cw[data-uid]").forEach(el => {
+    const r = el.getBoundingClientRect();
+    if (r.bottom > -40 && r.top < vh + 40) m.set(el.dataset.uid, {r, zone: el.closest(".panel").dataset.zone, src: el.querySelector(".ct img")?.src});
+  });
+  return m;
+}
+function animateBoard(fn, opts = {}){
+  if (REDUCED.matches || $("#board").hidden){ fn(); return; }
+  const before = snapshot();
+  fn();
+  const vh = innerHeight; let n = 0;
+  document.querySelectorAll("#board .cw[data-uid]").forEach(el => {
+    if (n > 140) return;
+    const r = el.getBoundingClientRect();
+    if (r.bottom < -40 || r.top > vh + 40) return;
+    const u = el.dataset.uid, b = before.get(u);
+    if (b){
+      const dx = b.r.left - r.left, dy = b.r.top - r.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      n++;
+      if (b.zone !== el.closest(".panel").dataset.zone && b.src){
+        // across the divider: fly a copy above both panels so it isn't clipped
+        const ct = el.querySelector(".ct"), cr = ct.getBoundingClientRect();
+        const fly = document.createElement("img"); fly.src = b.src; fly.className = "fly";
+        Object.assign(fly.style, {left: cr.left + "px", top: cr.top + "px", width: cr.width + "px", height: cr.height + "px"});
+        document.body.appendChild(fly); el.style.visibility = "hidden";
+        const sx = b.r.width / r.width;
+        const a = fly.animate([{transform: `translate(${b.r.left - cr.left}px,${b.r.top - cr.top}px) scale(${sx})`}, {transform: "none"}], {duration: 360, easing: EASE});
+        a.onfinish = a.oncancel = () => { fly.remove(); el.style.visibility = ""; };
+      } else el.animate([{transform: `translate(${dx}px,${dy}px)`}, {transform: "none"}], {duration: 300, easing: EASE});
+    } else if (opts.added && opts.added.includes(u)){
+      n++; el.animate([{opacity: 0, transform: "scale(.9) translateY(8px)"}, {opacity: 1, transform: "none"}], {duration: 260, easing: EASE});
+    }
+  });
+}
+
+/* ---------------- Render ---------------- */
+function renderAll(){ renderBoard(); renderHeader(); renderSidebar(); }
+function render(){
+  $("#app").classList.toggle("side-closed", !S.sidebarOpen);
+  const d = cur(), ready = !!(d && d.commander);
+  $("#board").hidden = !ready; $("#tools").hidden = !ready;
+  $("#welcome").hidden = ready;
+  for (const id of ["#cmds", "#combo", "#stats"]) $(id).hidden = !ready;
+  $(".top-actions").style.visibility = ready ? "" : "hidden";
+  $("#total").style.visibility = d ? "" : "hidden";
+  $(".name-wrap").hidden = !d;
+  $("#top").classList.toggle("mini", !!UI.cmdMini && ready);
+  renderSidebar(); renderHeader();
+  if (ready){ renderBoard(); refreshPrices(d); } else renderWelcome();
+}
+function renderSidebar(){
+  const list = liveDecks();
+  $("#deckList").innerHTML = list.length ? list.map(d => {
+    const n = inDeckCount(d);
+    const thumb = d.commander && d.commander.art ? `style="background-image:url('${esc(d.commander.art)}')"` : "";
+    return `<div class="deck-item ${d.id === S.active ? "active" : ""}" data-deck="${d.id}" role="button" tabindex="0">
+      <span class="deck-thumb" ${thumb}>${thumb ? "" : '<i class="ms ms-commander"></i>'}</span>
+      <span class="deck-meta"><b>${esc(displayName(d))}</b>
+      <small><span class="pips">${d.commander ? pipsHTML(deckCI(d)) : ""}</span>${n}/100 cards</small></span>
+      <span class="deck-acts"><button data-renamedeck="${d.id}" title="Rename">${I.pencil}</button><button data-dupdeck="${d.id}" title="Duplicate">${I.copy}</button><button class="del" data-deldeck="${d.id}" title="Delete">${I.trash}</button></span></div>`;
+  }).join("") : `<div class="side-note" style="padding:8px">No decks yet. Start one with “New deck”.</div>`;
+}
+function deckTotals(d){
+  const deck = d.cards.filter(c => c.zone === "deck");
+  const value = sumPrice([...cmdrs(d), ...deck.map(c => c.card)]);
+  return {n: inDeckCount(d), locked: deck.filter(c => c.locked).length, value};
+}
+function renderHeader(){
+  const d = cur();
+  if (!d) return;
+  if (document.activeElement !== $("#deckName")) $("#deckName").value = d.name || "";
+  const {n, locked, value} = deckTotals(d);
+  const tot = $("#total");
+  tot.innerHTML = `<b>${n}<span>/100</span></b><small>${n > 100 ? `${n - 100} too many` : n === 100 ? "Complete" : "in deck"}</small>
+    ${d.commander ? `<div class="tot-sub"><span title="Locked final picks in the deck">${I.lock}<b>${locked}</b> locked</span><span title="Deck value, commander included (${value.n} of ${n} cards have a price)"><b>${fmtMoney(value.tot, value.sym)}</b> value</span></div>` : ""}`;
+  tot.classList.toggle("full", n === 100); tot.classList.toggle("over", n > 100);
+  if (!d.commander) return;
+  // commanders
+  const slot = (c, kind, label) => `<div class="cmd-col"><button class="cmd-slot" data-cmd="${kind}" title="${esc(c.name)}"><img src="${esc(imgOf(c))}" ${srcsetAttr(c)} alt="${esc(c.name)}"><span class="cmd-lbl">${label}</span></button>
+    <div class="acts"><button data-cact="edit" data-kind="${kind}" title="Edit art and name">${I.brush}</button><button data-cact="change" data-kind="${kind}" title="Change ${kind === "partner" ? "partner" : "commander"}">${I.swap}</button>${kind === "partner" ? `<button class="del" data-cact="remove" title="Remove partner">${I.trash}</button>` : ""}</div></div>`;
+  let cm = slot(d.commander, "commander", d.partner ? "Commander" : "Commander");
+  if (d.partner) cm += slot(d.partner, "partner", "Partner");
+  else if (partnerQuery(d.commander)) cm += `<button class="cmd-slot partner empty" data-cmd="addPartner" title="This commander can have a partner"><span><span class="card-plus-ico">+</span>Partner</span></button>`;
+  $("#cmds").innerHTML = cm;
+  // combine row: always shows the empty slot, so it's clear there's room for more
+  const foc = d.cards.filter(c => c.focus);
+  $("#combo").innerHTML = `<div class="combo-lbl"><span class="eyebrow">Combine picks with</span><small>${foc.length ? "EDHREC picks blend these cards with your commander" : "Press " + "the magnifier under a card to blend its EDHREC picks in"}</small></div>
+    ${foc.map(c => `<button class="mini" data-open="${c.uid}" data-img="${esc(largeOf(c.card))}" title="${esc(c.card.name)}"><img src="${esc(imgOf(c.card))}" alt="${esc(c.card.name)}"><span class="x" data-unfocus="${c.uid}" title="Stop combining">×</span></button>`).join("")}
+    <button class="mini empty" id="comboAdd" title="Combine another card">+</button>`;
+  renderStats();
+  renderRail(d);
+}
+const isPhone = () => innerWidth <= 820;
+function renderRail(d){
+  const {n, locked, value} = deckTotals(d);
+  const deck = d.cards.filter(c => c.zone === "deck");
+  const chips = d.typeOrder.filter(t => (d.limits[t] ?? 0) > 0 || deck.some(c => c.bucket === t)).map(t => {
+    const k = deck.filter(c => c.bucket === t).length, lim = d.limits[t] ?? 0;
+    return `<span class="r-chip ${k > lim ? "over" : k === lim && lim ? "met" : ""}" title="${PLURAL[t]}: ${k} of ${lim}"><i class="ms ${MS[t]}"></i>${k}/${lim}</span>`;
+  }).join("");
+  $("#rail").innerHTML = `<button class="icon-btn" id="railMenu" title="Show or hide your decks">${I.menu}</button>
+    <button class="r-thumb" data-cmd="commander" title="${esc(d.commander.name)}"><img src="${esc(imgOf(d.commander))}" alt=""></button>
+    <div class="r-tot ${n === 100 ? "full" : n > 100 ? "over" : ""}" title="Cards in deck"><b>${n}</b><span>/100</span></div>
+    <div class="r-meta" title="Locked final picks">${I.lock}${locked}</div>
+    <div class="r-meta" title="Deck value">${fmtMoney(value.tot, value.sym)}</div>
+    <div class="r-types">${chips}</div>
+    <button class="icon-btn r-open" id="railOpen" title="Show commander and stats">${isPhone() ? I.foldD : I.foldR}</button>`;
+  $("#foldTop").innerHTML = isPhone() ? I.foldU : I.foldL;
+}
+function renderStats(){
+  const d = cur(); if (!d || !d.commander){ $("#stats").innerHTML = ""; return; }
+  const deck = d.cards.filter(c => c.zone === "deck");
+  const key = suggestKey(d), sg = SUGG[key] && !SUGG[key].loading ? SUGG[key] : null;
+  if (!SUGG[key]) loadSuggestion(d, key);
+  const err = SUGG[key] && SUGG[key].error;
+  const edhCell = (want, lim) => {
+    if (want == null && sg) return `<td class="edh">–</td>`;
+    if (want == null) return `<td class="edh" title="${err ? esc(err) : "Loading EDHREC…"}">${err ? "–" : "…"}</td>`;
+    const delta = lim == null ? null : want - lim;
+    return `<td class="edh"><b>${want}</b>${delta == null ? "" : `<i class="delta ${delta > 0 ? "up" : delta < 0 ? "down" : ""}">${delta ? (delta > 0 ? "+" : "−") + Math.abs(delta) : "✓"}</i>`}</td>`;
+  };
+  const rows = d.typeOrder.map(t => {
+    const items = deck.filter(c => c.bucket === t), k = items.length, lk = items.filter(c => c.locked).length, lim = d.limits[t] ?? 0;
+    const cls = k > lim ? "over" : (k === lim && lim > 0 ? "met" : "");
+    let r = `<tr class="${cls}" title="${PLURAL[t]}: ${k} in deck, ${lk} locked, your limit is ${lim}${sg ? `, EDHREC suggests ${sg.counts[t]}` : ""}"><td class="ic"><i class="ms ${MS[t]}"></i></td><td class="sname">${PLURAL[t]}</td><td class="num dn">${k}</td><td class="num lk">${lk || ""}</td>
+      <td><input type="number" min="0" max="99" inputmode="numeric" value="${lim}" data-lim="${t}" aria-label="${t} limit"></td>${edhCell(sg ? sg.counts[t] : null, lim)}</tr>`;
+    if (t === "Land"){
+      const basics = items.filter(c => c.card.basic).length;
+      r += `<tr class="sub"><td></td><td class="sname">Basic</td><td class="num">${basics}</td><td></td><td></td>${edhCell(sg ? sg.basic : null, null)}</tr>
+        <tr class="sub"><td></td><td class="sname">Other lands</td><td class="num">${k - basics}</td><td></td><td></td>${edhCell(sg ? sg.nonbasic : null, null)}</tr>`;
+    }
+    return r;
+  }).join("");
+  const cnt = {W:0,U:0,B:0,R:0,G:0,C:0};
+  for (const c of deck){ if (!c.card.ci.length) cnt.C++; else c.card.ci.forEach(x => cnt[x] = (cnt[x] || 0) + 1); }
+  const ci = deckCI(d);
+  const show = [...COLORS.filter(x => ci.includes(x) || cnt[x]), "C"];
+  const colors = show.map(x => `<span title="${cnt[x]} cards with ${COLOR_NAME[x]} in their color identity"><i class="ms ms-${x.toLowerCase()} ms-cost"></i>${cnt[x]}</span>`).join("");
+  const sum = Object.values(d.limits).reduce((a, b) => a + (+b || 0), 0) + cmdrs(d).length;
+  const sumTxt = sum === 100 ? "Limits = 100 ✓" : `Limits = ${sum} (${sum > 100 ? `${sum - 100} over` : `${100 - sum} short`})`;
+  const same = sg && d.typeOrder.every(t => (sg.counts[t] ?? 0) === (d.limits[t] ?? 0));
+  const basicsHave = deck.filter(c => c.card.basic).length;
+  const needBasics = sg && sg.basic ? Math.max(0, Math.min(sg.basic, (d.limits.Land ?? 0) - deck.filter(c => c.bucket === "Land" && !c.card.basic).length) - basicsHave) : 0;
+  $("#stats").innerHTML = `<table class="stbl"><thead><tr><th></th><th class="l sname">Type</th><th title="Cards in your deck">Deck</th><th title="Locked final picks">${I.lock.replace('class="i"', 'class="i" style="width:11px;height:11px"')}</th><th title="Your limit">Limit</th><th class="l" title="EDHREC's average for decks like yours">EDHREC</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="stats-foot"><div class="colors">${colors}</div><span class="sumline ${sum === 100 ? "good" : "bad"}">${sumTxt}</span>
+      ${sg ? `<button class="pill-btn" id="useSugg" ${same ? "disabled" : ""}>${same ? "Limits match EDHREC" : "Use EDHREC numbers"}</button>` : ""}
+      ${needBasics > 0 ? `<button class="pill-btn" id="addBasics" title="Add basic lands, split by the colors your spells need">+ ${needBasics} basic land${needBasics > 1 ? "s" : ""}</button>` : ""}
+      ${sg ? `<span class="basis-line" title="${esc(sg.why)}">${esc(sg.short)}</span>` : ""}</div>`;
+}
+
+/* ---------------- EDHREC type suggestions ----------------
+   1. Find the EDHREC theme for this commander whose card lists best match your cards.
+   2. Use that theme's average type counts (or the commander's overall average), with basics vs other lands.
+   3. Adjust lands for your mana curve versus the typical deck's curve.
+   4. Keep the total at 100 with your commander(s). */
+const SUGG = {};
+function suggestKey(d){
+  const names = d.cards.filter(c => c.zone === "deck").map(c => c.card.name).sort();
+  return cmdKey(d) + "|" + names.length + "|" + names.join(",").length + "|" + names.slice(0, 40).join(",");
+}
+function curveAvg(curve){
+  let n = 0, sum = 0;
+  for (const [k, v] of Object.entries(curve || {})){ n += v; sum += (+k) * v; }
+  return n ? sum / n : null;
+}
+async function loadSuggestion(d, key){
+  SUGG[key] = {loading: true};
+  try {
+    const {j: base, path} = await cmdPage(d);
+    if (!base) throw new Error(`EDHREC has no data for ${cmdKey(d)} yet.`);
+    const totalDecks = base.container?.json_dict?.card?.num_decks || base.num_decks_avg || 0;
+    const tags = ((base.panels && base.panels.taglinks) || []).slice(0, 10);
+    const ours = new Set(d.cards.map(c => c.card.name));
+    let best = null;
+    if (ours.size >= 6 && tags.length){
+      const pages = await Promise.all(tags.map(t => edh(`${path}/${t.slug}`)));
+      pages.forEach((pg, i) => {
+        if (!pg) return;
+        const seen = new Set(); let score = 0, hits = 0;
+        for (const l of edhLists(pg)) for (const cv of l.cardviews || []){
+          if (seen.has(cv.name) || !ours.has(cv.name)) continue;
+          seen.add(cv.name); hits++; score += Math.max(0, cv.synergy || 0) + 0.03;
+        }
+        if (hits >= 3 && score >= 0.3 && (!best || score > best.score)) best = {tag: tags[i], page: pg, score, hits};
+      });
+    }
+    const src = best ? best.page : base;
+    const counts = {};
+    for (const t of TYPES) counts[t] = Math.max(0, Math.round(src[t.toLowerCase()] ?? 0));
+    let landNote = "";
+    const spells = d.cards.filter(c => c.zone === "deck" && c.bucket !== "Land");
+    const avgE = curveAvg(src.panels && src.panels.mana_curve) ?? curveAvg(base.panels && base.panels.mana_curve);
+    if (avgE != null && spells.length >= 10){
+      const avgO = spells.reduce((a, c) => a + (c.card.cmc || 0), 0) / spells.length;
+      const adj = Math.max(-3, Math.min(3, Math.round((avgO - avgE) * 3)));
+      if (adj){
+        counts.Land += adj;
+        landNote = ` ${adj > 0 ? "+" : ""}${adj} land${Math.abs(adj) > 1 ? "s" : ""} because your spells cost ${avgO.toFixed(1)} on average versus ${avgE.toFixed(1)} in those decks.`;
+      }
+    }
+    let diff = (100 - cmdrs(d).length) - Object.values(counts).reduce((a, b) => a + b, 0);
+    const nonland = TYPES.filter(t => t !== "Land");
+    let guard = 200;
+    while (diff !== 0 && guard--){
+      const pool = nonland.filter(t => diff > 0 || counts[t] > 0).sort((a, b) => counts[b] - counts[a]);
+      const t = pool[0] || "Land";
+      counts[t] += Math.sign(diff); diff -= Math.sign(diff);
+    }
+    // basics vs other lands, scaled to the suggested land count
+    const sb = src.basic ?? base.basic, sn = src.nonbasic ?? base.nonbasic;
+    let basic = null, nonbasic = null;
+    if (sb != null && sn != null && sb + sn > 0){ basic = Math.round(counts.Land * sb / (sb + sn)); nonbasic = counts.Land - basic; }
+    const n = best ? best.tag.count : totalDecks;
+    const who = d.partner ? cmdKey(d) : d.commander.name.split(",")[0];
+    const short = best ? `From ${(+n || 0).toLocaleString()} “${best.tag.value}” decks` : `From ${(+n || 0).toLocaleString()} ${who} decks`;
+    const why = best
+      ? `Your deck matches EDHREC’s “${best.tag.value}” ${cmdKey(d)} decks best (${best.hits} of your cards are typical there). These are their average type counts.${landNote}`
+      : `Average type counts across ${(+n || 0).toLocaleString()} ${cmdKey(d)} decks on EDHREC.${ours.size < 6 ? " Add a few more cards and the suggestion will match your deck’s theme." : ""}${landNote}`;
+    SUGG[key] = {counts, basic, nonbasic, short: short + (landNote ? " · lands adjusted" : ""), why};
+  } catch (err){
+    SUGG[key] = {loading: true, error: err.message || "Couldn’t reach EDHREC."};
+    setTimeout(() => { if (SUGG[key] && SUGG[key].error) delete SUGG[key]; }, 15000);
+  }
+  if (cur() === d) renderStats();
+}
+/* Split basics by how many colored mana symbols your deck's spells use. */
+function basicSplit(d, n){
+  const ci = deckCI(d); if (!ci.length) return [{name: "Wastes", count: n}];
+  const w = Object.fromEntries(ci.map(x => [x, 0]));
+  for (const c of d.cards) if (c.zone === "deck" && c.bucket !== "Land") for (const m of String(c.card.mana).matchAll(/\{([^}]+)\}/g)) for (const x of ci) if (m[1].includes(x)) w[x]++;
+  let tot = Object.values(w).reduce((a, b) => a + b, 0);
+  if (!tot){ ci.forEach(x => w[x] = 1); tot = ci.length; }
+  const raw = ci.map(x => ({x, f: n * w[x] / tot}));
+  const out = raw.map(r => ({x: r.x, count: Math.floor(r.f), rem: r.f % 1}));
+  let left = n - out.reduce((a, b) => a + b.count, 0);
+  out.sort((a, b) => b.rem - a.rem).forEach(o => { if (left > 0){ o.count++; left--; } });
+  return out.filter(o => o.count > 0).map(o => ({name: BASIC_OF[o.x], count: o.count}));
+}
+async function addBasics(n){
+  const d = cur(); const split = basicSplit(d, n);
+  confirmTwice([{title: `Add ${n} basic land${n > 1 ? "s" : ""}?`, text: `This adds ${split.map(s => `<b>${s.count} ${esc(s.name)}</b>`).join(" and ")} to the deck, split by the colored mana your spells need. Each copy can get its own artwork: click it and swipe through the art.`, yes: "Add lands", safe: true}], async () => {
+    try {
+      const added = [];
+      for (const s of split){
+        let card = cardCache.get("basic:" + s.name);
+        if (!card){ const j = await sf(`/cards/named?exact=${encodeURIComponent(s.name)}`); if (!j) continue; card = toCard(j); cardCache.set("basic:" + s.name, card); }
+        for (let i = 0; i < s.count; i++){ const item = {uid: uid(), card: {...card}, bucket: "Land", zone: "deck", locked: false, focus: false}; d.cards.push(item); added.push(item.uid); }
+      }
+      animateBoard(() => { touch(d); renderAll(); }, {added});
+      toast(`Added ${added.length} basic lands`);
+    } catch { toast("Couldn’t load the basic lands. Check your connection."); }
+  });
+}
+function renderWelcome(){
+  const d = cur();
+  $("#welcome").innerHTML = `<div class="welcome-card">
+    <button class="big-slot" id="welcomeSlot"><span class="card-plus-ico">+</span>${d ? "Choose commander" : "New deck"}</button>
+    <h1>${d ? "Who leads this deck?" : "Build your next Commander deck"}</h1>
+    <ol class="steps">
+      <li>Pick a commander, and a partner if it has one. EDHREC’s data for them powers every recommendation.</li>
+      <li>Tap a card-with-plus tile in any type box to see EDHREC’s top picks for that type, or search any card.</li>
+      <li>Double-click a card, drag it, or press its arrow to move it between your card pool and your deck.</li>
+      <li>Click a card to read it, swipe through every artwork, rename it or give it your own art.</li>
+      <li>Lock final picks and preview a print-ready PDF of proxies when you reach 100.</li>
+    </ol></div>`;
+}
+
+/* ---------------- Board: sorting, filtering, tiles ---------------- */
+function matchesFilter(c){
+  const q = UI.filter.trim().toLowerCase();
+  if (q && !(`${c.card.name}\n${c.card.type}\n${c.card.text}`.toLowerCase().includes(q))) return false;
+  if (UI.ctype && !subtypes(c.card).includes(UI.ctype)) return false;
+  return true;
+}
+function sortVal(c, m){
+  switch (UI.sort){
+    case "incl": { const s = statFor(m, c.card.name); return s ? -s.incl : 1; }
+    case "syn": { const s = statFor(m, c.card.name); return s && s.syn != null ? -s.syn : 9; }
+    case "price": { const p = priceOf(c.card); return p ? -p.v : 1; }
+    case "cheap": { const p = priceOf(c.card); return p ? p.v : 1e9; }
+    case "cmc": return c.card.cmc || 0;
+    case "name": return c.card.name.toLowerCase();
+    case "ctype": return (subtypes(c.card)[0] || "~").toLowerCase() + "|" + c.card.name.toLowerCase();
+    default: return 0;
+  }
+}
+/* Locked cards always come first; within each group, your order or the chosen sort. */
+function zoneItems(d, zone, t){
+  const items = d.cards.filter(c => c.zone === zone && c.bucket === t);
+  const m = edhStats(d);
+  const keyed = items.map((c, i) => ({c, i, k: UI.sort === "manual" ? 0 : sortVal(c, m)}));
+  keyed.sort((a, b) => (b.c.locked - a.c.locked) || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0) || a.i - b.i);
+  return keyed.map(x => x.c);
+}
+/* srcset: normal (488px) for small cards, large (672px) when shown big or on sharp screens */
+function tilePx(){ return Math.round(parseFloat($("#board").style.getPropertyValue("--tile")) || 180); }
+function srcsetAttr(c){
+  if ((c.custom && IMG.get(c.custom.key)) || !c.img || !c.large || c.img === c.large) return "";
+  return `srcset="${esc(c.img)} 488w, ${esc(c.large)} 672w" sizes="(max-width:820px) 46vw, ${tilePx()}px"`;
+}
+function tileStatsHTML(c, d){
+  const pricey = isPricey(c.card);
+  const m = edhStats(d), price = `<span class="price${pricey ? " pricey" : ""}" title="${UI.cur === "usd" ? "TCGplayer" : "Cardmarket"} price for this printing${pricey ? " · expensive" : ""}">${priceText(c.card)}</span>`;
+  if (!m) return `<div class="ct-stats"><div class="st-row faint">EDHREC…</div><div class="st-row">${price}</div></div>`;
+  const s = statFor(m, c.card.name);
+  if (!s) return `<div class="ct-stats"><div class="st-row faint" title="Not on ${esc(cmdKey(d))}'s EDHREC page">Not on EDHREC</div><div class="st-row">${price}</div></div>`;
+  const pct = Math.round(s.incl * 100), syn = s.syn != null ? Math.round(s.syn * 100) : null;
+  const tip = `In ${pct}% of ${cmdKey(d)} decks on EDHREC${syn != null ? `. Synergy ${syn >= 0 ? "+" : ""}${syn}%: how much more often it's played with this commander than in other decks that could play it` : ""}`;
+  return `<div class="ct-stats" title="${esc(tip)}">
+    <div class="st-row"><b>${pct}%</b><span class="lg">of decks</span><span class="sh">decks</span></div>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <div class="st-row">${syn != null ? `<b class="syn ${syn > 0 ? "pos" : syn < 0 ? "neg" : ""}">${syn > 0 ? "+" : ""}${syn}%</b><span class="lg">synergy</span><span class="sh">syn</span>` : ""}${price}</div></div>`;
+}
+function tileHTML(c, over, d){
+  const inDeck = c.zone === "deck";
+  const lock = inDeck ? `<button data-act="lock" class="${c.locked ? "on" : ""}" title="${c.locked ? "Unlock" : "Lock as a final pick"}">${c.locked ? I.lock : I.unlock}</button>` : "";
+  return `<div class="cw${over ? " over" : ""}${c.locked ? " locked" : ""}${isPricey(c.card) ? " pricey" : ""}" data-uid="${c.uid}">
+    <div class="ct" data-img="${esc(largeOf(c.card))}" title="${esc(c.card.name)}">
+      <span class="ct-name">${esc(c.card.name)}</span>
+      ${c.card.custom ? `<span class="custom-tag" title="Custom art or name">${I.brush}</span>` : ""}
+      <img src="${esc(imgOf(c.card))}" ${srcsetAttr(c.card)} alt="${esc(c.card.name)}" loading="lazy" draggable="false" onerror="this.remove()">
+      <div class="ct-badges">${c.locked ? `<i title="Locked">${I.lock}</i>` : ""}${c.focus ? `<i title="Combined in recommendations">${I.focus}</i>` : ""}</div>
+    </div>
+    ${tileStatsHTML(c, d)}
+    <div class="acts">${lock}
+      <button data-act="edit" title="Edit art and name">${I.brush}</button>
+      <button data-act="focus" class="${c.focus ? "on" : ""}" title="${c.focus ? "Stop combining in recommendations" : "Combine with commander in recommendations"}">${I.focus}</button>
+      <button class="del" data-act="remove" title="Remove card" ${c.locked ? "disabled" : ""}>${I.trash}</button>
+    </div></div>`;
+}
+function boxHTML(d, zone, t){
+  const all = zoneItems(d, zone, t);
+  const lim = d.limits[t] ?? 0;
+  const overSet = zone === "deck" ? new Set(all.slice(lim).map(c => c.uid)) : new Set();
+  const filtering = !!(UI.filter.trim() || UI.ctype);
+  const shown = filtering ? all.filter(matchesFilter) : all;
+  if (filtering && !shown.length) return "";
+  const lk = all.filter(c => c.locked).length;
+  let count;
+  if (zone === "deck"){
+    const cls = all.length > lim ? "over" : (all.length === lim && lim > 0 ? "met" : "");
+    count = `<span class="box-count ${cls}">${filtering ? `${shown.length} shown · ` : ""}${all.length} of ${lim}</span>`;
+  } else count = `<span class="box-count">${filtering ? `${shown.length} of ` : ""}${all.length}</span>`;
+  let tiles = "", seenUnlocked = false;
+  for (const c of shown){
+    if (lk && !c.locked && !seenUnlocked){ seenUnlocked = true; if (shown.some(k => k.locked)) tiles += `<div class="lock-sep" aria-hidden="true"></div>`; }
+    tiles += tileHTML(c, overSet.has(c.uid), d);
+  }
+  const folded = !!(UI.collapsed || {})[zone + ":" + t];
+  return `<div class="box${folded ? " collapsed" : ""}" data-type="${t}" data-zone="${zone}">
+    <div class="box-head" data-fold="${zone}:${t}" title="${folded ? "Show" : "Hide"} ${PLURAL[t].toLowerCase()}"><button class="box-grip" title="Drag to reorder types" aria-label="Reorder ${t}">${I.grip}</button>
+      <i class="ms ${MS[t]}"></i><h3>${PLURAL[t]}</h3><span class="box-right">${lk ? `<span class="box-lk" title="${lk} locked">${I.lock}${lk}</span>` : ""}${count}<span class="box-fold" aria-hidden="true">${I.down}</span></span></div>
+    <div class="grid">${tiles}<button class="add-tile" data-add="${t}" data-side="${zone}"><span class="card-plus-ico">+</span>Add ${PLURAL[t].toLowerCase()}</button></div></div>`;
+}
+function renderBoard(){
+  const d = cur(); if (!d || !d.commander) return;
+  $("#optBoxes").innerHTML = d.typeOrder.map(t => boxHTML(d, "options", t)).join("") || `<div class="empty-note">No cards match the filter.</div>`;
+  $("#deckBoxes").innerHTML = d.typeOrder.map(t => boxHTML(d, "deck", t)).join("") || `<div class="empty-note">No cards match the filter.</div>`;
+  const pool = d.cards.filter(c => c.zone === "options"), deck = d.cards.filter(c => c.zone === "deck");
+  const pv = sumPrice(pool.map(c => c.card)), dv = sumPrice(deck.map(c => c.card));
+  const pc = list => list.filter(c => isPricey(c.card)).length, po = pc(pool), pd = pc(deck);
+  const sym = UI.cur === "usd" ? "$" : "€";
+  $("#optMeta").innerHTML = `${pool.length} cards · ${fmtMoney(pv.tot, pv.sym)}${po ? ` · <span class="ph-pricey" title="${po} cards at ${sym}${UI.pricey} or more">💎 ${po}</span>` : ""}`;
+  $("#deckMeta").innerHTML = `${deck.length} cards · ${fmtMoney(dv.tot, dv.sym)}${pd ? ` · <span class="ph-pricey" title="${pd} cards at ${sym}${UI.pricey} or more">💎 ${pd}</span>` : ""}`;
+  renderJump();
+  renderTools(d);
+}
+/* Quick jump: type icons in each panel heading scroll that side to the type's section. */
+function renderJump(){
+  for (const [zone, nav] of [["options", "#optJump"], ["deck", "#deckJump"]]){
+    const boxes = [...document.querySelectorAll(`.panel[data-zone="${zone}"] .box`)];
+    $(nav).innerHTML = boxes.map(b => {
+      const t = b.dataset.type, n = b.querySelectorAll(".cw").length;
+      return n ? `<button data-jump="${t}" class="${b.classList.contains("collapsed") ? "folded" : ""}" title="${PLURAL[t]} · ${n}${b.classList.contains("collapsed") ? " (hidden)" : ""}"><i class="ms ${MS[t]}"></i></button>` : "";
+    }).join("");
+  }
+  markJump();
+}
+function markJump(){
+  document.querySelectorAll(".panel").forEach(panel => {
+    const sc = panel.querySelector(".panel-scroll"), head = panel.querySelector(".panel-head");
+    const line = head.getBoundingClientRect().bottom + 50;
+    let curT = null;
+    panel.querySelectorAll(".box").forEach(b => { if (b.getBoundingClientRect().top <= line) curT = b.dataset.type; });
+    if (sc.scrollTop < 4) curT = panel.querySelector(".box")?.dataset.type || null;
+    panel.querySelectorAll(".jump button").forEach(btn => { btn.classList.toggle("on", btn.dataset.jump === curT); const bx = panel.querySelector(`.box[data-type="${btn.dataset.jump}"]`); btn.classList.toggle("folded", !!(bx && bx.classList.contains("collapsed"))); });
+  });
+}
+document.querySelectorAll(".panel").forEach(panel => {
+  const sc = panel.querySelector(".panel-scroll");
+  let raf = 0;
+  sc.addEventListener("scroll", () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; markJump(); }); }, {passive: true});
+  panel.querySelector(".jump").addEventListener("click", e => {
+    const b = e.target.closest("[data-jump]"); if (!b) return;
+    const box = panel.querySelector(`.box[data-type="${b.dataset.jump}"]`); if (!box) return;
+    if (box.classList.contains("collapsed")) setFolded(`${panel.dataset.zone}:${b.dataset.jump}`, false);
+    const head = panel.querySelector(".panel-head").offsetHeight;
+    const y = box.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - head - 8;
+    sc.scrollTo({top: Math.max(0, y), behavior: REDUCED.matches ? "auto" : "smooth"});
+  });
+});
+function renderTools(d){
+  const counts = new Map();
+  for (const c of d.cards) if (/Creature/.test(c.card.type.split("//")[0])) for (const s of subtypes(c.card)) counts.set(s, (counts.get(s) || 0) + 1);
+  const opts = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const html = `<option value="">All creature types</option>` + opts.map(([s, n]) => `<option value="${esc(s)}" ${UI.ctype === s ? "selected" : ""}>${esc(s)} (${n})</option>`).join("");
+  if ($("#ctypeSel").dataset.h !== html){ $("#ctypeSel").innerHTML = html; $("#ctypeSel").dataset.h = html; }
+  $("#ctypeSel").value = UI.ctype;
+  $("#sortSel").value = UI.sort;
+  $("#filterBox").classList.toggle("on", !!(UI.filter.trim() || UI.ctype));
+}
+
+/* ---------------- Card actions ---------------- */
+function findCard(u){ const d = cur(); return d && d.cards.find(c => c.uid === u); }
+function toggleLock(u){ const c = findCard(u); if (!c) return; animateBoard(() => { c.locked = !c.locked; touch(cur()); renderBoard(); renderHeader(); }); }
+function toggleFocus(u){ const c = findCard(u); if (!c) return; c.focus = !c.focus; touch(cur()); renderBoard(); renderHeader(); toast(c.focus ? `Recommendations now combine ${c.card.name}` : `${c.card.name} no longer combined`); }
+function moveOther(u){ const c = findCard(u); if (c) moveZone(u, c.zone === "deck" ? "options" : "deck"); }
+function moveZone(u, zone){
+  const d = cur(), c = findCard(u); if (!c || c.zone === zone) return;
+  if (c.locked && zone !== "deck"){ toast("Unlock this card to move it out of the deck"); return; }
+  animateBoard(() => { c.zone = zone; d.cards.splice(d.cards.indexOf(c), 1); d.cards.push(c); touch(d); renderAll(); });
+  limitWarn(c);
+}
+function moveAll(zone){
+  const d = cur(); if (!d) return;
+  const list = d.cards.filter(c => c.zone !== zone && !c.locked && (!(UI.filter.trim() || UI.ctype) || matchesFilter(c)));
+  if (!list.length){ toast(zone === "deck" ? "The card pool is empty" : "No unlocked cards in the deck"); return; }
+  animateBoard(() => { list.forEach(c => c.zone = zone); touch(d); renderAll(); });
+  toast(`Moved ${list.length} card${list.length > 1 ? "s" : ""} to the ${zone === "deck" ? "deck" : "card pool"}${UI.filter.trim() || UI.ctype ? " (only cards matching the filter)" : ""}`);
+}
+function limitWarn(c){
+  const d = cur(); if (c.zone !== "deck") return;
+  const n = d.cards.filter(k => k.zone === "deck" && k.bucket === c.bucket).length;
+  if (n > (d.limits[c.bucket] ?? 0)) toast(`Over your ${PLURAL[c.bucket].toLowerCase()} limit: ${n} of ${d.limits[c.bucket]}`);
+}
+function removeCard(u, ask = true){
+  const d = cur(), c = findCard(u); if (!c) return;
+  if (c.locked){ toast("Unlock this card before removing it"); return; }
+  const go = () => { animateBoard(() => { d.cards.splice(d.cards.indexOf(c), 1); touch(d); renderAll(); }); toast(`${c.card.name} removed`); };
+  if (!ask) return go();
+  confirmTwice([{title: `Remove ${esc(c.card.name)}?`, text: `It leaves the ${c.zone === "deck" ? "deck" : "card pool"}. You can add it again later from Add cards.`, yes: "Remove card"}], go);
+}
+
+/* ---------------- Hover preview (mouse only; not on the board, where the size slider does the job) ---------------- */
+const prev = $("#hoverPrev");
+let prevSrc = null;
+document.addEventListener("pointermove", e => {
+  if (e.pointerType !== "mouse" || drag){ if (!prev.hidden) prev.hidden = true; return; }
+  const el = e.target.closest("[data-img]");
+  if (!el || !el.dataset.img || el.closest("#detailScrim") || el.closest("#board")){ if (!prev.hidden) prev.hidden = true; return; }
+  if (prevSrc !== el.dataset.img){ prevSrc = el.dataset.img; prev.src = prevSrc; }
+  prev.hidden = false;
+  const W = 300, H = W * 88 / 63, pad = 18;
+  let x = e.clientX + pad; if (x + W > innerWidth - 8) x = e.clientX - pad - W;
+  let y = e.clientY - H / 2; y = Math.max(8, Math.min(innerHeight - H - 8, y));
+  prev.style.transform = `translate(${x}px, ${y}px)`;
+});
+document.addEventListener("pointerdown", () => { prev.hidden = true; });
+document.addEventListener("scroll", () => { prev.hidden = true; }, true);
+
+/* ---------------- Drag & drop ----------------
+   Mouse: press and move. Touch: press and hold a card ~0.2 s until it lifts, then drag.
+   Box handles (⋮⋮) drag right away on both. Reordering stays inside the locked or the unlocked group. */
+let press = null, drag = null, suppressClick = false;
+document.addEventListener("pointerdown", e => {
+  if (e.pointerType === "touch" || e.button > 0) return;
+  const grip = e.target.closest(".box-grip");
+  const tile = !grip && e.target.closest("#board .ct");
+  if (!grip && !tile) return;
+  press = {x: e.clientX, y: e.clientY, kind: grip ? "box" : "card", el: grip ? grip.closest(".box") : tile.closest(".cw")};
+  if (grip) e.preventDefault();
+});
+window.addEventListener("pointermove", e => {
+  if (e.pointerType === "touch") return;
+  if (drag){ e.preventDefault(); drag.x = e.clientX; drag.y = e.clientY; moveDrag(); return; }
+  if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 5) startDrag(press.kind, press.el, e.clientX, e.clientY);
+});
+window.addEventListener("pointerup", e => { if (e.pointerType === "touch") return; press = null; if (drag) endDrag(true); });
+
+let tp = null;
+document.addEventListener("touchstart", e => {
+  if (e.touches.length > 1){ cancelTouch(); return; }
+  const t = e.touches[0];
+  const grip = e.target.closest(".box-grip");
+  if (grip){ e.preventDefault(); startDrag("box", grip.closest(".box"), t.clientX, t.clientY); return; }
+  const tile = e.target.closest("#board .ct"); if (!tile) return;
+  const cw = tile.closest(".cw");
+  tp = {x: t.clientX, y: t.clientY, el: cw, timer: setTimeout(() => {
+    if (!tp) return; navigator.vibrate?.(15); cw.classList.add("lifted");
+    startDrag("card", cw, tp.x, tp.y); tp = null;
+  }, 200)};
+}, {passive: false});
+document.addEventListener("touchmove", e => {
+  if (drag){ e.preventDefault(); const t = e.touches[0]; drag.x = t.clientX; drag.y = t.clientY; moveDrag(); return; }
+  if (tp){ const t = e.touches[0]; if (Math.hypot(t.clientX - tp.x, t.clientY - tp.y) > 10) cancelTouch(); }
+}, {passive: false});
+document.addEventListener("touchend", e => { cancelTouch(); if (drag){ e.preventDefault(); endDrag(true); } }, {passive: false});
+document.addEventListener("touchcancel", () => { cancelTouch(); if (drag) endDrag(false); });
+function cancelTouch(){ if (tp){ clearTimeout(tp.timer); tp = null; } }
+document.addEventListener("contextmenu", e => { if (e.target.closest("#board .ct") || drag) e.preventDefault(); });
+
+function startDrag(kind, el, x, y){
+  press = null; if (!el) return;
+  const src = kind === "box" ? el.querySelector(".box-head") : el.querySelector(".ct");
+  const r = src.getBoundingClientRect();
+  const ghost = src.cloneNode(true);
+  ghost.classList.add("ghost");
+  ghost.style.width = r.width + "px"; ghost.style.height = r.height + "px";
+  if (kind === "box"){ ghost.style.background = "var(--surface-2)"; ghost.style.borderRadius = "10px"; ghost.style.border = "1px solid var(--gold-line)"; }
+  else ghost.style.borderRadius = "6px";
+  document.body.appendChild(ghost);
+  prev.hidden = true;
+  drag = {kind, el, ghost, ox: x - r.left, oy: y - r.top, x, y, target: null, uid: el.dataset.uid, type: el.dataset.type};
+  el.classList.remove("lifted"); el.classList.add("dragging");
+  document.body.classList.add("is-dragging");
+  moveDrag(); autoScroll();
+}
+function clearMarks(){
+  document.querySelectorAll(".ins-before,.ins-after,.ins-top,.ins-bottom,.target,.drop-target").forEach(el => el.classList.remove("ins-before","ins-after","ins-top","ins-bottom","target","drop-target"));
+}
+function moveDrag(){
+  const {ghost, x, y} = drag;
+  ghost.style.transform = `translate3d(${x - drag.ox}px, ${y - drag.oy}px, 0)${drag.kind === "card" ? " rotate(2.5deg)" : ""}`;
+  if (!drag.raf) drag.raf = requestAnimationFrame(() => { if (drag){ drag.raf = 0; hitTest(); } });
+}
+function setMarks(list){
+  const key = list.map(([el, c]) => (el.dataset.uid || el.dataset.type || el.dataset.zone) + c).join("|");
+  if (key === drag.markKey) return;
+  drag.markKey = key; clearMarks(); list.forEach(([el, c]) => el.classList.add(c));
+}
+function hitTest(){
+  const {x, y} = drag;
+  const marks = [];
+  const under = document.elementFromPoint(x, y);
+  const panel = under && under.closest(".panel");
+  drag.panel = panel; drag.target = null;
+  if (!panel) return setMarks([]);
+  if (drag.kind === "card"){
+    const c = findCard(drag.uid); if (!c) return;
+    const zone = panel.dataset.zone;
+    const box = panel.querySelector(`.box[data-type="${c.bucket}"]`);
+    if (box) marks.push([box, "target"]);
+    marks.push([panel, "drop-target"]);
+    const t = under.closest(".cw[data-uid]");
+    const tc = t && findCard(t.dataset.uid);
+    // reorder only in "Your order", and only next to cards in the same group (locked or not)
+    if (UI.sort === "manual" && t && box && box.contains(t) && t.dataset.uid !== drag.uid && tc && tc.locked === c.locked){
+      const r = t.getBoundingClientRect();
+      const after = x > r.left + r.width / 2;
+      marks.push([t, after ? "ins-after" : "ins-before"]);
+      drag.target = {zone, ref: t.dataset.uid, after};
+    } else drag.target = {zone, ref: null};
+  } else {
+    const box = under.closest(".box");
+    if (!box || box.dataset.type === drag.type) return setMarks([]);
+    const r = box.getBoundingClientRect();
+    const after = y > r.top + r.height / 2;
+    marks.push([box, after ? "ins-bottom" : "ins-top"]);
+    drag.target = {type: box.dataset.type, after};
+  }
+  setMarks(marks);
+}
+function autoScroll(){
+  if (!drag) return;
+  const sc = drag.panel && drag.panel.querySelector(".panel-scroll");
+  if (sc){
+    const r = sc.getBoundingClientRect(), edge = 70;
+    let v = 0;
+    if (drag.y < r.top + edge) v = -Math.ceil((r.top + edge - drag.y) / 5);
+    else if (drag.y > r.bottom - edge) v = Math.ceil((drag.y - (r.bottom - edge)) / 5);
+    if (v){ sc.scrollTop += v; hitTest(); }
+  }
+  requestAnimationFrame(autoScroll);
+}
+function endDrag(commit){
+  if (drag && commit) hitTest();
+  const dr = drag; drag = null; if (dr.raf) cancelAnimationFrame(dr.raf);
+  dr.ghost.remove(); dr.el.classList.remove("dragging", "lifted");
+  document.body.classList.remove("is-dragging");
+  clearMarks();
+  suppressClick = true; setTimeout(() => suppressClick = false, 80);
+  if (!commit || !dr.target) return;
+  const d = cur();
+  if (dr.kind === "card"){
+    const c = findCard(dr.uid); if (!c) return;
+    const {zone, ref, after} = dr.target;
+    if (c.locked && zone !== "deck"){ toast("Unlock this card to move it out of the deck"); return; }
+    if (!ref && zone === c.zone) return;
+    const was = c.zone;
+    animateBoard(() => {
+      d.cards.splice(d.cards.indexOf(c), 1);
+      c.zone = zone;
+      if (ref){ let j = d.cards.findIndex(k => k.uid === ref); if (after) j++; d.cards.splice(j, 0, c); }
+      else d.cards.push(c);
+      touch(d); renderAll();
+    });
+    if (was !== zone) limitWarn(c);
+  } else {
+    const o = d.typeOrder.filter(t => t !== dr.type);
+    let j = o.indexOf(dr.target.type); if (dr.target.after) j++;
+    o.splice(j, 0, dr.type); d.typeOrder = o;
+    touch(d); renderBoard(); renderStats();
+  }
+}
+
+/* ---------------- Resizable divider between card pool and deck ---------------- */
+function applySplit(){ $("#board").style.setProperty("--sp", (UI.split * 100).toFixed(2) + "%"); }
+(() => {
+  const sp = $("#splitter"); let on = false;
+  sp.addEventListener("pointerdown", e => { on = true; sp.setPointerCapture(e.pointerId); sp.classList.add("on"); document.body.classList.add("splitting"); e.preventDefault(); });
+  sp.addEventListener("pointermove", e => {
+    if (!on) return;
+    const r = $("#board").getBoundingClientRect();
+    UI.split = Math.max(.15, Math.min(.85, (e.clientX - r.left) / r.width)); applySplit();
+  });
+  const end = () => { if (!on) return; on = false; sp.classList.remove("on"); document.body.classList.remove("splitting"); saveUI(); };
+  sp.addEventListener("pointerup", end); sp.addEventListener("pointercancel", end);
+  sp.addEventListener("dblclick", () => { UI.split = .5; applySplit(); saveUI(); });
+})();
+
+/* ---------------- Header shrinks to one line while you scroll the cards ---------------- */
+
+/* ---------------- Board clicks: buttons act at once; single click = card view; double click = move ---------------- */
+let clickT = null, clickU = null;
+function setFolded(key, on){
+  UI.collapsed = UI.collapsed || {};
+  if (on) UI.collapsed[key] = true; else delete UI.collapsed[key];
+  saveUI();
+  const [zone, t] = key.split(":"), box = document.querySelector(`.panel[data-zone="${zone}"] .box[data-type="${t}"]`);
+  if (box){ box.classList.toggle("collapsed", on); box.querySelector(".box-head").title = `${on ? "Show" : "Hide"} ${PLURAL[t].toLowerCase()}`; }
+  markJump();
+}
+$("#board").addEventListener("click", e => {
+  if (suppressClick) return;
+  const fh = !e.target.closest(".box-grip") && e.target.closest("[data-fold]");
+  if (fh){ const k = fh.dataset.fold; setFolded(k, !(UI.collapsed || {})[k]); return; }
+  const add = e.target.closest("[data-add]");
+  if (add){ openAdd(add.dataset.add, add.dataset.side); return; }
+  const cw = e.target.closest(".cw[data-uid]"); if (!cw) return;
+  const u = cw.dataset.uid;
+  const act = e.target.closest("[data-act]");
+  if (act){
+    const a = act.dataset.act;
+    if (a === "move") moveOther(u); else if (a === "lock") toggleLock(u); else if (a === "focus") toggleFocus(u);
+    else if (a === "remove") removeCard(u);
+    else if (a === "edit") openDetail({kind: "item", uid: u}, cw.querySelector(".ct"));
+    return;
+  }
+  const ct = e.target.closest(".ct"); if (!ct) return;
+  openDetail({kind: "item", uid: u}, ct);
+  if (V) V.dbl = {uid: u, t: performance.now()};
+});
+/* Double-click a card = move it. The first click already opened the card view, so a second press right after
+   closes it again (no animation) and moves the card. */
+let swallowClickUntil = 0;
+document.addEventListener("pointerdown", e => {
+  if (!V || !V.dbl || performance.now() - V.dbl.t > 350) return;
+  e.preventDefault(); e.stopPropagation();
+  const u = V.dbl.uid;
+  closeDetail(true, {anim: false}); swallowClickUntil = performance.now() + 500;
+  moveOther(u);
+}, true);
+document.addEventListener("click", e => { if (performance.now() < swallowClickUntil){ swallowClickUntil = 0; e.preventDefault(); e.stopPropagation(); } }, true);
+$("#stats").addEventListener("click", e => {
+  if (e.target.closest("#useSugg")){
+    const d = cur(), sg = SUGG[suggestKey(d)]; if (!sg || !sg.counts) return;
+    d.limits = {...sg.counts}; touch(d); renderBoard(); renderStats();
+    toast("Limits updated to EDHREC’s numbers");
+  }
+  const ab = e.target.closest("#addBasics");
+  if (ab){ const n = parseInt(ab.textContent.replace(/\D+/g, ""), 10) || 0; if (n) addBasics(n); }
+});
+$("#stats").addEventListener("change", e => {
+  const inp = e.target.closest("[data-lim]"); if (!inp) return;
+  const d = cur(); d.limits[inp.dataset.lim] = Math.max(0, Math.min(99, parseInt(inp.value, 10) || 0));
+  touch(d); renderBoard(); renderStats();
+});
+
+/* ---------------- Toolbar ---------------- */
+function applyZoom(){
+  const z = (+UI.zoom || 100) / 100, board = $("#board");
+  board.style.removeProperty("--tile");
+  const base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tile")) || 180;
+  board.style.setProperty("--tile", Math.round(base * z) + "px");
+  $("#top").style.setProperty("--tile", Math.round(base * z) + "px");
+  const sz = `(max-width:820px) 46vw, ${Math.round(base * z)}px`;
+  document.querySelectorAll("img[sizes]").forEach(im => im.sizes = sz);
+  $("#zoom").value = UI.zoom; $("#zoomVal").textContent = Math.round(z * 100) + "%";
+}
+$("#zoom").addEventListener("input", e => { UI.zoom = +e.target.value; applyZoom(); saveUI(); });
+$("#zoom").closest("label").addEventListener("dblclick", () => { UI.zoom = 100; applyZoom(); saveUI(); });
+addEventListener("resize", applyZoom);
+$("#sortSel").addEventListener("change", e => { UI.sort = e.target.value; saveUI(); animateBoard(() => renderBoard()); if (UI.sort !== "manual") toast("Drag to reorder works in “Your order”. Locked cards always come first."); });
+let filtT;
+$("#filterQ").addEventListener("input", e => { UI.filter = e.target.value; clearTimeout(filtT); filtT = setTimeout(renderBoard, 150); });
+$("#ctypeSel").addEventListener("change", e => { UI.ctype = e.target.value; renderBoard(); });
+$("#allToDeck").onclick = () => moveAll("deck");
+$("#allToPool").onclick = () => moveAll("options");
+
+/* ---------------- Add-cards modal: search always on top; empty search = EDHREC picks ---------------- */
+const A = {mode: "cards", bucket: "Any", side: "options", q: "", colors: true, results: [], loading: false, error: "", page: 1, more: false, token: 0, isNew: false, addedNow: new Set()};
+function openAdd(bucket, side){
+  const d = cur(); if (!d) return;
+  if (!d.commander){ openCommanderPicker(); return; }
+  Object.assign(A, {mode: "cards", bucket: bucket || "Any", side: side || "options", q: "", results: [], error: "", addedNow: new Set()});
+  showScrim("#addScrim"); renderAddShell(); loadAdd();
+}
+function openCommanderPicker(isNew){
+  Object.assign(A, {mode: "commander", q: "", results: [], error: "", isNew: !!isNew});
+  showScrim("#addScrim"); renderAddShell(); loadAdd();
+}
+function openPartnerPicker(){
+  const d = cur(); if (!d || !d.commander) return;
+  Object.assign(A, {mode: "partner", q: "", results: [], error: "", isNew: false});
+  showScrim("#addScrim"); renderAddShell(); loadAdd();
+}
+function renderAddShell(){
+  const d = cur(), isCmd = A.mode !== "cards";
+  let top = "";
+  if (isCmd){
+    top = `${A.isNew ? `<div class="namefield"><input id="newName" placeholder="Deck name (optional, defaults to your commander)" value="${esc(d.name || "")}" autocomplete="off"></div>` : ""}
+      <div class="searchrow"><div class="search">${I.search}<input id="addQ" type="search" placeholder="${A.mode === "partner" ? "Search partners…" : "Search legends: Atraxa, Edgar Markov, elves…"}" autocomplete="off"><button class="clear" id="clearQ" title="Clear search" hidden>${I.close}</button></div></div>
+      <div class="basis" id="basis">${A.mode === "partner" ? `Commanders that can pair with <b>${esc(d.commander.name)}</b>.` : "Legal commanders, most played on EDHREC first."}</div>`;
+  } else {
+    const chips = ["Any", ...d.typeOrder].map(t => `<button class="chip ${A.bucket === t ? "on" : ""}" data-bucket="${t}"><i class="ms ${MS[t]}"></i>${PLURAL[t]}</button>`).join("");
+    top = `<div class="searchrow"><div class="search">${I.search}<input id="addQ" type="search" placeholder="Search name or rules text. Creature types: t:squirrel" autocomplete="off"><button class="clear" id="clearQ" title="Clear search, back to EDHREC picks" hidden>${I.close}</button></div>
+      <label class="toggle" title="Only show cards your commander allows when searching"><input type="checkbox" id="onlyColors" ${A.colors ? "checked" : ""}>Only ${pipsHTML(deckCI(d))}</label></div>
+      <div class="chips" id="chips">${chips}</div>
+      <div class="basis" id="basis"></div>`;
+  }
+  const title = A.mode === "commander" ? "Choose your commander" : A.mode === "partner" ? "Choose a partner" : "Add cards";
+  $("#addModal").innerHTML = `<div class="modal-head"><h2>${title}</h2><button class="icon-btn" data-close title="Close">${I.close}</button></div>
+    <div class="modal-top">${top}</div><div class="modal-body" id="addBody"></div>`;
+  if (HOVER.matches || isCmd) setTimeout(() => (A.isNew ? $("#newName") : $("#addQ"))?.focus(), 50);
+}
+function sortedResults(){
+  if (A.mode !== "cards" || A.q.trim() || UI.addSort === "best") return A.results;
+  const v = r => UI.addSort === "incl" ? -(r.incl ?? -1) : UI.addSort === "syn" ? -(r.syn ?? -9) : UI.addSort === "price" ? -((priceOf(r.card) || {v: -1}).v) : ((priceOf(r.card) || {v: 1e9}).v);
+  return [...A.results].sort((a, b) => v(a) - v(b));
+}
+function renderAddBody(){
+  const d = cur();
+  if (A.mode === "cards"){
+    const foc = d.cards.filter(c => c.focus).map(c => esc(c.card.name));
+    $("#basis").innerHTML = A.q.trim()
+      ? `Search results for <b>“${esc(A.q.trim())}”</b>${A.bucket !== "Any" ? ` among ${PLURAL[A.bucket].toLowerCase()}` : ""}. Clear the search to see EDHREC picks again.`
+      : `EDHREC picks for <b>${esc(cmdKey(d))}</b>${foc.length ? ` combined with <b>${foc.join(", ")}</b>` : ""}.
+        <select id="addSort" aria-label="Sort picks"><option value="best">Best match first</option><option value="incl">Most played</option><option value="syn">Highest synergy</option><option value="cheap">Cheapest</option><option value="price">Most expensive</option></select>`;
+    if ($("#addSort")) $("#addSort").value = UI.addSort;
+    document.querySelectorAll("#chips .chip").forEach(ch => ch.classList.toggle("on", ch.dataset.bucket === A.bucket));
+  }
+  $("#clearQ").hidden = !A.q;
+  const visible = sortedResults().filter(r => A.mode !== "cards" || canMulti(r.card) || A.addedNow.has(r.card.name) || !d.cards.some(k => k.card.name === r.card.name));
+  let body;
+  if (A.error) body = `<div class="notice">${esc(A.error)}</div>`;
+  else if (A.loading && !A.results.length) body = `<div class="results">${'<div class="skel"></div>'.repeat(12)}</div>`;
+  else if (!visible.length) body = `<div class="notice">${A.q.trim() || A.mode !== "cards" ? "No cards match that search." : `EDHREC has no more ${PLURAL[A.bucket].toLowerCase()} to suggest for this deck. Try searching above.`}</div>`;
+  else body = `<div class="results">${visible.slice(0, A.q.trim() || A.mode !== "cards" ? 999 : 60).map(r => resultHTML(r)).join("")}</div>` + (A.more ? `<div class="more"><button class="btn" id="moreBtn">${A.loading ? "Loading…" : "Show more"}</button></div>` : "");
+  $("#addBody").innerHTML = body;
+}
+function resultHTML(r){
+  const d = cur(), c = r.card, i = A.results.indexOf(r);
+  let meta = "", tag = "";
+  if (r.incl != null){
+    const pct = Math.round(r.incl * 100), syn = r.syn != null ? Math.round(r.syn * 100) : null;
+    meta = `<div class="bar"><i style="width:${pct}%"></i></div>In ${pct}% of decks${syn != null ? ` · ${syn >= 0 ? "+" : ""}${syn}% synergy` : ""}`;
+  }
+  if (r.pairs && r.pairs.length){ meta += `${meta ? "<br>" : ""}Pairs with ${r.pairs.map(esc).join(", ")}`; tag = `<span class="tag">Combo ×${r.pairs.length + (r.incl != null ? 1 : 0)}</span>`; }
+  if (!meta) meta = esc(c.type);
+  let acts;
+  if (A.mode !== "cards") acts = `<button class="btn primary" style="grid-column:1/-1;justify-content:center" data-pick="${i}">${A.mode === "partner" ? "Choose as partner" : "Choose"}</button>`;
+  else {
+    const have = d.cards.find(k => k.card.name === c.name);
+    const deckFirst = A.side === "deck";
+    if (have && !canMulti(c)) acts = `<button class="btn done" disabled>✓ In ${have.zone === "deck" ? "deck" : "pool"}</button>`;
+    else acts = `<button class="btn ${deckFirst ? "" : "primary"}" data-addto="options" data-i="${i}">+ Pool</button><button class="btn ${deckFirst ? "primary" : ""}" data-addto="deck" data-i="${i}">+ Deck</button>`;
+  }
+  return `<div class="rt"><button class="rt-img" data-zoom="${i}" data-img="${esc(c.large)}" title="${HOVER.matches ? "" : "Open " + esc(c.name)}"><img src="${esc(c.img)}" alt="${esc(c.name)}" loading="lazy">${tag}</button>
+    <div class="rt-meta"><b>${esc(c.name)}</b><span class="price${isPricey(c) ? " pricey" : ""}">${priceText(c)}</span>${meta}</div><div class="rt-acts">${acts}</div></div>`;
+}
+async function loadAdd(append = false){
+  const d = cur(); const tok = ++A.token;
+  A.loading = true; A.error = "";
+  if (!append){ A.results = []; A.page = 1; A.more = false; }
+  renderAddBody();
+  try {
+    const raw = A.q.trim();
+    if (A.mode !== "cards" || raw){
+      let q = raw;
+      if (q && !/[:<>=!]/.test(q)) q = `(${q} or o:"${q.replace(/"/g, "")}")`;
+      if (A.mode === "commander") q = `${q} is:commander game:paper`;
+      else if (A.mode === "partner") q = `${q} ${partnerQuery(d.commander) || "is:commander keyword:partner"} game:paper`;
+      else {
+        if (A.bucket !== "Any") q += ` t:${A.bucket.toLowerCase()}`;
+        if (A.colors) q += ` id<=${deckCI(d).join("").toLowerCase() || "c"}`;
+        q += " game:paper";
+      }
+      const res = await sfSearch(q.trim(), A.page);
+      if (tok !== A.token) return;
+      A.results = A.results.concat(res.cards.filter(c => A.mode !== "partner" || c.name !== d.commander.name).map(card => ({card})));
+      A.more = res.more;
+    } else {
+      const recs = await recommend(d, A.bucket);
+      if (tok !== A.token) return;
+      A.results = recs;
+    }
+  } catch (err){
+    if (tok !== A.token) return;
+    A.error = navigator.onLine === false ? "You’re offline. Recommendations and search need an internet connection." : (err.message || "Something went wrong loading cards. Try again.");
+  }
+  A.loading = false; renderAddBody();
+}
+let qT;
+$("#addModal").addEventListener("input", e => {
+  if (e.target.id === "addQ"){ A.q = e.target.value; $("#clearQ").hidden = !A.q; clearTimeout(qT); qT = setTimeout(() => loadAdd(), 300); }
+});
+$("#addModal").addEventListener("change", e => {
+  if (e.target.id === "onlyColors"){ A.colors = e.target.checked; if (A.q.trim()) loadAdd(); }
+  if (e.target.id === "addSort"){ UI.addSort = e.target.value; saveUI(); renderAddBody(); }
+});
+$("#addModal").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "newName") $("#addQ").focus(); });
+$("#addModal").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.hasAttribute("data-close")) return hideScrim("#addScrim");
+  if (b.id === "clearQ"){ A.q = ""; $("#addQ").value = ""; loadAdd(); if (HOVER.matches) $("#addQ").focus(); return; }
+  if (b.dataset.bucket){ A.bucket = b.dataset.bucket; loadAdd(); return; }
+  if (b.id === "moreBtn"){ A.page++; loadAdd(true); return; }
+  if (b.dataset.zoom != null){ const r = A.results[+b.dataset.zoom]; openDetail({kind: "add", card: r.card, rec: r}, b); return; }
+  if (b.dataset.pick != null){ setCommander(A.results[+b.dataset.pick].card); return; }
+  if (b.dataset.addto){
+    const r = A.results[+b.dataset.i];
+    if (addCard(r.card, b.dataset.addto)){ A.addedNow.add(r.card.name); toast(`${r.card.name} added to ${b.dataset.addto === "deck" ? "deck" : "card pool"}`); renderAddBody(); }
+  }
+});
+function setCommander(card){
+  const d = cur(); if (!d) return;
+  card = {...card}; delete card.custom;
+  if (A.mode === "partner"){
+    d.partner = card;
+    d.cards = d.cards.filter(c => c.card.name !== card.name);
+    touch(d); hideScrim("#addScrim"); closeDetail(true, {anim: false}); render();
+    toast(`${card.name} joins as partner`); return;
+  }
+  const old = d.commander;
+  const typed = $("#newName") ? $("#newName").value.trim() : null;
+  d.commander = card;
+  if (d.partner && !partnerQuery(card)) d.partner = null;
+  if (typed) d.name = typed;
+  else if (!d.name || (old && d.name === old.name)) d.name = card.name;
+  touch(d); hideScrim("#addScrim"); closeDetail(true, {anim: false}); render();
+  toast(`${card.name} leads this deck`);
+}
+
+/* ---------------- Card view ----------------
+   One view for everything about a card: the cover flow of every artwork on top (the centered card IS the card),
+   rules text, EDHREC numbers and price below, then actions and your own art. Rename by clicking the name on the card.
+   Changes to art and name are kept when you close the view. */
+const FRAMES = {
+  "2015": {box: [56, 104, 616, 518], name: [52, 50, 92]},
+  "2003": {box: [57, 107, 616, 520], name: [54, 52, 96]},
+  "1997": {box: [80, 89, 600, 510], name: [62, 42, 84]},
+  "1993": {box: [80, 89, 600, 510], name: [62, 42, 84]}
+};
+const frameOf = c => FRAMES[c.frame] || FRAMES["2015"];
+function loadImage(src){
+  return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error("Couldn’t load that image.")); im.src = src; });
+}
+async function corsImage(url){
+  if (url.startsWith("data:")) return loadImage(url);
+  const r = await fetch(url); if (!r.ok) throw new Error("Couldn’t load the card image.");
+  return loadImage(URL.createObjectURL(await r.blob()));
+}
+let V = null, vTok = 0;
+function viewTarget(v){
+  const d = cur(); if (!d || !v) return null;
+  if (v.kind === "item") return findCard(v.uid)?.card || null;
+  if (v.kind === "commander") return d.commander;
+  if (v.kind === "partner") return d.partner;
+  return v.card0;
+}
+const plainPrint = c => { const p = {...c}; delete p.custom; return p; };
+function initView(o){
+  const card = o.kind === "add" ? o.card : (o.kind === "item" ? findCard(o.uid).card : o.kind === "commander" ? cur().commander : cur().partner);
+  const v = {kind: o.kind, uid: o.uid, card0: o.kind === "add" ? o.card : null, rec: o.rec || null,
+    card: JSON.parse(JSON.stringify(card)), prints: V && V.prints && V.prints[0] && V.prints[0].name === card.name ? V.prints : [plainPrint(card)], fi: 0,
+    base: null, user: null, mode: "frame", box: [...frameOf(card).box], zoom: 1, pan: {x: 0, y: 0},
+    name: (card.custom && card.custom.name) || "", customBase: !!(card.custom && IMG.get(card.custom.key)),
+    dirty: false, back: false, editable: o.kind !== "add", token: ++vTok, flying: false, busy: false};
+  const i = v.prints.findIndex(p => p.id === card.id); v.fi = i < 0 ? 0 : i;
+  if (i < 0) v.prints = [plainPrint(card)];
+  return v;
+}
+function openDetail(o, srcEl){
+  if (o.kind === "item" && !findCard(o.uid)) return;
+  V = initView(o); V.srcEl = srcEl;
+  prev.hidden = true; showScrim("#detailScrim"); renderDetail();
+  animateOpen(srcEl);
+  loadBase(); loadPrints();
+}
+/* Cards fly between the board and the cover flow along a soft S-curve, tilting one way then the other, and settle. */
+/* One smooth curve (cubic Bézier with a gentle S), sampled finely so speed and direction never change abruptly.
+   Ease-out: quick start, soft landing. */
+/* CSS-style cubic-bezier easing, solved numerically. (.32,0,.18,1): soft start, long gentle glide in. */
+function bezierEase(x1, y1, x2, y2){
+  const bx = s => 3 * (1 - s) * (1 - s) * s * x1 + 3 * (1 - s) * s * s * x2 + s * s * s;
+  const by = s => 3 * (1 - s) * (1 - s) * s * y1 + 3 * (1 - s) * s * s * y2 + s * s * s;
+  return u => { let lo = 0, hi = 1; for (let i = 0; i < 30; i++){ const m = (lo + hi) / 2; if (bx(m) < u) lo = m; else hi = m; } return by((lo + hi) / 2); };
+}
+const FLY_EASE = bezierEase(.32, 0, .18, 1);
+function sFlight(fly, r0, r1, dur){
+  Object.assign(fly.style, {left: r1.left + "px", top: r1.top + "px", width: r1.width + "px", height: r1.height + "px", transformOrigin: "50% 50%"});
+  const dx = (r0.left + r0.width / 2) - (r1.left + r1.width / 2), dy = (r0.top + r0.height / 2) - (r1.top + r1.height / 2);
+  const dist = Math.hypot(dx, dy) || 1, bend = Math.min(80, dist * .14);
+  const nx = -dy / dist * bend, ny = dx / dist * bend;            // sideways, for the S
+  const P0 = [dx, dy], P1 = [dx * .62 + nx, dy * .62 + ny], P2 = [dx * .2 - nx * .7, dy * .2 - ny * .7], P3 = [0, 0];
+  const bez = (k, u) => { const m = 1 - u; return m * m * m * P0[k] + 3 * m * m * u * P1[k] + 3 * m * u * u * P2[k] + u * u * u * P3[k]; };
+  const s0 = r0.width / r1.width, N = 40, frames = [];
+  for (let i = 0; i <= N; i++){
+    const u = i / N, e = FLY_EASE(u);
+    frames.push({transform: `translate(${bez(0, e).toFixed(2)}px,${bez(1, e).toFixed(2)}px) scale(${(s0 + (1 - s0) * e).toFixed(4)})`, offset: u});
+  }
+  return fly.animate(frames, {duration: dur, easing: "linear"});
+}
+/* Hand over from the flying copy to the real card without a visible swap: reveal the card underneath, then fade the copy. */
+function fadeAway(fly, after){
+  const a = fly.animate([{opacity: 1}, {opacity: 0}], {duration: 120, easing: "linear", fill: "forwards"});
+  a.onfinish = a.oncancel = () => { fly.remove(); after && after(); };
+}
+function makeFly(src, r){
+  const fly = document.createElement("img"); fly.src = src; fly.className = "fly";
+  Object.assign(fly.style, {left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", transformOrigin: "50% 50%"});
+  document.body.appendChild(fly); return fly;
+}
+function animateOpen(srcEl){
+  const img = srcEl && (srcEl.tagName === "IMG" ? srcEl : srcEl.querySelector("img"));
+  if (!img || REDUCED.matches || !V) return;
+  const tok = V.token, r0 = srcEl.getBoundingClientRect();
+  const src = img.currentSrc || img.src;
+  const fly = makeFly(src, r0); fly.classList.add("fly-r");
+  V.flying = true;
+  // the cover flow's card starts with the very same picture, so the hand-over is invisible
+  const ci = $("#flowStage .fl.center img"); if (ci && !V.customBase) ci.src = src;
+  const hideTarget = on => { const c = $("#flowStage .fl.center"), o = $("#flOver"); if (c) c.style.visibility = on ? "hidden" : ""; if (o) o.style.visibility = on ? "hidden" : ""; };
+  hideTarget(true);
+  srcEl.style.visibility = "hidden";
+  const done = () => {
+    srcEl.style.visibility = "";
+    if (V && V.token === tok){ V.flying = false; hideTarget(false); fadeAway(fly, () => { if (V && V.token === tok) upgradeCenter(); }); }
+    else fly.remove();
+  };
+  // start right away: the cover flow is laid out in its final place already, so the target doesn't move
+  const target = $("#flowStage .fl.center");
+  if (!target){ done(); return; }
+  const a = sFlight(fly, r0, target.getBoundingClientRect(), 460);
+  a.onfinish = a.oncancel = done;
+  V.flyAnim = a;
+}
+/* Closing: the card (with its new art or name) flies back to its place. */
+function closeFly(v){
+  if (!v || REDUCED.matches) return null;
+  const c = $("#flowStage .fl.center"); if (!c || c.style.visibility === "hidden" || v.back) return null;
+  const r = c.getBoundingClientRect(); if (!r.width) return null;
+  const over = $("#flOver"), cv = $("#artCanvas");
+  let src = c.querySelector("img").src;
+  if (over && over.classList.contains("custom") && !over.classList.contains("stale")) try { src = cv.toDataURL("image/jpeg", .85); } catch {}
+  return {fly: makeFly(src, r), r};
+}
+function landFly(f, v){
+  if (!f) return;
+  let dest = null;
+  if (v.kind === "item") dest = document.querySelector(`#board .cw[data-uid="${v.uid}"] .ct`);
+  else if (v.kind === "commander" || v.kind === "partner") dest = document.querySelector(`#cmds [data-cmd="${v.kind}"]`);
+  else if (v.srcEl && v.srcEl.isConnected) dest = v.srcEl;
+  const r = dest && dest.getBoundingClientRect();
+  const onScreen = r && r.width && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+  if (!onScreen){
+    const a = f.fly.animate([{opacity: 1, transform: "none"}, {opacity: 0, transform: "scale(.85) translateY(20px)"}], {duration: 220, easing: "ease-in"});
+    a.onfinish = a.oncancel = () => f.fly.remove(); return;
+  }
+  dest.style.visibility = "hidden";
+  const a = sFlight(f.fly, f.r, r, 400);
+  a.onfinish = a.oncancel = () => { dest.style.visibility = ""; fadeAway(f.fly); };
+}
+function customView(){ return !!(V && (V.user || V.name.trim() || V.customBase)); }
+function renderDetail(){
+  const c = V.card;
+  $("#detailModal").innerHTML = `<div class="modal-head"><h2>${esc(c.name)} <span class="mana">${manaHTML(c.mana)}</span></h2><button class="icon-btn" data-close title="Close">${I.close}</button></div>
+    <div class="dv-scroll">
+      <div class="flow" id="flow" tabindex="0" aria-label="Every artwork of this card. Drag, swipe, scroll or use the arrow keys. Click a card to jump to it.">
+        <div class="flow-stage" id="flowStage"></div>
+        <div class="fl-over" id="flOver"><canvas id="artCanvas" width="1344" height="1872"></canvas>
+          ${V.editable ? `<input class="name-over" id="artName" maxlength="40" autocomplete="off" spellcheck="false" placeholder="${esc(c.name.split(" // ")[0])}" value="${esc(V.name)}" title="Click to rename this card" aria-label="Name on the card"><button class="name-pen" id="namePen" title="Rename this card">${I.pencil}</button>` : ""}</div>
+      </div>
+      <div class="flow-foot"><div class="flow-cap" id="flowCap"></div>${c.back ? `<button class="btn sm" id="dFlip">${I.flip}Flip</button>` : ""}<input type="range" class="flow-scrub" id="flowScrub" min="0" max="0" value="0" aria-label="Jump to artwork" hidden></div>
+      <div class="dv-body"><div class="dv-info" id="dvInfo"></div><div class="dv-side" id="dvSide"></div></div>
+    </div>`;
+  renderFlow(); renderDetailParts(); drawArt();
+}
+function renderDetailParts(){
+  if (!V) return;
+  const d = cur(), c = V.card, item = V.kind === "item" ? findCard(V.uid) : null;
+  const s = V.rec && V.rec.incl != null ? {incl: V.rec.incl, syn: V.rec.syn} : statFor(edhStats(d), c.name);
+  const pr = priceOf(c), pa = PRICES[c.id];
+  const chips = [];
+  if (V.kind !== "commander" && V.kind !== "partner"){
+    if (s){
+      const pct = Math.round(s.incl * 100), syn = s.syn != null ? Math.round(s.syn * 100) : null;
+      chips.push(`<span class="chip-st" title="Played in ${pct}% of ${esc(cmdKey(d))} decks on EDHREC"><b>${pct}%</b> of decks</span>`);
+      if (syn != null) chips.push(`<span class="chip-st" title="Synergy: how much more often it's played with this commander than in other decks that could play it"><b class="${syn > 0 ? "pos" : syn < 0 ? "neg" : ""}">${syn > 0 ? "+" : ""}${syn}%</b> synergy</span>`);
+    } else chips.push(`<span class="chip-st" title="Not on ${esc(cmdKey(d))}'s EDHREC page">Not on EDHREC</span>`);
+  }
+  chips.push(`<span class="chip-st price${isPricey(c) ? " pricey" : ""}" title="This printing${pa && pa.e != null ? ` · €${pa.e.toFixed(2)}` : ""}${pa && pa.u != null ? ` · $${pa.u.toFixed(2)}` : ""}"><b>${pr ? fmtMoney(pr.v, pr.sym) : "–"}</b></span>`);
+  if (V.rec && V.rec.pairs && V.rec.pairs.length) chips.push(`<span class="chip-st" title="Also played with ${V.rec.pairs.map(esc).join(", ")}">Combo ×${V.rec.pairs.length}</span>`);
+  $("#dvInfo").innerHTML = `<div class="type-line">${esc(c.type)}${c.custom && c.custom.name ? ` · printed as “${esc(c.custom.name)}”` : ""}</div>
+    <div class="oracle">${manaHTML(c.text)}</div>${c.pt ? `<div class="pt">${esc(c.pt)}</div>` : ""}
+    <div class="chip-row">${chips.join("")}</div>
+    <div class="dv-links"><a href="https://edhrec.com/cards/${slugify(c.name)}" target="_blank" rel="noopener">EDHREC ↗</a><a href="https://scryfall.com/search?q=${encodeURIComponent(`!"${c.name.split(" // ")[0]}"`)}" target="_blank" rel="noopener">Scryfall ↗</a><a href="https://www.cardmarket.com/en/Magic/Products/Search?searchString=${encodeURIComponent(c.name.split(" // ")[0])}" target="_blank" rel="noopener">Cardmarket ↗</a></div>`;
+  let acts = "";
+  if (V.kind === "commander"){
+    acts = `<button class="btn" data-d="changeCmd">Change commander</button>${d.partner ? "" : partnerQuery(d.commander) ? `<button class="btn" data-d="addPartner">+ Partner</button>` : ""}`;
+  } else if (V.kind === "partner"){
+    acts = `<button class="btn" data-d="changePartner">Change partner</button><button class="btn danger" data-d="removePartner">${I.trash}Remove</button>`;
+  } else if (item){
+    acts = item.zone === "deck"
+      ? `<button class="btn" data-d="toPool" ${item.locked ? "disabled" : ""} title="Move to card pool">${I.left}To pool</button><button class="btn ${item.locked ? "on" : ""}" data-d="lock" title="${item.locked ? "Unlock" : "Lock as a final pick"}">${item.locked ? I.lock + "Locked" : I.unlock + "Lock"}</button>`
+      : `<button class="btn primary" data-d="toDeck" title="Move to deck">To deck${I.right}</button>`;
+    acts += `<button class="btn ${item.focus ? "on" : ""}" data-d="focus" title="Blend this card's EDHREC picks with your commander's">${I.focus}${item.focus ? "Combined" : "Combine"}</button>`;
+    if (canMulti(c)) acts += `<button class="btn" data-d="copy" title="Add another copy; each copy can have its own art">${I.copy}+1 copy</button>`;
+    acts += `<button class="btn danger" data-d="remove" ${item.locked ? "disabled" : ""}>${I.trash}Remove</button>`;
+  } else if (V.kind === "add"){
+    if (A.mode === "commander" || A.mode === "partner") acts = `<button class="btn primary" data-d="pick">${A.mode === "partner" ? "Choose as partner" : "Choose as commander"}</button>`;
+    else {
+      const have = d.cards.find(k => k.card.name === c.name);
+      acts = have && !canMulti(c) ? `<span class="btn" style="color:var(--ok);border-color:transparent;background:none">✓ In ${have.zone === "deck" ? "deck" : "card pool"}</span>`
+        : `<button class="btn ${A.side === "deck" ? "" : "primary"}" data-d="addPool" title="Adds it with the artwork shown above">+ Card pool</button><button class="btn ${A.side === "deck" ? "primary" : ""}" data-d="addDeck" title="Adds it with the artwork shown above">+ Deck</button>`;
+    }
+  }
+  let edit = "";
+  if (V.editable){
+    const hasCustom = !!(V.user || V.name.trim() || V.customBase || (viewTarget(V) || {}).custom);
+    edit = `<div class="dv-edit ${V.dirty ? "dirty" : ""}">
+      <div class="ed-head"><span class="ed-title">✦ Customize</span><span class="ed-hint">${V.dirty ? "Unsaved changes" : "Swipe the cards above to change art"}</span></div>
+      <div class="ed-row"><span class="ed-lbl">${I.pencil}Name</span><span class="ed-field"><input id="artName2" maxlength="40" autocomplete="off" spellcheck="false" placeholder="${esc(c.name.split(" // ")[0])}" value="${esc(V.name)}" aria-label="Name on the card">${V.name ? `<button class="x" id="nameClear" title="Use the real name">×</button>` : ""}</span></div>
+      <div class="ed-row"><span class="ed-lbl">${I.brush}Art</span><div class="ed-btns">
+        <button class="btn sm" id="artUpload" title="Use any picture: AI-made art, a photo, a drawing. You can also paste an image.">${I.upload}Upload</button>
+        <button class="btn sm" id="artPrompt" title="Copy a prompt for an AI image tool (ChatGPT, Gemini, Midjourney…)">AI art prompt</button>
+        <button class="btn sm" id="artOrig" title="Download the current art, for example to attach in your AI image tool">Download</button></div></div>
+      ${V.user ? `<div class="ed-row"><span class="ed-lbl">Fit</span><div class="ed-btns" title="${V.mode === "frame" ? "Drag the picture on the card to frame it; drag the gold corners to fit the art window" : "Drag the picture on the card to position it"}">
+        <div class="seg"><button data-mode="frame" class="${V.mode === "frame" ? "on" : ""}">In frame</button><button data-mode="whole" class="${V.mode === "whole" ? "on" : ""}">Whole card</button></div>
+        <input type="range" id="artZoom" min="1" max="4" step="0.01" value="${V.zoom}" aria-label="Zoom"><button class="btn sm" id="artDrop">Remove</button></div></div>` : ""}
+      <input type="file" id="artFile" accept="image/*" hidden>
+      <div class="ed-foot">
+        ${hasCustom ? `<button class="link-btn" id="artReset" title="Back to the official art and name">Reset to original</button>` : "<span></span>"}
+        <span class="ed-save"><button class="btn sm" id="artUndo" ${V.dirty ? "" : "disabled"} title="Throw away the changes">${I.undo}Discard</button>
+        <button class="btn sm save-btn" id="artSave" ${V.dirty ? "" : "disabled"}>Save changes</button></span></div></div>`;
+  }
+  $("#dvSide").innerHTML = `<div class="dv-acts">${acts}</div>${edit}`;
+}
+function renderFlow(){
+  const st = $("#flowStage"); if (!st || !V) return;
+  const centerSrc = p => V.back && p.back ? p.back.large : (V.customBase && V.card.custom && p.id === V.card.id ? IMG.get(V.card.custom.key) : p.img);
+  st.innerHTML = V.prints.map((p, i) => `<button class="fl" data-fi="${i}" aria-label="${esc(p.set)}"><img src="${esc(i === V.fi ? centerSrc(p) : p.img)}" alt="" loading="${Math.abs(i - V.fi) < 6 ? "eager" : "lazy"}" draggable="false"></button>`).join("");
+  upgradeCenter();
+  const sc = $("#flowScrub");
+  if (sc){ sc.hidden = V.prints.length < 2; sc.max = V.prints.length - 1; sc.value = V.fi; }
+  // place freshly built cards straight into position (no slide-in), so the center card never moves under a landing flight
+  st.classList.add("instant"); layoutFlow(); void st.offsetWidth; st.classList.remove("instant");
+  if (V.flying){ const c = $("#flowStage .fl.center"); if (c) c.style.visibility = "hidden"; }
+}
+function upgradeCenter(){
+  if (V && V.flying) return;
+  const p = V && V.prints[V.fi]; if (!p || !p.large || V.back || (V.customBase && p.id === V.card.id)) return;
+  const tok = V.token, fi = V.fi, im = new Image(), hi = /cards\.scryfall\.io\/large\//.test(p.large) ? pngOf(p.large) : p.large;
+  im.onload = () => { (im.decode ? im.decode() : Promise.resolve()).catch(() => {}).then(() => { if (!V || V.token !== tok || V.fi !== fi) return; const el = $("#flowStage") && $("#flowStage").children[fi]; const i2 = el && el.querySelector("img"); if (i2 && i2.src !== im.src) i2.src = im.src; }); };
+  im.onerror = () => { if (hi !== p.large){ im.onerror = null; im.src = p.large; } };
+  im.src = hi;
+}
+function flowSize(){
+  // same width as the cards on the board (measured, so it also matches stretched cards on phones)
+  const ct = document.querySelector("#board .ct"), w = ct && ct.getBoundingClientRect().width;
+  const base = w || parseFloat($("#board").style.getPropertyValue("--tile")) || 180;
+  const want = Math.max(base * 1.3, isPhone() ? 210 : 240);
+  const maxH = (innerHeight * .6) / 1.397, maxW = Math.min(innerWidth * .8, 600);
+  return Math.round(Math.max(90, Math.min(want, maxH, maxW)));
+}
+const pngOf = u => String(u || "").replace("/large/", "/png/").replace(/\.jpg(\?|$)/, ".png$1");
+function layoutFlow(){
+  const fw = $("#flow"); if (fw) fw.style.setProperty("--flw", flowSize() + "px");
+  const st = $("#flowStage"); if (!st || !V) return;
+  const w = $("#flow").clientWidth, cw = parseFloat(getComputedStyle($("#flow")).getPropertyValue("--flw")) || 236;
+  const gap = Math.min(52, w / 14), first = Math.min(cw * .62, w / 4.6);
+  [...st.children].forEach((el, i) => {
+    const o = i - V.fi, a = Math.abs(o), sg = Math.sign(o);
+    if (a > 9){ el.style.visibility = "hidden"; return; }
+    el.style.visibility = "";
+    const x = o === 0 ? 0 : sg * (first + (a - 1) * gap);
+    el.style.transform = o === 0 ? "translateX(-50%)" : `translateX(calc(-50% + ${x}px)) translateZ(-140px) rotateY(${-sg * 62}deg)`;
+    el.style.zIndex = 100 - a;
+    el.classList.toggle("center", o === 0);
+  });
+  const sc = $("#flowScrub"); if (sc && +sc.value !== V.fi) sc.value = V.fi;
+  const p = V.prints[V.fi], cap = $("#flowCap");
+  if (cap && p){
+    const pr = priceOf(p);
+    cap.innerHTML = `<b>${esc(p.set || "This version")}</b>${p.artist ? ` · art by ${esc(p.artist)}` : ""}${pr ? ` · <span class="price">${fmtMoney(pr.v, pr.sym)}</span>` : ""} · ${V.fi + 1} of ${V.prints.length}${V.prints.length < 2 ? " (loading other artworks…)" : ""}`;
+  }
+  updateOverlay();
+}
+function updateOverlay(){
+  const o = $("#flOver"); if (!o || !V) return;
+  const stale = V.back || !V.prints[V.fi] || V.prints[V.fi].id !== V.card.id;
+  o.classList.toggle("stale", stale);
+  o.classList.toggle("custom", customView() && !!V.base);
+  o.classList.toggle("user", !!V.user);
+}
+async function loadBase(){
+  if (!V || !V.editable) return;
+  const tok = V.token, c = V.card;
+  const src = V.customBase ? IMG.get(c.custom.key) : (c.large || c.img);
+  const hi = !V.customBase && /cards\.scryfall\.io\/large\//.test(src) ? pngOf(src) : null;
+  try { let im; try { im = await corsImage(hi || src); } catch (err){ if (!hi) throw err; im = await corsImage(src); } if (V && V.token === tok && V.card.id === c.id){ V.base = im; drawArt(); updateOverlay(); } }
+  catch (e){ if (V && V.token === tok && customView()) toast(e.message); }
+}
+async function loadPrints(){
+  const tok = V.token, name = V.card.name.split(" // ")[0];
+  try {
+    const j = await sf(`/cards/search?q=${encodeURIComponent(`!"${name}"`)}&unique=art&order=released&dir=desc&include_extras=true`);
+    if (!V || V.token !== tok) return;
+    const list = (j ? j.data : []).map(toCard).filter(p => p.img);
+    savePrices();
+    if (!list.length) return;
+    let i = list.findIndex(p => p.id === V.card.id || (V.card.ill && p.ill === V.card.ill));
+    if (i < 0){ list.unshift(plainPrint(V.card)); i = 0; }
+    else if (list[i].id !== V.card.id) list[i] = plainPrint(V.card); // same art, other printing: keep yours
+    V.prints = list; V.fi = i;
+    renderFlow(); renderDetailParts();
+  } catch {}
+}
+let flowT;
+function setFlow(i){
+  if (!V || !V.prints) return;
+  i = Math.max(0, Math.min(V.prints.length - 1, i));
+  if (i === V.fi) return;
+  V.fi = i; V.back = false; layoutFlow();
+  clearTimeout(flowT); flowT = setTimeout(() => applyPrint(V.prints[V.fi]), 240);
+}
+async function applyPrint(p){
+  if (!V || p.id === V.card.id) return;
+  Object.assign(V.card, {id: p.id, img: p.img, large: p.large, art: p.art, back: p.back, frame: p.frame, fullArt: p.fullArt, set: p.set, artist: p.artist, ill: p.ill});
+  V.box = [...frameOf(V.card).box];
+  V.customBase = false; V.base = null;
+  if (V.editable) markDirty();
+  updateOverlay(); renderDetailParts();
+  upgradeCenter();
+  loadBase();
+}
+function markDirty(){ if (V && !V.dirty){ V.dirty = true; const a = document.activeElement, id = a && a.id, pos = a && a.selectionStart; renderDetailParts(); if (id === "artName2"){ const n = $("#artName2"); n.focus(); try { n.setSelectionRange(pos, pos); } catch {} } } }
+let flowDrag = null, flowWheel = 0, flowMoved = false;
+$("#detailModal").addEventListener("pointerdown", e => {
+  const f = e.target.closest("#flow"); if (!f || !V || e.target.closest(".name-over,.name-pen") || (e.target.id === "artCanvas" && V.user)) return;
+  flowDrag = {x: e.clientX, fi: V.fi}; flowMoved = false;
+});
+window.addEventListener("pointermove", e => {
+  if (!flowDrag || !V) return;
+  const dx = e.clientX - flowDrag.x;
+  if (Math.abs(dx) > 6) flowMoved = true;
+  if (flowMoved) setFlow(flowDrag.fi - Math.round(dx / 55));
+});
+window.addEventListener("pointerup", () => { flowDrag = null; });
+window.addEventListener("pointercancel", () => { flowDrag = null; });
+$("#detailModal").addEventListener("wheel", e => {
+  if (!e.target.closest("#flow") || !V || V.prints.length < 2) return;
+  // sideways wheel / trackpad swipe (or shift + wheel) flips artworks; normal wheel scrolls the view
+  if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) && !e.shiftKey) return;
+  e.preventDefault();
+  flowWheel += e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX;
+  while (Math.abs(flowWheel) >= 60){ setFlow(V.fi + Math.sign(flowWheel)); flowWheel -= 60 * Math.sign(flowWheel); }
+}, {passive: false});
+$("#detailModal").addEventListener("keydown", e => {
+  if (e.target.id !== "flow" || !V) return;
+  if (e.key === "ArrowLeft"){ e.preventDefault(); setFlow(V.fi - 1); }
+  if (e.key === "ArrowRight"){ e.preventDefault(); setFlow(V.fi + 1); }
+});
+window.addEventListener("resize", () => { if (V) layoutFlow(); });
+
+/* canvas: your own art and the painted name */
+const ART_SCALE = 2; // custom cards are built at 1344×1872 so uploaded art stays sharp
+function coverDraw(ctx, im, x, y, w, h, zoom, pan){
+  const s = Math.max(w / im.width, h / im.height) * zoom;
+  const dw = im.width * s, dh = im.height * s;
+  const maxX = Math.max(0, (dw - w) / 2), maxY = Math.max(0, (dh - h) / 2);
+  pan.x = Math.max(-maxX, Math.min(maxX, pan.x)); pan.y = Math.max(-maxY, Math.min(maxY, pan.y));
+  ctx.drawImage(im, x + (w - dw) / 2 + pan.x, y + (h - dh) / 2 + pan.y, dw, dh);
+}
+function paintName(ctx){
+  const nm = V.name.trim(); if (!nm || !V.base) return;
+  const f = frameOf(V.card), [nx, ny1, ny2] = f.name;
+  const front = String(V.card.mana || "").split(" // ")[0];
+  const pips = (front.match(/\{[^}]+\}/g) || []).length;
+  const right = 616 - pips * 33 - 10;
+  const S = ctx.getTransform().a || 1;
+  const px = ctx.getImageData(Math.round((nx + 2) * S), Math.round((ny1 + 4) * S), Math.round(6 * S), Math.round((ny2 - ny1 - 8) * S)).data;
+  let r = 0, g = 0, b = 0, n = px.length / 4;
+  for (let i = 0; i < px.length; i += 4){ r += px[i]; g += px[i + 1]; b += px[i + 2]; }
+  r /= n; g /= n; b /= n;
+  ctx.fillStyle = `rgb(${r|0},${g|0},${b|0})`;
+  ctx.fillRect(nx, ny1, right - nx, ny2 - ny1);
+  const light = r * .3 + g * .59 + b * .11 > 140;
+  ctx.fillStyle = light ? "#111" : "#f4f1e6";
+  let size = 31;
+  ctx.font = `700 ${size}px Georgia, "Times New Roman", serif`;
+  while (ctx.measureText(nm).width > right - nx - 12 && size > 14){ size--; ctx.font = `700 ${size}px Georgia, "Times New Roman", serif`; }
+  ctx.textBaseline = "middle";
+  ctx.fillText(nm, nx + 6, (ny1 + ny2) / 2 + 1);
+  // keep the real name visible on the card (and on printed proxies): a small label at the top of the art
+  const real = V.card.name.split(" // ")[0];
+  if (nm.toLowerCase() !== real.toLowerCase()){
+    const [bx, by] = frameOf(V.card).box;
+    let fs = 21; ctx.font = `italic 600 ${fs}px Georgia, "Times New Roman", serif`;
+    while (ctx.measureText(real).width > 500 && fs > 13){ fs--; ctx.font = `italic 600 ${fs}px Georgia, "Times New Roman", serif`; }
+    const tw = ctx.measureText(real).width, x = bx + 8, y = by + 7, w = tw + 22, h = fs + 12;
+    ctx.fillStyle = "rgba(10,10,14,.68)";
+    ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, h / 2); else ctx.rect(x, y, w, h); ctx.fill();
+    ctx.fillStyle = "#f4efe0"; ctx.textBaseline = "middle";
+    ctx.fillText(real, x + 11, y + h / 2 + 1);
+  }
+}
+function compose(ctx, overlay){
+  const S = ctx.canvas.width / 672;
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+  ctx.clearRect(0, 0, 672, 936);
+  ctx.fillStyle = "#1c1f2d"; ctx.fillRect(0, 0, 672, 936);
+  if (V.base) ctx.drawImage(V.base, 0, 0, 672, 936);
+  if (V.user){
+    if (V.mode === "whole") coverDraw(ctx, V.user, 0, 0, 672, 936, V.zoom, V.pan);
+    else {
+      const [x1, y1, x2, y2] = V.box;
+      ctx.save(); ctx.beginPath(); ctx.rect(x1, y1, x2 - x1, y2 - y1); ctx.clip();
+      coverDraw(ctx, V.user, x1, y1, x2 - x1, y2 - y1, V.zoom, V.pan); ctx.restore();
+    }
+  }
+  if (V.mode !== "whole") paintName(ctx);
+  if (overlay && V.user && V.mode === "frame"){
+    const [x1, y1, x2, y2] = V.box;
+    ctx.strokeStyle = "rgba(217,171,79,.9)"; ctx.lineWidth = 3; ctx.setLineDash([10, 8]); ctx.strokeRect(x1, y1, x2 - x1, y2 - y1); ctx.setLineDash([]);
+    ctx.fillStyle = "#d9ab4f";
+    for (const [hx, hy] of [[x1, y1], [x2, y2]]){ ctx.beginPath(); ctx.arc(hx, hy, 16, 0, Math.PI * 2); ctx.fill(); }
+  }
+}
+function drawArt(){ const cv = $("#artCanvas"); if (cv && V && V.base) compose(cv.getContext("2d"), true); }
+function canvasPoint(e){ const cv = $("#artCanvas"), r = cv.getBoundingClientRect(); return {x: (e.clientX - r.left) * 672 / r.width, y: (e.clientY - r.top) * 936 / r.height}; }
+let artDrag = null;
+$("#detailModal").addEventListener("pointerdown", e => {
+  if (!V || e.target.id !== "artCanvas" || !V.user) return;
+  e.preventDefault(); e.target.setPointerCapture(e.pointerId);
+  const p = canvasPoint(e), [x1, y1, x2, y2] = V.box;
+  const near = (a, b) => Math.hypot(p.x - a, p.y - b) < 40;
+  artDrag = {p, kind: V.mode === "frame" && near(x1, y1) ? "tl" : V.mode === "frame" && near(x2, y2) ? "br" : "pan", pan: {...V.pan}, box: [...V.box]};
+});
+$("#detailModal").addEventListener("pointermove", e => {
+  if (!artDrag) return;
+  const p = canvasPoint(e), dx = p.x - artDrag.p.x, dy = p.y - artDrag.p.y, b = artDrag.box;
+  if (artDrag.kind === "pan") V.pan = {x: artDrag.pan.x + dx, y: artDrag.pan.y + dy};
+  else if (artDrag.kind === "tl") V.box = [Math.max(0, Math.min(b[2] - 60, b[0] + dx)), Math.max(0, Math.min(b[3] - 60, b[1] + dy)), b[2], b[3]];
+  else V.box = [b[0], b[1], Math.min(672, Math.max(b[0] + 60, b[2] + dx)), Math.min(936, Math.max(b[1] + 60, b[3] + dy))];
+  drawArt(); markDirty();
+});
+$("#detailModal").addEventListener("pointerup", () => { artDrag = null; });
+$("#detailModal").addEventListener("input", e => {
+  if (!V) return;
+  if (e.target.id === "flowScrub"){ setFlow(+e.target.value); return; }
+  if (e.target.id === "artZoom"){ V.zoom = +e.target.value; drawArt(); markDirty(); }
+  if (e.target.id === "artName" || e.target.id === "artName2"){
+    V.name = e.target.value;
+    const other = $(e.target.id === "artName" ? "#artName2" : "#artName"); if (other && other.value !== V.name) other.value = V.name;
+    updateOverlay(); drawArt(); markDirty();
+  }
+});
+$("#detailModal").addEventListener("keydown", e => { if ((e.target.id === "artName" || e.target.id === "artName2") && e.key === "Enter") e.target.blur(); });
+$("#detailModal").addEventListener("change", e => { if (V && e.target.id === "artFile" && e.target.files[0]) useUserFile(e.target.files[0]); });
+document.addEventListener("paste", e => {
+  if (!V || !V.editable || $("#detailScrim").hidden) return;
+  const f = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith("image/")); if (f){ e.preventDefault(); useUserFile(f); }
+});
+async function useUserFile(file){
+  try {
+    const url = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(file); });
+    V.user = await loadImage(url); V.zoom = 1; V.pan = {x: 0, y: 0};
+    if (!V.base) await loadBase();
+    V.dirty = true; updateOverlay(); drawArt(); renderDetailParts();
+  } catch { toast("That file isn’t a picture this browser can open."); }
+}
+$("#detailModal").addEventListener("click", async e => {
+  if (!V) return;
+  if (e.target.closest("#namePen")){ const n = $("#artName"); n.focus(); n.select(); return; }
+  if (e.target.id === "nameClear" || e.target.closest("#nameClear")){ V.name = ""; ["#artName", "#artName2"].forEach(s => { if ($(s)) $(s).value = ""; }); updateOverlay(); drawArt(); markDirty(); renderDetailParts(); return; }
+  if (e.target.closest("#flow") && !e.target.closest(".name-over") && !(e.target.id === "artCanvas" && V.user)){
+    // 3D-tilted cards don't hit-test reliably, so find the front-most card under the pointer by its on-screen box
+    if (flowMoved) return;
+    let best = null;
+    document.querySelectorAll("#flowStage .fl").forEach(el => {
+      if (el.style.visibility === "hidden") return;
+      const r = el.getBoundingClientRect(), i = +el.dataset.fi;
+      if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && (best == null || Math.abs(i - V.fi) < Math.abs(best - V.fi))) best = i;
+    });
+    if (best != null) setFlow(best);
+    return;
+  }
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.hasAttribute("data-close")){ requestClose(); return; }
+  if (b.id === "artSave"){ closeDetail(false); return; }
+  if (b.id === "dFlip"){ V.back = !V.back; renderFlow(); return; }
+  if (b.id === "artUpload"){ $("#artFile").click(); return; }
+  if (b.dataset.mode){ V.mode = b.dataset.mode; V.pan = {x: 0, y: 0}; drawArt(); markDirty(); renderDetailParts(); return; }
+  if (b.id === "artDrop"){ V.user = null; updateOverlay(); drawArt(); markDirty(); renderDetailParts(); return; }
+  if (b.id === "artUndo"){ const keep = V.prints; const o = {kind: V.kind, uid: V.uid, card: V.card0, rec: V.rec}; V = initView(o); if (keep.length > 1 && keep[0].name === V.card.name){ V.prints = keep; const i = keep.findIndex(p => p.id === V.card.id); V.fi = i < 0 ? 0 : i; } renderDetail(); loadBase(); return; }
+  if (b.id === "artReset"){
+    const t = viewTarget(V);
+    V.user = null; V.name = ""; V.customBase = false; V.base = null; V.dirty = true;
+    if (t && t.custom){ Object.assign(V.card, plainPrint(t)); delete V.card.custom; }
+    ["#artName", "#artName2"].forEach(s => { if ($(s)) $(s).value = ""; });
+    updateOverlay(); renderDetailParts(); loadBase(); return;
+  }
+  if (b.id === "artPrompt"){
+    const c = V.card;
+    const text = `Create a new fantasy illustration for the Magic: The Gathering card "${c.name.split(" // ")[0]}" (${c.type}). `
+      + `What the card does: ${String(c.text).replace(/\s+/g, " ").slice(0, 300)} `
+      + `If I attached an image, keep its subject and composition but reimagine it with fresh detail. `
+      + `Style: detailed painterly fantasy art, dramatic lighting, rich color. No text, no card frame, no border. Landscape format, about 4:3.`;
+    try { await navigator.clipboard.writeText(text); toast("Prompt copied. Paste it into your AI image tool."); }
+    catch { toast("Couldn’t copy automatically in this browser."); }
+    return;
+  }
+  if (b.id === "artOrig"){
+    try {
+      const r = await fetch(V.card.art || V.card.large); const blob = await r.blob();
+      const url = URL.createObjectURL(blob); const a = document.createElement("a");
+      a.href = url; a.download = `${slugify(V.card.name)}-art.jpg`; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000); toast("Art downloaded");
+    } catch { toast("Couldn’t download the art. Check your connection."); }
+    return;
+  }
+  const a = b.dataset.d; if (!a) return;
+  const u = V.uid, d = cur();
+  if (a === "toPool" || a === "toDeck"){ requestClose(() => moveZone(u, a === "toDeck" ? "deck" : "options"), {anim: false}); }
+  else if (a === "lock"){ toggleLock(u); renderDetailParts(); }
+  else if (a === "focus"){ toggleFocus(u); renderDetailParts(); }
+  else if (a === "copy"){
+    const it = findCard(u); if (!it) return;
+    const copy = {uid: uid(), card: plainPrint(it.card), bucket: it.bucket, zone: it.zone, locked: false, focus: false};
+    d.cards.splice(d.cards.indexOf(it) + 1, 0, copy); touch(d); renderAll();
+    toast(`Added another ${it.card.name}. Click it to give it a different artwork.`);
+  }
+  else if (a === "remove"){ const it = findCard(u); if (!it) return; confirmTwice([{title: `Remove ${esc(it.card.name)}?`, text: `It leaves the ${it.zone === "deck" ? "deck" : "card pool"}.`, yes: "Remove card"}], () => { closeDetail(true, {anim: false}); removeCard(u, false); }); }
+  else if (a === "changeCmd"){ requestClose(() => openCommanderPicker(), {anim: false}); }
+  else if (a === "addPartner" || a === "changePartner"){ requestClose(() => openPartnerPicker(), {anim: false}); }
+  else if (a === "removePartner"){ confirmTwice([{title: "Remove the partner?", text: `${esc(d.partner.name)} leaves the command zone. Recommendations go back to ${esc(d.commander.name)} alone.`, yes: "Remove partner"}], () => { closeDetail(true, {anim: false}); d.partner = null; touch(d); render(); toast("Partner removed"); }); }
+  else if (a === "pick"){ setCommander(V.card); }
+  else if (a === "addPool" || a === "addDeck"){
+    if (addCard(plainPrint(V.card), a === "addDeck" ? "deck" : "options")){
+      A.addedNow.add(V.card.name); toast(`${V.card.name} added to ${a === "addDeck" ? "deck" : "card pool"}`);
+      closeDetail(true); renderAddBody();
+    }
+  }
+});
+/* Closing keeps art and name changes (pass discard=true to drop them). */
+/* Close the card view; with unsaved changes, ask first (save, discard or keep editing). */
+function requestClose(after, opts = {}){
+  if (!V) return;
+  if (!(V.editable && V.dirty)){ closeDetail(true, opts).then(() => after && after()); return; }
+  C = {save: true, after, opts};
+  $("#confirmModal").innerHTML = `<div class="modal-body"><h2>Save your changes?</h2><p>You changed the art or name of <b>${esc(V.card.name)}</b>.</p>
+    <div class="row"><button class="btn" data-c="no">Keep editing</button><button class="btn danger" data-c="discard">Discard</button><button class="btn primary" data-c="save">Save</button></div></div>`;
+  showScrim("#confirmScrim");
+  setTimeout(() => $('#confirmModal [data-c="save"]')?.focus(), 30);
+}
+async function closeDetail(discard, opts = {}){
+  const v = V;
+  if (v && v.flyAnim) v.flyAnim.cancel();
+  const f = opts.anim === false ? null : closeFly(v);
+  V = null; flowDrag = null; artDrag = null; clearTimeout(flowT);
+  $("#detailScrim").hidden = true;
+  if (v && !discard && v.editable && v.dirty) await commitView(v);
+  if (f) landFly(f, v);
+}
+async function commitView(v){
+  // a flow position that wasn't applied yet still counts
+  const p = v.prints[v.fi]; if (p && p.id !== v.card.id) Object.assign(v.card, {id: p.id, img: p.img, large: p.large, art: p.art, back: p.back, frame: p.frame, fullArt: p.fullArt, set: p.set, artist: p.artist, ill: p.ill});
+  const d = cur(), orig = viewTarget(v); if (!d || !orig) return;
+  let card;
+  if (v.user || v.name.trim() || v.customBase){
+    if (v.customBase && !v.user && v.name.trim() === ((orig.custom && orig.custom.name) || "")){ card = {...orig}; }
+    else {
+      if (!v.base){ try { v.base = await corsImage(v.customBase ? IMG.get(orig.custom.key) : (v.card.large || v.card.img)); } catch { toast("Couldn’t load the card image, so the art change wasn’t saved."); return; } }
+      const cv = document.createElement("canvas"); cv.width = 672 * ART_SCALE; cv.height = 936 * ART_SCALE;
+      const keepV = V; V = v; compose(cv.getContext("2d"), false); V = keepV;
+      let data;
+      try { data = cv.toDataURL("image/jpeg", 0.93); } catch { toast("This picture can’t be combined with the card. Try another file."); return; }
+      const key = "img_" + uid();
+      IMG.set(key, data); await idb.set(key, data);
+      card = {...plainPrint(v.card), custom: {key, name: v.name.trim() || null}};
+    }
+  } else card = plainPrint(v.card);
+  if (orig.custom && (!card.custom || card.custom.key !== orig.custom.key)){ const k = orig.custom.key; setTimeout(() => { if (!usedImageKeys().has(k)){ IMG.delete(k); idb.del(k); } }, 0); }
+  if (v.kind === "commander") d.commander = card;
+  else if (v.kind === "partner") d.partner = card;
+  else { const it = findCard(v.uid); if (!it) return; it.card = card; }
+  touch(d); renderAll(); refreshPrices(d);
+  toast("Card updated");
+}
+
+/* ---------------- Confirm & report ---------------- */
+let C = null;
+function confirmTwice(steps, onYes){ C = {steps, i: 0, onYes}; showScrim("#confirmScrim"); renderConfirm(); }
+function renderConfirm(){
+  const s = C.steps[C.i];
+  $("#confirmModal").innerHTML = `<div class="modal-body">
+    ${C.steps.length > 1 ? `<div class="step-dots">${C.steps.map((_, i) => `<i class="${i <= C.i ? "on" : ""}"></i>`).join("")}</div>` : ""}
+    <h2>${s.title}</h2><p>${s.text}</p>
+    <div class="row"><button class="btn" data-c="no">Cancel</button><button class="btn ${s.safe ? "primary" : `danger ${C.i === C.steps.length - 1 ? "solid" : ""}`}" data-c="yes">${s.yes}</button></div></div>`;
+  setTimeout(() => $('#confirmModal [data-c="no"]')?.focus(), 30);
+}
+function showReport(title, parts){
+  C = {report: true};
+  $("#confirmModal").innerHTML = `<div class="modal-body"><h2>${esc(title)}</h2><ul class="report">${parts.map(p => `<li>${esc(p)}</li>`).join("")}</ul>
+    <div class="row"><button class="btn primary" data-c="no">OK</button></div></div>`;
+  showScrim("#confirmScrim");
+}
+$("#confirmModal").addEventListener("click", async e => {
+  const b = e.target.closest("[data-c]"); if (!b) return;
+  if (b.dataset.c === "no"){ hideScrim("#confirmScrim"); return; }
+  if (C && C.save){
+    const {after, opts} = C; hideScrim("#confirmScrim");
+    await closeDetail(b.dataset.c === "discard", opts);
+    if (after) after();
+    return;
+  }
+  if (C.i < C.steps.length - 1){ C.i++; renderConfirm(); return; }
+  hideScrim("#confirmScrim"); C.onYes();
+});
+function wipeDeck(){
+  const d = cur(); if (!d) return;
+  const n = d.cards.length;
+  if (!n){ toast("This deck has no cards to wipe"); return; }
+  confirmTwice([
+    {title: "Wipe this deck?", text: `This removes all ${n} cards from <b>${esc(displayName(d))}</b>, in both the card pool and the deck. Your commander and type limits stay.`, yes: "Yes, wipe it"},
+    {title: "Are you really, really sure?", text: "Locked cards go too. This can’t be undone.", yes: `Wipe all ${n} cards`}
+  ], () => { d.cards = []; touch(d); render(); toast("Deck wiped"); });
+}
+function deleteDeck(id){
+  const d = S.decks[id]; if (!d) return;
+  confirmTwice([
+    {title: "Delete this deck?", text: `<b>${esc(displayName(d))}</b> and all its cards will be removed from your deck list.`, yes: "Yes, delete it"},
+    {title: "Are you really, really sure?", text: "This can’t be undone unless you still have a saved file with it.", yes: "Delete deck"}
+  ], () => {
+    ensureVer(d);
+    S.decks[id] = {id, deleted: true, updated: Date.now(), past: [...d.past, d.ver].slice(-1500), ver: uid(), name: d.name};
+    if (S.active === id) S.active = liveDecks()[0]?.id || null;
+    save(); render(); toast("Deck deleted");
+  });
+}
+
+/* ---------------- PDF: A4 preview first, cards at exactly 63 × 88 mm ---------------- */
+function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Couldn’t load the PDF tools. Check your connection.")); document.head.appendChild(s); }); }
+async function toDataURL(url){
+  if (url.startsWith("data:")) return url;
+  const r = await fetch(url); if (!r.ok) throw new Error("image " + r.status);
+  const b = await r.blob();
+  return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); });
+}
+function pdfFaces(d){
+  const list = [...cmdrs(d), ...d.cards.filter(c => c.zone === "deck").map(c => c.card)];
+  const faces = [];
+  for (const c of list){ faces.push({name: c.name, url: largeOf(c), thumb: imgOf(c)}); if (c.back) faces.push({name: c.name + " (back)", url: c.back.large || c.back.img, thumb: c.back.img}); }
+  return faces;
+}
+let pdfBusy = false;
+function openPdf(){
+  const d = cur(); if (!d || !d.commander) return;
+  const faces = pdfFaces(d), pages = Math.ceil(faces.length / 9), n = inDeckCount(d);
+  const backs = faces.length - n;
+  // A4 = 210 × 297 mm; 3 × 3 cards of 63 × 88 mm centered
+  const mx = 10.5, my = 16.5, pct = (v, of) => (v / of * 100).toFixed(3) + "%";
+  const cuts = [];
+  for (let c = 0; c <= 3; c++){ const x = mx + c * 63; cuts.push(`<i class="cut" style="left:${pct(x, 210)};top:0;width:1px;height:${pct(my - 1.5, 297)}"></i><i class="cut" style="left:${pct(x, 210)};bottom:0;width:1px;height:${pct(my - 1.5, 297)}"></i>`); }
+  for (let r = 0; r <= 3; r++){ const y = my + r * 88; cuts.push(`<i class="cut" style="top:${pct(y, 297)};left:0;height:1px;width:${pct(mx - 1.5, 210)}"></i><i class="cut" style="top:${pct(y, 297)};right:0;height:1px;width:${pct(mx - 1.5, 210)}"></i>`); }
+  let html = "";
+  for (let p = 0; p < pages; p++){
+    const cards = faces.slice(p * 9, p * 9 + 9).map((f, k) => {
+      const st = `left:${pct(mx + (k % 3) * 63, 210)};top:${pct(my + Math.floor(k / 3) * 88, 297)}`;
+      return `<img src="${esc(f.thumb)}" alt="${esc(f.name)}" title="${esc(f.name)}" loading="lazy" style="${st}">`;
+    }).join("");
+    html += `<div><div class="a4" style="animation-delay:${Math.min(p, 8) * 40}ms">${cuts.join("")}${cards}<span class="pg">page ${p + 1} of ${pages}</span><span class="ruler"></span></div><div class="pdf-cap">Page ${p + 1}</div></div>`;
+  }
+  $("#pdfModal").innerHTML = `<div class="modal-head"><h2>Print preview · ${esc(displayName(d))}</h2><button class="icon-btn" data-close title="Close">${I.close}</button></div>
+    <div class="pdf-top"><p><b>${n} cards</b>${backs ? ` plus ${backs} back face${backs > 1 ? "s" : ""}` : ""} on <b>${pages} A4 page${pages > 1 ? "s" : ""}</b>, at real card size (6.3 × 8.8 cm) with cut marks. Each page has a 5 cm ruler to check the scale. When printing, choose <b>Actual size</b> / <b>100%</b> and turn off “Fit to page”.${n < 100 ? " The deck isn’t at 100 yet, but you can still print it." : ""}</p></div>
+    <div class="modal-body" style="padding:0"><div class="pdf-pages">${html}</div></div>
+    <div class="pdf-foot"><div class="progress" hidden id="pdfProg"><i></i></div><span id="pdfMsg"></span><button class="btn" data-close>Close</button><button class="btn primary" id="makePdf">Download PDF</button></div>`;
+  showScrim("#pdfScrim");
+}
+async function buildPdf(onProgress){
+  const d = cur();
+  if (!window.jspdf) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  const faces = pdfFaces(d);
+  const doc = new window.jspdf.jsPDF({unit: "mm", format: "a4", orientation: "portrait", compress: true});
+  const PW = 210, PH = 297, W = 63, H = 88, mx = (PW - 3 * W) / 2, my = (PH - 3 * H) / 2;
+  const cache = new Map(), failed = [];
+  for (let i = 0; i < faces.length; i++){
+    const f = faces[i], k = i % 9;
+    if (k === 0){
+      if (i) doc.addPage("a4", "portrait");
+      doc.setDrawColor(150); doc.setLineWidth(0.2);
+      for (let c = 0; c <= 3; c++){ const x = mx + c * W; doc.line(x, 2, x, my - 1.5); doc.line(x, PH - my + 1.5, x, PH - 2); }
+      for (let r = 0; r <= 3; r++){ const y = my + r * H; doc.line(2, y, mx - 1.5, y); doc.line(PW - mx + 1.5, y, PW - 2, y); }
+      const rx = mx, ry = PH - 7;
+      doc.setDrawColor(60); doc.setLineWidth(0.3); doc.line(rx, ry, rx + 50, ry);
+      for (let t = 0; t <= 5; t++) doc.line(rx + t * 10, ry - (t % 5 ? 1.2 : 2), rx + t * 10, ry);
+      doc.setFontSize(7); doc.setTextColor(90);
+      doc.text("5 cm. Measure this line; it should be exactly 5 cm. Cards are 6.3 x 8.8 cm.", rx + 53, ry + 0.8);
+      doc.text(`${displayName(d)}  ·  page ${Math.floor(i / 9) + 1} of ${Math.ceil(faces.length / 9)}`, PW - mx, 6, {align: "right"});
+    }
+    const x = mx + (k % 3) * W, y = my + Math.floor(k / 3) * H;
+    onProgress && onProgress(i, faces.length, f.name);
+    try {
+      let data = cache.get(f.url);
+      if (!data){ data = await toDataURL(f.url); cache.set(f.url, data); }
+      doc.addImage(data, "JPEG", x, y, W, H, f.url, "FAST");
+    } catch {
+      failed.push(f.name);
+      doc.setDrawColor(60); doc.rect(x, y, W, H); doc.setFontSize(11); doc.setTextColor(20); doc.text(doc.splitTextToSize(f.name, W - 8), x + 4, y + 10);
+    }
+  }
+  return {doc, faces, failed};
+}
+async function makePdf(){
+  if (pdfBusy) return; pdfBusy = true;
+  const d = cur(), btn = $("#makePdf"), prog = $("#pdfProg"), msg = $("#pdfMsg");
+  btn.disabled = true; prog.hidden = false; msg.textContent = "Loading PDF tools…";
+  try {
+    const {doc, faces, failed} = await buildPdf((i, n, name) => { msg.textContent = `Adding ${name} (${i + 1} of ${n})`; prog.firstElementChild.style.width = Math.round((i + 1) / n * 100) + "%"; });
+    doc.save(`${displayName(d).replace(/[\\/:*?"<>|]+/g, "")} proxies.pdf`);
+    msg.textContent = failed.length ? `Done. ${failed.length} image${failed.length > 1 ? "s" : ""} couldn’t load and became text placeholders: ${failed.join(", ")}.` : `Done. ${faces.length} cards on ${Math.ceil(faces.length / 9)} A4 pages.`;
+  } catch (err){ msg.textContent = err.message || "The PDF couldn’t be created."; }
+  btn.disabled = false; pdfBusy = false;
+}
+$("#pdfModal").addEventListener("click", e => {
+  if (e.target.closest("[data-close]") && !pdfBusy) hideScrim("#pdfScrim");
+  if (e.target.closest("#makePdf")) makePdf();
+});
+
+/* ---------------- Save / import ---------------- */
+function download(name, text, type){
+  const url = URL.createObjectURL(new Blob([text], {type}));
+  const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+function fileHTML(){
+  const images = {}; for (const k of usedImageKeys()) if (IMG.has(k)) images[k] = IMG.get(k);
+  const payload = JSON.stringify({version: 2, savedAt: Date.now(), decks: S.decks, images}).replace(/</g, "\\u003c");
+  return PRISTINE.replace(/(<script id="embedded-decks" type="application\/json">)[\s\S]*?(<\/script>)/, (_, a, b) => a + payload + b);
+}
+function saveFile(){
+  download(`command-zone-${new Date().toISOString().slice(0, 10)}.html`, fileHTML(), "text/html");
+  S.lastFileSave = Date.now(); save(false);
+  toast("Saved. Send this one file to your partner.");
+}
+async function importFile(file){
+  const text = await file.text();
+  let data = null;
+  try {
+    if (/^\s*[{[]/.test(text)) data = JSON.parse(text);
+    else { const m = text.match(/<script id="embedded-decks" type="application\/json">([\s\S]*?)<\/script>/); if (m) data = JSON.parse(m[1]); }
+  } catch {}
+  if (!data || !data.decks){ toast("That file has no Command Zone decks in it"); return; }
+  await storeImages(data.images);
+  const parts = reportText(mergeDecks(data.decks));
+  if (!cur()) S.active = liveDecks()[0]?.id || null;
+  save(); render();
+  showReport("Import finished", parts.length ? parts : ["You already had everything in this file. Nothing changed."]);
+}
+
+/* ---------------- Scrims ---------------- */
+function showScrim(sel){ $(sel).hidden = false; }
+function hideScrim(sel){
+  if (sel === "#detailScrim"){ requestClose(); return; }
+  $(sel).hidden = true; if (sel === "#addScrim") A.token++;
+}
+document.querySelectorAll(".scrim").forEach(s => s.addEventListener("click", e => { if (e.target === s && !(s.id === "pdfScrim" && pdfBusy)) hideScrim("#" + s.id); }));
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (document.activeElement && document.activeElement.id === "artName"){ document.activeElement.blur(); return; }
+  for (const id of ["#confirmScrim", "#detailScrim", "#pdfScrim", "#addScrim"]) if (!$(id).hidden){ if (id !== "#pdfScrim" || !pdfBusy) hideScrim(id); return; }
+});
+
+/* ---------------- Wiring ---------------- */
+$("#newDeck").onclick = newDeck;
+$("#closeSide").onclick = () => { S.sidebarOpen = false; save(false); render(); };
+$("#openSide").onclick = () => { S.sidebarOpen = !S.sidebarOpen; save(false); render(); };
+$("#sideScrim").onclick = () => { S.sidebarOpen = false; render(); };
+$("#deckList").addEventListener("click", e => {
+  const del = e.target.closest("[data-deldeck]"); if (del){ deleteDeck(del.dataset.deldeck); return; }
+  const ren = e.target.closest("[data-renamedeck]"); if (ren){ renameInList(ren.dataset.renamedeck); return; }
+  const dup = e.target.closest("[data-dupdeck]"); if (dup){ duplicateDeck(dup.dataset.dupdeck); return; }
+  if (e.target.closest(".deck-rename")) return;
+  const it = e.target.closest("[data-deck]"); if (!it) return;
+  S.active = it.dataset.deck; if (innerWidth <= 820) S.sidebarOpen = false; save(false); render();
+});
+function renameInList(id){
+  const d = S.decks[id]; const b = document.querySelector(`.deck-item[data-deck="${id}"] .deck-meta b`); if (!d || !b) return;
+  const inp = document.createElement("input"); inp.className = "deck-rename"; inp.value = d.name || displayName(d); inp.setAttribute("aria-label", "Deck name");
+  b.replaceWith(inp); inp.focus(); inp.select();
+  let done = false;
+  const finish = ok => { if (done) return; done = true; if (ok){ const v = inp.value.trim(); if (v && v !== d.name){ d.name = v; touch(d); } } renderSidebar(); renderHeader(); };
+  inp.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") finish(true); if (e.key === "Escape") finish(false); });
+  inp.addEventListener("blur", () => finish(true));
+}
+function duplicateDeck(id){
+  const src = S.decks[id]; if (!src) return;
+  const d = JSON.parse(JSON.stringify(src));
+  d.id = uid(); d.ver = uid(); d.past = []; d.created = d.updated = Date.now();
+  d.name = displayName(src) + " (copy)";
+  d.cards.forEach(c => c.uid = uid());
+  S.decks[d.id] = d; S.active = d.id; save(); render();
+  toast(`Made a copy: ${d.name}`);
+}
+$("#deckList").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.dataset.deck) e.target.click(); });
+let nameT;
+$("#deckName").addEventListener("input", e => {
+  const d = cur(); if (!d) return; d.name = e.target.value; renderSidebar();
+  clearTimeout(nameT); nameT = setTimeout(() => touch(d), 400);
+});
+$("#cmds").addEventListener("click", e => {
+  const a = e.target.closest("[data-cact]");
+  if (a){
+    const kind = a.dataset.kind, slotEl = a.closest(".cmd-col").querySelector(".cmd-slot");
+    if (a.dataset.cact === "edit") openDetail({kind}, slotEl);
+    else if (a.dataset.cact === "change") kind === "partner" ? openPartnerPicker() : openCommanderPicker();
+    else if (a.dataset.cact === "remove"){
+      const d = cur();
+      confirmTwice([{title: "Remove the partner?", text: `${esc(d.partner.name)} leaves the command zone. Recommendations go back to ${esc(d.commander.name)} alone.`, yes: "Remove partner"}], () => { d.partner = null; touch(d); render(); toast("Partner removed"); });
+    }
+    return;
+  }
+  const b = e.target.closest("[data-cmd]"); if (!b) return;
+  const k = b.dataset.cmd;
+  if (k === "addPartner") openPartnerPicker(); else openDetail({kind: k}, b);
+});
+$("#combo").addEventListener("click", e => {
+  const x = e.target.closest("[data-unfocus]"); if (x){ e.stopPropagation(); toggleFocus(x.dataset.unfocus); return; }
+  if (e.target.closest("#comboAdd")){
+    toast("Press the magnifier under any card to combine it");
+    document.body.classList.remove("pulse-focus"); void document.body.offsetWidth; document.body.classList.add("pulse-focus");
+    setTimeout(() => document.body.classList.remove("pulse-focus"), 2300); return;
+  }
+  const m = e.target.closest("[data-open]"); if (m && findCard(m.dataset.open)) openDetail({kind: "item", uid: m.dataset.open}, m);
+});
+$("#welcome").addEventListener("click", e => { if (e.target.closest("#welcomeSlot")) cur() ? openCommanderPicker(true) : newDeck(); });
+$("#addAny").onclick = () => openAdd("Any", "options");
+function setMini(on){ UI.cmdMini = on; saveUI(); $("#top").classList.toggle("mini", on); applyZoom(); }
+$("#foldTop").onclick = () => setMini(true);
+$("#rail").addEventListener("click", e => {
+  if (e.target.closest("#railOpen")){ setMini(false); return; }
+  if (e.target.closest("#railMenu")){ S.sidebarOpen = !S.sidebarOpen; save(false); render(); return; }
+  const th = e.target.closest("[data-cmd]"); if (th) openDetail({kind: "commander"}, th);
+});
+addEventListener("resize", () => { const d = cur(); if (d && d.commander) renderRail(d); });
+$("#wipeBtn").onclick = wipeDeck;
+$("#pdfBtn").onclick = openPdf;
+$("#saveFile").onclick = saveFile;
+$("#importBtn").onclick = () => $("#importFile").click();
+$("#importFile").onchange = e => { const f = e.target.files[0]; if (f) importFile(f); e.target.value = ""; };
+$("#curSel").value = UI.cur;
+$("#curSel").onchange = e => { UI.cur = e.target.value; saveUI(); $("#priceySym").textContent = UI.cur === "usd" ? "$" : "€"; renderAll(); };
+$("#priceyIn").value = UI.pricey; $("#priceySym").textContent = UI.cur === "usd" ? "$" : "€";
+let priceyT;
+$("#priceyIn").addEventListener("input", e => { const v = parseFloat(String(e.target.value).replace(",", ".")); if (!(v >= 0)) return; UI.pricey = v; saveUI(); clearTimeout(priceyT); priceyT = setTimeout(renderAll, 200); });
+window.addEventListener("storage", e => { if (e.key === KEY){ try { S.decks = JSON.parse(e.newValue).decks; render(); } catch {} } });
+
+applyZoom(); applySplit();
+load();
+render();
+idb.loadAll().then(() => { if (IMG.size) render(); });
+</script>
+</body>
+</html>
