@@ -860,7 +860,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115213916";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115213949";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -3564,13 +3564,13 @@ function driveSchedule(){
   clearTimeout(DS.pushT); DS.pushT = setTimeout(() => driveSync(true), 800);
 }
 /* Checking for other people's changes: a tiny "has the file changed?" request (about 1 KB); the decks are only downloaded
-   when something did change. Every 4 s while you use the app (8 s on mobile data or with data saver on: about 0.45 MB an hour),
+   when something did change. Every 5 s while you use the app (10 s on mobile data or with data saver on: about 0.36 MB an hour),
    every minute after 2 minutes without activity, paused while the tab is hidden. */
 function pollDelay(){
   if (Date.now() - lastInput > 120000) return 60000;
   const c = navigator.connection;
   const mobile = c && (c.saveData || c.type === "cellular" || /^(slow-2g|2g|3g)$/.test(c.effectiveType || ""));
-  return mobile ? 8000 : 4000;
+  return mobile ? 10000 : 5000;
 }
 let lastInput = Date.now();
 ["pointerdown", "keydown", "wheel", "touchstart"].forEach(ev => addEventListener(ev, () => { lastInput = Date.now(); }, {passive: true, capture: true}));
@@ -3578,7 +3578,7 @@ async function pollLoop(){
   try { if (DS.token && DS.file && document.visibilityState === "visible" && !DS.busy && DS.status !== "pending") await driveSync(false); } catch {}
   setTimeout(pollLoop, pollDelay());
 }
-setTimeout(pollLoop, 4000);
+setTimeout(pollLoop, 5000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && DS.token && DS.file) driveSync(false); });
 addEventListener("beforeunload", e => { if (DS.status === "pending" || (DS.busy && DS.canEdit)){ e.preventDefault(); e.returnValue = ""; } });
 function setDrive(status, msg){ DS.status = status; DS.msg = msg || ""; renderDrive(); }
