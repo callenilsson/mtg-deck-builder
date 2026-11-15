@@ -348,7 +348,7 @@ body.ro .name-wrap svg{display:none}
 .cw.pricey .ct{outline:3px solid var(--pricey);outline-offset:-1px;box-shadow:0 0 18px -2px rgba(160,110,255,.65),0 3px 10px rgba(0,0,0,.45)}
 .cw.pricey.locked .ct{box-shadow:0 0 0 3px var(--gold),0 0 20px 0 rgba(160,110,255,.6)}
 .cw.over.pricey .ct{outline-color:var(--danger)}
-.qty{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);z-index:3;display:flex;align-items:center;border-radius:999px;background:rgba(10,10,14,.88);border:1px solid var(--gold-line);box-shadow:0 4px 14px rgba(0,0,0,.55);overflow:hidden}
+.qty{position:absolute;right:4%;top:3%;z-index:3;display:flex;align-items:center;border-radius:999px;background:rgba(10,10,14,.88);border:1px solid var(--gold-line);box-shadow:0 4px 14px rgba(0,0,0,.55);overflow:hidden}
 .qty b{min-width:26px;text-align:center;font-size:14px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
 .qty button{width:26px;height:26px;border:0;background:none;color:var(--gold);font-size:17px;font-weight:700;line-height:1;padding:0}
 .qty button:hover{background:var(--gold-soft)}
@@ -502,6 +502,10 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 @media (hover:none){.name-over{border-color:rgba(217,171,79,.55)}}
 .flow-empty{display:grid;place-items:center;height:100%;color:var(--muted)}
 .flow-foot{display:flex;align-items:center;gap:12px;padding:8px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.art-find{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:0 8px;flex:0 1 230px;min-width:150px}
+.art-find:focus-within{border-color:var(--gold-line)}
+.art-find svg.i{width:14px;height:14px;color:var(--muted)}
+.art-find input{flex:1;min-width:0;background:none;border:0;outline:none;padding:6px 0;font-size:13px}
 .flow-cap{font-size:12.5px;color:var(--muted);min-width:0;flex:1 1 260px}
 .flow-cap b{color:var(--fg);font-weight:600}
 .flow-cap .price{color:#e9d9a8;font-weight:600}
@@ -848,7 +852,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115101505";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115102722";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -999,7 +1003,7 @@ function toCard(sc){
     back: back ? {img: back.normal, large: back.large || back.normal} : null,
     basic: /Basic/.test(sc.type_line || ""),
     frame: sc.frame || "2015", fullArt: !!(sc.full_art || sc.border_color === "borderless" || (sc.frame_effects || []).includes("extendedart")),
-    set: sc.set_name || "", artist: sc.artist || "", ill: sc.illustration_id || (f[0] && f[0].illustration_id) || ""
+    set: sc.set_name || "", setCode: sc.set || "", year: String(sc.released_at || "").slice(0, 4), artist: sc.artist || "", ill: sc.illustration_id || (f[0] && f[0].illustration_id) || ""
   };
 }
 let sfLast = 0;
@@ -1245,12 +1249,8 @@ function addCard(card, zone){
   const d = cur(); if (!d || guard(d)) return null;
   if (cmdrs(d).some(k => k.name === card.name)){ toast(`${card.name} is your commander`); return null; }
   if (!canMulti(card) && d.cards.some(c => c.card.name === card.name)){ toast(`${card.name} is already in this deck`); return null; }
-  if (canMulti(card)){
-    const st = d.cards.find(k => k.zone === zone && k.card.id === card.id && !hasCustoms(k.card));
-    if (st){ st.qty = qOf(st) + 1; touch(d); renderAll(); return st.uid; }
-  }
-  const item = {uid: uid(), card: {...card}, bucket: bucketOf(card.type), zone, locked: false, focus: false};
-  delete item.card.custom;
+  const item = {uid: uid(), card: plainPrint(card), bucket: bucketOf(card.type), zone, locked: false, focus: false};
+  revealAfterAdd = item.uid;
   d.cards.push(item);
   touch(d); renderAll();
   return item.uid;
@@ -1310,7 +1310,6 @@ function normalizeStacks(d){
 }
 function render(){
   $("#app").classList.toggle("side-closed", !S.sidebarOpen);
-  if (normalizeStacks(cur())) touch(cur());
   const d = cur(), ready = !!(d && d.commander);
   $("#board").hidden = !ready; $("#tools").hidden = !ready;
   $("#welcome").hidden = ready;
@@ -1414,7 +1413,7 @@ function renderHeader(){
   tot.classList.toggle("full", n === 100); tot.classList.toggle("over", n > 100);
   if (!d.commander) return;
   // commanders
-  const slot = (c, kind, label) => `<div class="cmd-col"><button class="cmd-slot" data-cmd="${kind}" title="${esc(c.name)}"><img src="${esc(imgOf(c))}" ${srcsetAttr(c)} alt="${esc(c.name)}"><span class="cmd-lbl">${label}</span></button>
+  const slot = (c, kind, label) => `<div class="cmd-col"><button class="cmd-slot" data-cmd="${kind}" title="${esc(c.name)}"><img src="${esc(imgOf(c))}" ${srcsetAttr(c)} alt="${esc(c.name)}">${kind === "partner" ? `<span class="cmd-lbl">${label}</span>` : ""}</button>
     <div class="acts"><button data-cact="edit" data-kind="${kind}" title="Edit art and name">${I.brush}</button><button data-cact="change" data-kind="${kind}" title="Change ${kind === "partner" ? "partner" : "commander"}">${I.swap}</button>${kind === "partner" ? `<button class="del" data-cact="remove" title="Remove partner">${I.trash}</button>` : ""}</div></div>`;
   let cm = slot(d.commander, "commander", d.partner ? "Commander" : "Commander");
   if (d.partner) cm += slot(d.partner, "partner", "Partner");
@@ -1479,7 +1478,9 @@ function renderStats(){
   const same = sg && d.typeOrder.every(t => (sg.counts[t] ?? 0) === (d.limits[t] ?? 0));
   const basicsHave = sumQ(deck.filter(c => c.card.basic));
   const needBasics = sg && sg.basic ? Math.max(0, Math.min(sg.basic, (d.limits.Land ?? 0) - sumQ(deck.filter(c => c.bucket === "Land" && !c.card.basic))) - basicsHave) : 0;
-  $("#stats").innerHTML = `<table class="stbl"><thead><tr><th></th><th class="l sname">Type</th><th title="Cards in your deck">Deck</th><th title="Locked final picks">${I.lock.replace('class="i"', 'class="i" style="width:11px;height:11px"')}</th><th title="Your limit">Limit</th><th class="l" title="EDHREC's average for decks like yours">EDHREC</th></tr></thead><tbody>${rows}</tbody></table>
+  const nTok = sumQ((d.tokens || []).filter(k => tokZone(k) === "deck"));
+  const tokRow = `<tr class="tokrow" title="Tokens in the deck: not part of the 100"><td class="ic"><i class="ms ms-token"></i></td><td class="sname">Tokens</td><td class="num">${nTok}</td><td></td><td></td><td class="edh">–</td></tr>`;
+  $("#stats").innerHTML = `<table class="stbl"><thead><tr><th></th><th class="l sname">Type</th><th title="Cards in your deck">Deck</th><th title="Locked final picks">${I.lock.replace('class="i"', 'class="i" style="width:11px;height:11px"')}</th><th title="Your limit">Limit</th><th class="l" title="EDHREC's average for decks like yours">EDHREC</th></tr></thead><tbody>${rows}${tokRow}</tbody></table>
     <div class="stats-foot"><div class="colors">${colors}</div><span class="sumline ${sum === 100 ? "good" : "bad"}">${sumTxt}</span>
       ${sg ? `<button class="pill-btn" id="useSugg" ${same ? "disabled" : ""}>${same ? "Limits match EDHREC" : "Use EDHREC numbers"}</button>` : ""}
       ${needBasics > 0 ? `<button class="pill-btn" id="addBasics" title="Add basic lands, split by the colors your spells need">+ ${needBasics} basic land${needBasics > 1 ? "s" : ""}</button>` : ""}
@@ -1582,11 +1583,10 @@ async function addBasics(n){
       for (const s of split){
         let card = cardCache.get("basic:" + s.name);
         if (!card){ const j = await sf(`/cards/named?exact=${encodeURIComponent(s.name)}`); if (!j) continue; card = toCard(j); cardCache.set("basic:" + s.name, card); }
-        const st = d.cards.find(k => k.zone === "deck" && k.card.name === card.name && !hasCustoms(k.card));
-        if (st){ st.qty = qOf(st) + s.count; added.push(st.uid); }
-        else { const item = {uid: uid(), card: {...card}, bucket: "Land", zone: "deck", locked: false, focus: false, qty: s.count}; d.cards.push(item); added.push(item.uid); }
+        const item = {uid: uid(), card: {...card}, bucket: "Land", zone: "deck", locked: false, focus: false, qty: s.count}; d.cards.push(item); added.push(item.uid);
       }
       animateBoard(() => { touch(d); renderAll(); }, {added});
+      if (added[0]) setTimeout(() => revealCard(added[0]), 80);
       toast(`Added ${n} basic lands`);
     } catch { toast("Couldn’t load the basic lands. Check your connection."); }
   });
@@ -1706,37 +1706,44 @@ function boxHTML(d, zone, t){
     <div class="grid">${tiles}<button class="add-tile" data-add="${t}" data-side="${zone}"><span class="card-plus-ico">+</span>Add ${PLURAL[t].toLowerCase()}</button></div></div>`;
 }
 /* Tokens: not part of the 100, no limits, no EDHREC. One tile per artwork with a count, like basic lands. */
-function tokenBoxHTML(d){
-  const toks = d.tokens || [];
+const tokZone = k => k.zone || "deck";
+function tokenBoxHTML(d, zone){
+  const toks = (d.tokens || []).filter(k => tokZone(k) === zone);
   const filtering = !!(UI.filter.trim() || UI.ctype);
   const shown = filtering ? toks.filter(matchesFilter) : toks;
   if (filtering && !shown.length) return "";
-  const folded = !!(UI.collapsed || {})["deck:Token"];
+  const fk = zone + ":Token", folded = !!(UI.collapsed || {})[fk];
   const tiles = shown.map(k => `<div class="cw tok" data-tok="${k.uid}">
-      <div class="ct" data-img="${esc(largeOf(k.card))}" title="${esc(k.card.name)}"><span class="ct-name">${esc(k.card.name)}</span>
+      <div class="ct" data-img="${esc(largeOf(k.card))}" title="${esc(k.card.custom && k.card.custom.name ? k.card.custom.name + " (" + k.card.name + ")" : k.card.name)}"><span class="ct-name">${esc(k.card.name)}</span>
         ${k.card.custom ? `<span class="custom-tag" title="Custom art or name">${I.brush}</span>` : ""}
         <img src="${esc(imgOf(k.card))}" ${srcsetAttr(k.card)} alt="${esc(k.card.name)}" loading="lazy" draggable="false" onerror="this.remove()">${qtyHTML(k)}</div>
       <div class="ct-stats"><div class="st-row faint">${esc(String(k.card.pt || k.card.type.replace(/^Token\s*/, "")).slice(0, 40))}</div></div>
-      <div class="acts"><button data-tact="edit" title="Change its artwork">${I.brush}</button><button class="del" data-tact="remove" title="Remove token">${I.trash}</button></div></div>`).join("");
-  return `<div class="box tokens${folded ? " collapsed" : ""}" data-type="Token" data-zone="deck">
-    <div class="box-head" data-fold="deck:Token" title="${folded ? "Show" : "Hide"} tokens"><span class="box-grip" style="visibility:hidden"></span>
-      <i class="ms ms-token"></i><h3>Tokens</h3><span class="box-right"><button class="pill-btn" data-tokfind="1" title="Find the tokens your deck's cards make">Find for my deck</button><span class="box-count">${sumQ(toks)}</span><span class="box-fold" aria-hidden="true">${I.down}</span></span></div>
-    <div class="grid">${tiles}<button class="add-tile" data-addtoken="1"><span class="card-plus-ico">+</span>Add tokens</button></div></div>`;
+      <div class="acts"><button data-tact="edit" title="Edit art and name">${I.brush}</button><button class="del" data-tact="remove" title="Remove token">${I.trash}</button></div></div>`).join("");
+  return `<div class="box tokens${folded ? " collapsed" : ""}" data-type="Token" data-zone="${zone}">
+    <div class="box-head" data-fold="${fk}" title="${folded ? "Show" : "Hide"} tokens"><span class="box-grip" style="visibility:hidden"></span>
+      <i class="ms ms-token"></i><h3>Tokens</h3><span class="box-right"><button class="pill-btn" data-tokfind="${zone}" title="Find the tokens your deck's cards make">Find for my deck</button><span class="box-count">${sumQ(toks)}</span><span class="box-fold" aria-hidden="true">${I.down}</span></span></div>
+    <div class="grid">${tiles}<button class="add-tile" data-addtoken="${zone}"><span class="card-plus-ico">+</span>Add tokens</button></div></div>`;
 }
-function addToken(card){
+/* Adding always makes a new token card, so each can get its own art; use its count for copies. */
+function addToken(card, zone){
   const d = cur(); if (!d || guard(d)) return null;
   d.tokens = d.tokens || [];
-  const st = d.tokens.find(k => k.card.id === card.id && !hasCustoms(k.card));
-  if (st) st.qty = qOf(st) + 1;
-  else d.tokens.push({uid: uid(), card: plainPrint(card), qty: 1});
-  touch(d); renderBoard();
+  const k = {uid: uid(), card: plainPrint(card), qty: 1, zone: zone || A.side || "deck"};
+  d.tokens.push(k); revealAfterAdd = k.uid;
+  touch(d); renderBoard(); renderStats();
   return true;
+}
+function moveToken(u){
+  const d = cur(); if (guard(d)) return;
+  const k = (d.tokens || []).find(x => x.uid === u); if (!k) return;
+  animateBoard(() => { k.zone = tokZone(k) === "deck" ? "options" : "deck"; touch(d); renderBoard(); renderStats(); });
+  toast(`${k.card.name} moved to the ${k.zone === "deck" ? "deck" : "card pool"}`);
 }
 function removeToken(u){
   const d = cur(); if (guard(d)) return;
   const k = (d.tokens || []).find(x => x.uid === u); if (!k) return;
   confirmTwice([{title: `Remove ${esc(k.card.name)}?`, text: "The token leaves this deck’s token list.", yes: "Remove token"}], () => {
-    d.tokens = d.tokens.filter(x => x !== k); touch(d); renderBoard(); toast(`${k.card.name} removed`);
+    d.tokens = d.tokens.filter(x => x !== k); touch(d); renderBoard(); renderStats(); toast(`${k.card.name} removed`);
   });
 }
 /* Tokens your deck's cards make, from Scryfall's related cards. */
@@ -1761,8 +1768,8 @@ async function deckTokens(d){
 }
 function renderBoard(){
   const d = cur(); if (!d || !d.commander) return;
-  $("#optBoxes").innerHTML = d.typeOrder.map(t => boxHTML(d, "options", t)).join("") || `<div class="empty-note">No cards match the filter.</div>`;
-  $("#deckBoxes").innerHTML = (d.typeOrder.map(t => boxHTML(d, "deck", t)).join("") || `<div class="empty-note">No cards match the filter.</div>`) + tokenBoxHTML(d);
+  $("#optBoxes").innerHTML = (d.typeOrder.map(t => boxHTML(d, "options", t)).join("") || `<div class="empty-note">No cards match the filter.</div>`) + tokenBoxHTML(d, "options");
+  $("#deckBoxes").innerHTML = (d.typeOrder.map(t => boxHTML(d, "deck", t)).join("") || `<div class="empty-note">No cards match the filter.</div>`) + tokenBoxHTML(d, "deck");
   const pool = d.cards.filter(c => c.zone === "options"), deck = d.cards.filter(c => c.zone === "deck");
   const pv = sumPrice(cardsQ(pool)), dv = sumPrice(cardsQ(deck));
   const pc = list => sumQ(list.filter(c => isPricey(c.card))), po = pc(pool), pd = pc(deck);
@@ -2045,7 +2052,8 @@ $("#board").addEventListener("click", e => {
   if (fh){ const k = fh.dataset.fold; setFolded(k, !(UI.collapsed || {})[k]); return; }
   const add = e.target.closest("[data-add]");
   if (add){ openAdd(add.dataset.add, add.dataset.side); return; }
-  if (e.target.closest("[data-addtoken],[data-tokfind]")){ openAddTokens(); return; }
+  const at = e.target.closest("[data-addtoken],[data-tokfind]");
+  if (at){ openAddTokens(at.dataset.addtoken || at.dataset.tokfind); return; }
   const tk = e.target.closest(".cw[data-tok]");
   if (tk){
     const tu = tk.dataset.tok, ta = e.target.closest("[data-tact],[data-act]");
@@ -2054,7 +2062,7 @@ $("#board").addEventListener("click", e => {
       else if (a === "remove") removeToken(tu);
       else if (a === "edit") openDetail({kind: "token", uid: tu}, tk.querySelector(".ct"));
       return; }
-    if (e.target.closest(".ct")) openDetail({kind: "token", uid: tu}, tk.querySelector(".ct"));
+    if (e.target.closest(".ct")){ openDetail({kind: "token", uid: tu}, tk.querySelector(".ct")); if (V) V.dbl = {uid: tu, tok: true, t: performance.now()}; }
     return;
   }
   const cw = e.target.closest(".cw[data-uid]"); if (!cw) return;
@@ -2078,9 +2086,9 @@ let swallowClickUntil = 0;
 document.addEventListener("pointerdown", e => {
   if (!V || !V.dbl || performance.now() - V.dbl.t > 350) return;
   e.preventDefault(); e.stopPropagation();
-  const u = V.dbl.uid;
+  const {uid: u, tok} = V.dbl;
   closeDetail(true, {anim: false}); swallowClickUntil = performance.now() + 500;
-  moveOther(u);
+  if (tok) moveToken(u); else moveOther(u);
 }, true);
 document.addEventListener("click", e => { if (performance.now() < swallowClickUntil){ swallowClickUntil = 0; e.preventDefault(); e.stopPropagation(); } }, true);
 $("#stats").addEventListener("click", e => {
@@ -2141,9 +2149,9 @@ function openCommanderPicker(isNew){
   Object.assign(A, {mode: "commander", q: "", results: [], error: "", isNew: !!isNew});
   showScrim("#addScrim"); renderAddShell(); loadAdd();
 }
-function openAddTokens(){
+function openAddTokens(side){
   const d = cur(); if (!d || guard(d)) return;
-  Object.assign(A, {mode: "token", bucket: "Any", q: "", results: [], error: "", isNew: false, addedNow: new Set()});
+  Object.assign(A, {mode: "token", side: side === "options" ? "options" : "deck", bucket: "Any", q: "", results: [], error: "", isNew: false, addedNow: new Set()});
   showScrim("#addScrim"); renderAddShell(); loadAdd();
 }
 function openPartnerPicker(){
@@ -2212,7 +2220,7 @@ function resultHTML(r){
   let acts;
   if (A.mode === "token"){
     const have = (d.tokens || []).filter(k => k.card.name === c.name).reduce((a, k) => a + qOf(k), 0);
-    acts = `<button class="btn ${have ? "" : "primary"}" style="grid-column:1/-1;justify-content:center" data-addtok="${i}">${have ? `+ One more (${have})` : "+ Add token"}</button>`;
+    acts = `<button class="btn ${have ? "" : "primary"}" style="grid-column:1/-1;justify-content:center" data-addtok="${i}" title="Adds it as its own card, so it can have its own art">${have ? `+ Add another (${have} in deck)` : `+ Add to ${A.side === "options" ? "pool" : "deck"}`}</button>`;
   } else if (A.mode !== "cards") acts = `<button class="btn primary" style="grid-column:1/-1;justify-content:center" data-pick="${i}">${A.mode === "partner" ? "Choose as partner" : "Choose"}</button>`;
   else {
     const have = d.cards.find(k => k.card.name === c.name);
@@ -2237,7 +2245,8 @@ async function loadAdd(append = false){
     } else if (A.mode === "token"){
       const res = await sfSearch(`${raw} t:token`, A.page, true);
       if (tok !== A.token) return;
-      A.results = A.results.concat(res.cards.map(card => ({card}))); A.more = res.more;
+      const lo = raw.toLowerCase(), rank = c => c.name.toLowerCase() === lo ? 0 : c.name.toLowerCase().startsWith(lo) ? 1 : c.name.includes("//") ? 3 : 2;
+      A.results = A.results.concat(res.cards.sort((a, b) => rank(a) - rank(b)).map(card => ({card}))); A.more = res.more;
     } else if (A.mode !== "cards" || raw){
       let q = raw;
       if (q && !/[:<>=!]/.test(q)) q = `(${q} or o:"${q.replace(/"/g, "")}")`;
@@ -2280,7 +2289,7 @@ $("#addModal").addEventListener("click", e => {
   if (b.id === "moreBtn"){ A.page++; loadAdd(true); return; }
   if (b.dataset.zoom != null){ const r = A.results[+b.dataset.zoom]; openDetail({kind: "add", card: r.card, rec: r}, b); return; }
   if (b.dataset.pick != null){ setCommander(A.results[+b.dataset.pick].card); return; }
-  if (b.dataset.addtok != null){ const r = A.results[+b.dataset.addtok]; if (addToken(r.card)){ toast(`${r.card.name} token added`); renderAddBody(); } return; }
+  if (b.dataset.addtok != null){ const r = A.results[+b.dataset.addtok]; if (addToken(r.card, A.side)){ toast(`${r.card.name} token added`); renderAddBody(); } return; }
   if (b.dataset.addto){
     const r = A.results[+b.dataset.i];
     if (addCard(r.card, b.dataset.addto)){ A.addedNow.add(r.card.name); toast(`${r.card.name} added to ${b.dataset.addto === "deck" ? "deck" : "card pool"}`); renderAddBody(); }
@@ -2377,6 +2386,7 @@ function stashCust(){
 }
 function loadCust(cid){
   if (V.cid === cid) return;
+  clearTimeout(snapT);
   stashCust();
   const s = slotOf(cid); if (!s) return;
   for (const f of SLOT_FIELDS) V[f] = s[f];
@@ -2385,14 +2395,21 @@ function loadCust(cid){
 }
 function unloadCust(){
   if (!V.cid) return;
+  clearTimeout(snapT);
   stashCust();
   Object.assign(V, {cid: null, hasCust: false, custChanged: false, name: "", user: null, userKey: null, custBase: null, legacy: false, legacyKey: null, custKey: null, snap: "", base: null, baseFor: null, mode: "frame", zoom: 1, pan: {x: 0, y: 0}});
   ["#artName", "#artName2"].forEach(x => { if ($(x)) $(x).value = ""; });
 }
+/* "Find art": only printings whose set name, set code, artist or year match every word */
+function artMatch(p){
+  const q = String(V.artQ || "").trim().toLowerCase(); if (!q) return true;
+  const hay = `${p.set} ${p.setCode || ""} ${p.artist} ${p.year || ""}`.toLowerCase();
+  return q.split(/\s+/).every(w => hay.includes(w));
+}
 function entries(){
   const list = [], placed = new Set();
   const custsFor = id => V.rebase ? [] : V.custs.filter(s => s.custBase.id === id);
-  for (const p of V.prints){ for (const s of custsFor(p.id)){ list.push({t: "c", cid: s.cid}); placed.add(s.cid); } list.push({t: "p", p}); }
+  for (const p of V.prints){ for (const s of custsFor(p.id)){ list.push({t: "c", cid: s.cid}); placed.add(s.cid); } if (artMatch(p)) list.push({t: "p", p}); }
   if (!V.rebase) V.custs.filter(s => !placed.has(s.cid)).forEach(s => list.unshift({t: "c", cid: s.cid}));
   return list;
 }
@@ -2403,7 +2420,7 @@ function syncSel(){
   if (i < 0){ i = 0; V.selKey = list[0] ? entryKey(list[0]) : V.selKey; }
   V.fi = i;
   const e = list[i];
-  if (e && e.t === "c") loadCust(e.cid);
+  if (e && e.t === "c" && V.cid !== e.cid){ loadCust(e.cid); setTimeout(() => { if (V && V.cid === e.cid){ loadBase(); loadUserArt(); updateOverlay(); } }, 0); }
   else if (e && !V.rebase) unloadCust();
   V.card = e ? (e.t === "c" ? V.custBase : e.p) : V.card;
   V.drawCard = V.rebase ? V.card : V.custBase;
@@ -2516,7 +2533,7 @@ function renderDetail(){
         <div class="fl-over" id="flOver"><canvas id="artCanvas" width="1344" height="1872"></canvas>
           ${V.editable ? `<input class="name-over" id="artName" maxlength="40" autocomplete="off" spellcheck="false" placeholder="${esc(c.name.split(" // ")[0])}" value="${esc(V.name)}" title="Click to rename this card" aria-label="Name on the card"><button class="name-pen" id="namePen" title="Rename this card">${I.pencil}</button>` : ""}</div>
       </div>
-      <div class="flow-foot"><div class="flow-cap" id="flowCap"></div>${c.back ? `<button class="btn sm" id="dFlip">${I.flip}Flip</button>` : ""}<input type="range" class="flow-scrub" id="flowScrub" min="0" max="0" value="0" aria-label="Jump to artwork" hidden></div>
+      <div class="flow-foot"><label class="art-find" title="Show only artworks whose set, set code, artist or year match">${I.search}<input id="artQ" type="search" placeholder="Find art: set, artist, year" autocomplete="off" value="${esc(V.artQ || "")}"></label><div class="flow-cap" id="flowCap"></div>${c.back ? `<button class="btn sm" id="dFlip">${I.flip}Flip</button>` : ""}<input type="range" class="flow-scrub" id="flowScrub" min="0" max="0" value="0" aria-label="Jump to artwork" hidden></div>
       <div class="dv-body"><div class="dv-info" id="dvInfo"></div><div class="dv-side" id="dvSide"></div></div>
     </div>`;
   renderFlow(); renderDetailParts(); drawArt();
@@ -2547,7 +2564,7 @@ function renderDetailParts(){
     acts = `<button class="btn" data-d="changeCmd">Change commander</button>${d.partner ? "" : partnerQuery(d.commander) ? `<button class="btn" data-d="addPartner">+ Partner</button>` : ""}`;
   } else if (V.kind === "token"){
     const k = (d.tokens || []).find(x => x.uid === V.uid);
-    acts = k ? `<span class="qty-big"><button data-d="dec" title="One fewer">−</button><b>${qOf(k)}</b><button data-d="inc" title="One more">+</button></span><button class="btn danger" data-d="tokRemove">${I.trash}Remove token</button>` : "";
+    acts = k ? `<button class="btn ${tokZone(k) === "deck" ? "" : "primary"}" data-d="tokMove">${tokZone(k) === "deck" ? I.left + "To pool" : "To deck" + I.right}</button><span class="qty-big"><button data-d="dec" title="One fewer">−</button><b>${qOf(k)}</b><button data-d="inc" title="One more">+</button></span><button class="btn danger" data-d="tokRemove">${I.trash}Remove token</button>` : "";
   } else if (V.kind === "partner"){
     acts = `<button class="btn" data-d="changePartner">Change partner</button><button class="btn danger" data-d="removePartner">${I.trash}Remove</button>`;
   } else if (item){
@@ -2637,8 +2654,8 @@ function layoutFlow(){
   const gap = Math.min(52, w / 14), first = Math.min(cw * .62, w / 4.6);
   [...st.children].forEach((el, i) => {
     const o = i - V.fi, a = Math.abs(o), sg = Math.sign(o);
-    if (a > 9){ el.style.visibility = "hidden"; return; }
-    el.style.visibility = "";
+    if (a > 9){ el.style.display = "none"; return; }     // far away: not rendered, and its images aren't downloaded
+    el.style.display = ""; el.style.visibility = "";
     const x = o === 0 ? 0 : sg * (first + (a - 1) * gap);
     el.style.transform = o === 0 ? "translateX(-50%)" : `translateX(calc(-50% + ${x}px)) translateZ(-140px) rotateY(${-sg * 62}deg)`;
     el.style.zIndex = 100 - a;
@@ -2646,11 +2663,13 @@ function layoutFlow(){
   });
   const list = entries(), sc = $("#flowScrub"); if (sc && +sc.value !== V.fi) sc.value = V.fi;
   const e = list[V.fi], cap = $("#flowCap");
+  if (cap && !e) cap.innerHTML = `No artworks match “${esc(V.artQ || "")}”`;
   if (cap && e){
     const p = e.t === "c" ? slotOf(e.cid).custBase : e.p, pr = priceOf(p);
     const what = e.t === "c" ? `<b>✦ Your version${V.custs.length > 1 ? " " + custNumber(e.cid) : ""}</b> · based on ${esc(p.set || "this printing")}`
       : `${V.rebase ? `<b class="rebase-cap">New base:</b> ` : ""}<b>${esc(p.set || "This version")}</b>${p.artist ? ` · art by ${esc(p.artist)}` : ""}`;
-    cap.innerHTML = `${what}${pr ? ` · <span class="price">${fmtMoney(pr.v, pr.sym)}</span>` : ""} · ${V.fi + 1} of ${list.length}${V.prints.length < 2 ? " (loading other artworks…)" : ""}`;
+    const yr = e.t === "p" && p.year ? ` (${p.year})` : "";
+    cap.innerHTML = `${what}${yr}${pr ? ` · <span class="price">${fmtMoney(pr.v, pr.sym)}</span>` : ""} · ${V.fi + 1} of ${list.length}${V.artQ && V.artQ.trim() ? ` matching “${esc(V.artQ.trim())}”` : ""}${V.morePrints ? " (loading more artworks…)" : V.prints.length < 2 ? " (loading other artworks…)" : ""}`;
   }
   updateOverlay();
 }
@@ -2658,14 +2677,14 @@ function updateOverlay(){
   const o = $("#flOver"); if (!o || !V) return;
   const show = !V.back && (V.rebase || centerIsCustom());
   o.classList.toggle("stale", !!V.back);
-  o.classList.toggle("custom", show && !!V.base);
+  o.classList.toggle("custom", show && !!V.base && !(V.userKey && !V.user));
   o.classList.toggle("user", show && !!V.user && !V.rebase);
   o.classList.toggle("rebasing", !!V.rebase);
 }
 /* the picture the customization is drawn on: the chosen printing (or, for older customizations, their finished image) */
 async function loadBase(){
   if (!V || !V.editable || !V.hasCust) return;
-  const tok = V.token, target = V.rebase ? V.card : V.custBase;
+  const tok = V.token, cid = V.cid, target = V.rebase ? V.card : V.custBase;
   const useLegacy = V.legacy && V.legacyKey && IMG.get(V.legacyKey) && !V.rebase;
   const key = useLegacy ? "legacy:" + V.legacyKey : target.id;
   if (V.baseFor === key && V.base) return;
@@ -2673,7 +2692,7 @@ async function loadBase(){
   const hi = !useLegacy && /cards\.scryfall\.io\/large\//.test(src) ? pngOf(src) : null;
   try {
     let im; try { im = await corsImage(hi || src); } catch (err){ if (!hi) throw err; im = await corsImage(src); }
-    const now = V && V.token === tok && V.custBase && (V.rebase ? V.card : V.custBase).id === target.id;
+    const now = V && V.token === tok && V.cid === cid && V.custBase && (V.rebase ? V.card : V.custBase).id === target.id;
     if (now){ V.base = im; V.baseFor = key; drawArt(); updateOverlay(); }
   } catch (e){ if (V && V.token === tok) toast(e.message); }
 }
@@ -2686,8 +2705,11 @@ async function loadPrints(){
   const tok = V.token, name = V.card.name.split(" // ")[0];
   try {
     const isTok = V.kind === "token";
-    const j = await sf(`/cards/search?q=${encodeURIComponent(`!"${name}"${isTok ? " t:token" : ""}`)}&unique=art&order=released&dir=desc&include_extras=true`);
+    const url = `/cards/search?q=${encodeURIComponent(`!"${name}"${isTok ? " t:token" : ""}`)}&unique=art&order=released&dir=desc&include_extras=true`;
+    const j = await sf(url);
     if (!V || V.token !== tok) return;
+    // more pages load quietly afterwards (up to ~1,400 artworks)
+    if (j && j.has_more) setTimeout(() => loadMorePrints(url, 2, tok, isTok), 0);
     // for tokens, only the same token (same stats and text), in every artwork
     const list = (j ? j.data : []).map(toCard).filter(p => p.img && (!isTok || (p.pt === V.card.pt && p.text === V.card.text)));
     savePrices();
@@ -2700,6 +2722,20 @@ async function loadPrints(){
     V.prints = list;
     renderFlow(); renderDetailParts();
   } catch {}
+}
+async function loadMorePrints(url, page, tok, isTok){
+  if (!V || V.token !== tok || page > 8) return;
+  V.morePrints = true; layoutFlow();
+  try {
+    const j = await sf(url + "&page=" + page);
+    if (!V || V.token !== tok) return;
+    const have = new Set(V.prints.map(p => p.id));
+    const add = (j ? j.data : []).map(toCard).filter(p => p.img && !have.has(p.id) && (!isTok || (p.pt === V.card.pt && p.text === V.card.text)));
+    savePrices();
+    if (add.length){ V.prints = V.prints.concat(add); if (!flowDrag) renderFlow(); }
+    if (j && j.has_more){ loadMorePrints(url, page + 1, tok, isTok); return; }
+  } catch {}
+  if (V && V.token === tok){ V.morePrints = false; if (!flowDrag) renderFlow(); }
 }
 let flowT;
 /* Clicks and keys switch at once; drags and the wheel settle for a moment first. */
@@ -2841,11 +2877,13 @@ function compose(ctx, overlay){
 let snapT;
 function drawArt(){
   const cv = $("#artCanvas"); if (!cv || !V || !V.base || !V.hasCust) return;
+  if (V.userKey && !V.user) return;            // its picture isn't loaded yet: don't draw (or snapshot) an incomplete version
   compose(cv.getContext("2d"), true);
   // a small picture of your version for its card in the flow (and its reflection)
   if (V.rebase) return;
+  const cid = V.cid;
   clearTimeout(snapT); snapT = setTimeout(() => {
-    if (!V || !V.base) return;
+    if (!V || !V.base || V.cid !== cid || (V.userKey && !V.user)) return;
     const sm = document.createElement("canvas"); sm.width = 488; sm.height = 680;
     compose(sm.getContext("2d"), false);
     try { V.snap = sm.toDataURL("image/jpeg", .86); } catch { return; }
@@ -2874,6 +2912,14 @@ $("#detailModal").addEventListener("pointerup", () => { artDrag = null; });
 $("#detailModal").addEventListener("input", e => {
   if (!V) return;
   if (e.target.id === "flowScrub"){ setFlow(+e.target.value, true); return; }
+  if (e.target.id === "artQ"){
+    V.artQ = e.target.value;
+    const list = entries(), still = list.some(x => entryKey(x) === V.selKey);
+    if (!still){ const first = list.find(x => x.t === "p"); if (first){ V.selKey = entryKey(first); if (V.editable && V.selKey !== V.startKey && !V.rebase) markDirty(); } }
+    renderFlow(); renderDetailParts();
+    if (!still && V.rebase){ V.box = [...frameOf(V.card).box]; loadBase(); }
+    return;
+  }
   if (e.target.id === "artZoom"){ V.zoom = +e.target.value; drawArt(); markCust(); }
   if (e.target.id === "artName" || e.target.id === "artName2"){
     const val = e.target.value, id = e.target.id;
@@ -2939,7 +2985,7 @@ $("#detailModal").addEventListener("click", async e => {
     if (flowMoved) return;
     let best = null;
     document.querySelectorAll("#flowStage .fl").forEach(el => {
-      if (el.style.visibility === "hidden") return;
+      if (el.style.visibility === "hidden" || el.style.display === "none") return;
       const r = el.querySelector("img.face").getBoundingClientRect(), i = +el.dataset.fi;
       if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && (best == null || Math.abs(i - V.fi) < Math.abs(best - V.fi))) best = i;
     });
@@ -2979,6 +3025,7 @@ $("#detailModal").addEventListener("click", async e => {
   const a = b.dataset.d; if (!a) return;
   const u = V.uid, d = cur();
   if (a === "toPool" || a === "toDeck"){ requestClose(() => moveZone(u, a === "toDeck" ? "deck" : "options"), {anim: false}); }
+  else if (a === "tokMove"){ requestClose(() => moveToken(u), {anim: false}); }
   else if (a === "tokRemove"){ requestClose(() => removeToken(u), {anim: false}); }
   else if (a === "lock"){ toggleLock(u); renderDetailParts(); }
   else if (a === "focus"){ toggleFocus(u); renderDetailParts(); }
@@ -3150,7 +3197,7 @@ async function toDataURL(url){
   return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); });
 }
 function pdfFaces(d){
-  const list = [...cmdrs(d), ...cardsQ(d.cards.filter(c => c.zone === "deck")), ...cardsQ(d.tokens || [])];
+  const list = [...cmdrs(d), ...cardsQ(d.cards.filter(c => c.zone === "deck")), ...cardsQ((d.tokens || []).filter(k => tokZone(k) === "deck"))];
   const faces = [];
   for (const c of list){ faces.push({name: c.name, url: largeOf(c), thumb: imgOf(c)}); if (c.back) faces.push({name: c.name + " (back)", url: c.back.large || c.back.img, thumb: c.back.img}); }
   return faces;
@@ -3158,7 +3205,7 @@ function pdfFaces(d){
 let pdfBusy = false;
 function openPdf(){
   const d = cur(); if (!d || !d.commander) return;
-  const faces = pdfFaces(d), pages = Math.ceil(faces.length / 9), n = inDeckCount(d), nt = sumQ(d.tokens || []);
+  const faces = pdfFaces(d), pages = Math.ceil(faces.length / 9), n = inDeckCount(d), nt = sumQ((d.tokens || []).filter(k => tokZone(k) === "deck"));
   const backs = faces.length - n - nt;
   // A4 = 210 × 297 mm; 3 × 3 cards of 63 × 88 mm centered
   const mx = 10.5, my = 16.5, pct = (v, of) => (v / of * 100).toFixed(3) + "%";
@@ -3485,9 +3532,17 @@ $("#driveBox").addEventListener("click", e => {
 
 /* ---------------- Scrims ---------------- */
 function showScrim(sel){ $(sel).hidden = false; }
+let revealAfterAdd = null;
+function revealCard(u){
+  const el = document.querySelector(`#board .cw[data-uid="${u}"], #board .cw[data-tok="${u}"]`); if (!el) return;
+  const box = el.closest(".box"); if (box && box.classList.contains("collapsed")) setFolded(`${box.dataset.zone}:${box.dataset.type}`, false);
+  el.scrollIntoView({block: "center", behavior: REDUCED.matches ? "auto" : "smooth"});
+  setTimeout(() => el.querySelector(".ct")?.animate([{boxShadow: "0 0 0 0 rgba(217,171,79,.9)"}, {boxShadow: "0 0 0 10px rgba(217,171,79,0)"}], {duration: 900, iterations: 2}), 350);
+}
 function hideScrim(sel){
   if (sel === "#detailScrim"){ requestClose(); return; }
-  $(sel).hidden = true; if (sel === "#addScrim") A.token++;
+  $(sel).hidden = true;
+  if (sel === "#addScrim"){ A.token++; if (revealAfterAdd){ const u = revealAfterAdd; revealAfterAdd = null; setTimeout(() => revealCard(u), 60); } }
 }
 document.querySelectorAll(".scrim").forEach(s => s.addEventListener("click", e => { if (e.target === s && !(s.id === "pdfScrim" && pdfBusy)) hideScrim("#" + s.id); }));
 document.addEventListener("keydown", e => {
