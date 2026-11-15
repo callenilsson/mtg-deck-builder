@@ -852,7 +852,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115104848";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115105527";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1707,6 +1707,15 @@ function boxHTML(d, zone, t){
 }
 /* Tokens: not part of the 100, no limits, no EDHREC. One tile per artwork with a count, like basic lands. */
 const tokZone = k => k.zone || "deck";
+/* The same token across printings: same name and power/toughness, and the same rules text once wording
+   like "Sacrifice this artifact" vs "this token" is ignored (missing text counts as a match). */
+const normTokText = s => String(s || "").toLowerCase().replace(/this (artifact|creature|token|permanent|enchantment)/g, "this").replace(/\s+/g, " ").trim();
+const tokKey = c => `${String(c.name).toLowerCase()}|${c.pt || ""}|${normTokText(c.text)}`;
+function sameToken(a, b){
+  if (String(a.name).toLowerCase() !== String(b.name).toLowerCase() || (a.pt || "") !== (b.pt || "")) return false;
+  const x = normTokText(a.text), y = normTokText(b.text);
+  return !x || !y || x === y;
+}
 function tokenBoxHTML(d, zone){
   const toks = (d.tokens || []).filter(k => tokZone(k) === zone);
   const filtering = !!(UI.filter.trim() || UI.ctype);
@@ -1763,7 +1772,9 @@ async function deckTokens(d){
     for (const c of (j && j.data) || []) out.push({card: toCard(c), pairs: [...new Set(makers[c.id] || [])]});
   }
   const seen = new Set();
-  tokenCache[key] = out.filter(r => { const k = r.card.name + "|" + r.card.pt + "|" + r.card.text; if (seen.has(k)) return false; seen.add(k); return true; }).sort((a, b) => a.card.name.localeCompare(b.card.name));
+  const merged = [];
+  for (const r of out){ const g = merged.find(m => sameToken(m.card, r.card)); if (g){ g.pairs = [...new Set([...g.pairs, ...r.pairs])]; g.arts = (g.arts || 1) + 1; } else merged.push({...r, arts: 1}); }
+  tokenCache[key] = merged.sort((a, b) => a.card.name.localeCompare(b.card.name));
   return tokenCache[key];
 }
 function renderBoard(){
@@ -2214,6 +2225,7 @@ function resultHTML(r){
     const pct = Math.round(r.incl * 100), syn = r.syn != null ? Math.round(r.syn * 100) : null;
     meta = `<div class="bar"><i style="width:${pct}%"></i></div>In ${pct}% of decks${syn != null ? ` · ${syn >= 0 ? "+" : ""}${syn}% synergy` : ""}`;
   }
+  if (A.mode === "token" && r.arts > 1) tag = `<span class="tag">${r.arts} arts</span>`;
   if (A.mode === "token" && r.pairs && r.pairs.length) meta = `${esc(c.pt || "")} · made by ${r.pairs.slice(0, 3).map(esc).join(", ")}${r.pairs.length > 3 ? "…" : ""}`;
   else if (r.pairs && r.pairs.length){ meta += `${meta ? "<br>" : ""}Pairs with ${r.pairs.map(esc).join(", ")}`; tag = `<span class="tag">Combo ×${r.pairs.length + (r.incl != null ? 1 : 0)}</span>`; }
   if (!meta) meta = esc(c.type);
@@ -2246,7 +2258,12 @@ async function loadAdd(append = false){
       const res = await sfSearch(`${raw} t:token`, A.page, true);
       if (tok !== A.token) return;
       const lo = raw.toLowerCase(), rank = c => c.name.toLowerCase() === lo ? 0 : c.name.toLowerCase().startsWith(lo) ? 1 : c.name.includes("//") ? 3 : 2;
-      A.results = A.results.concat(res.cards.sort((a, b) => rank(a) - rank(b)).map(card => ({card}))); A.more = res.more;
+      // one result per distinct token; its other artworks are in its card view
+      for (const card of res.cards.sort((a, b) => rank(a) - rank(b))){
+        const g = A.results.find(r => sameToken(r.card, card));
+        if (g) g.arts = (g.arts || 1) + 1; else A.results.push({card, arts: 1});
+      }
+      A.more = res.more;
     } else if (A.mode !== "cards" || raw){
       let q = raw;
       if (q && !/[:<>=!]/.test(q)) q = `(${q} or o:"${q.replace(/"/g, "")}")`;
@@ -2713,7 +2730,7 @@ async function loadPrints(){
     // more pages load quietly afterwards (up to ~1,400 artworks)
     if (j && j.has_more) setTimeout(() => loadMorePrints(url, 2, tok, isTok), 0);
     // for tokens, only the same token (same stats and text), in every artwork
-    const list = (j ? j.data : []).map(toCard).filter(p => p.img && (!isTok || (p.pt === V.card.pt && p.text === V.card.text)));
+    const list = (j ? j.data : []).map(toCard).filter(p => p.img && (!isTok || sameToken(p, V.card)));
     savePrices();
     if (!list.length) return;
     // keep the exact printings this card and its customization use (same art, other set: keep yours)
@@ -2732,7 +2749,7 @@ async function loadMorePrints(url, page, tok, isTok){
     const j = await sf(url + "&page=" + page);
     if (!V || V.token !== tok) return;
     const have = new Set(V.prints.map(p => p.id));
-    const add = (j ? j.data : []).map(toCard).filter(p => p.img && !have.has(p.id) && (!isTok || (p.pt === V.card.pt && p.text === V.card.text)));
+    const add = (j ? j.data : []).map(toCard).filter(p => p.img && !have.has(p.id) && (!isTok || sameToken(p, V.card)));
     savePrices();
     if (add.length){ V.prints = V.prints.concat(add); if (!flowDrag) renderFlow(); }
     if (j && j.has_more){ loadMorePrints(url, page + 1, tok, isTok); return; }
