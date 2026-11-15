@@ -852,7 +852,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115103528";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115104848";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1245,11 +1245,11 @@ function newDeck(){
   openCommanderPicker(true);
 }
 function inDeckCount(d){ return sumQ(d.cards.filter(c => c.zone === "deck")) + cmdrs(d).length; }
-function addCard(card, zone){
+function addCard(card, zone, keep){
   const d = cur(); if (!d || guard(d)) return null;
   if (cmdrs(d).some(k => k.name === card.name)){ toast(`${card.name} is your commander`); return null; }
   if (!canMulti(card) && d.cards.some(c => c.card.name === card.name)){ toast(`${card.name} is already in this deck`); return null; }
-  const item = {uid: uid(), card: plainPrint(card), bucket: bucketOf(card.type), zone, locked: false, focus: false};
+  const item = {uid: uid(), card: keep ? JSON.parse(JSON.stringify(card)) : plainPrint(card), bucket: bucketOf(card.type), zone, locked: false, focus: false};
   revealAfterAdd = item.uid;
   d.cards.push(item);
   touch(d); renderAll();
@@ -1725,10 +1725,10 @@ function tokenBoxHTML(d, zone){
     <div class="grid">${tiles}<button class="add-tile" data-addtoken="${zone}"><span class="card-plus-ico">+</span>Add tokens</button></div></div>`;
 }
 /* Adding always makes a new token card, so each can get its own art; use its count for copies. */
-function addToken(card, zone){
+function addToken(card, zone, keep){
   const d = cur(); if (!d || guard(d)) return null;
   d.tokens = d.tokens || [];
-  const k = {uid: uid(), card: plainPrint(card), qty: 1, zone: zone || A.side || "deck"};
+  const k = {uid: uid(), card: keep ? JSON.parse(JSON.stringify(card)) : plainPrint(card), qty: 1, zone: zone || A.side || "deck"};
   d.tokens.push(k); revealAfterAdd = k.uid;
   touch(d); renderBoard(); renderStats();
   return true;
@@ -2295,9 +2295,9 @@ $("#addModal").addEventListener("click", e => {
     if (addCard(r.card, b.dataset.addto)){ A.addedNow.add(r.card.name); toast(`${r.card.name} added to ${b.dataset.addto === "deck" ? "deck" : "card pool"}`); renderAddBody(); }
   }
 });
-function setCommander(card){
+function setCommander(card, keep){
   const d = cur(); if (!d || guard(d)) return;
-  card = {...card}; delete card.custom;
+  card = keep ? JSON.parse(JSON.stringify(card)) : plainPrint(card);
   if (A.mode === "partner"){
     d.partner = card;
     d.cards = d.cards.filter(c => c.card.name !== card.name);
@@ -2368,7 +2368,7 @@ function initView(o){
   const custs = custList(card).map(c => slotFrom(c, card));
   const active = card.custom ? (custs.find(s => card.custom.cid && s.cid === card.custom.cid) || custs.find(s => s.custKey === card.custom.key) || custs[0]) : null;
   const v = {kind: o.kind, uid: o.uid, card0: o.kind === "add" ? o.card : null, rec: o.rec || null,
-    editable: o.kind !== "add" && !roDeck(cur()), token: ++vTok, flying: false, back: false, dirty: false, custChanged: false,
+    editable: !roDeck(cur()), token: ++vTok, flying: false, back: false, dirty: false, custChanged: false,
     prints: [plainPrint(active ? active.custBase : card)], custs, cid: null, hasCust: false,
     name: "", userKey: null, user: null, mode: "frame", zoom: 1, pan: {x: 0, y: 0}, box: [...frameOf(card).box], custBase: null,
     legacy: false, legacyKey: null, custKey: null, snap: "", base: null, baseFor: null, rebase: false,
@@ -2576,7 +2576,8 @@ function renderDetailParts(){
     if (canMulti(c)) acts += `<span class="qty-big"><button data-d="dec" title="One fewer">−</button><b>${qOf(item)}</b><button data-d="inc" title="One more">+</button></span><button class="btn" data-d="copy" title="Add a separate card for a different artwork">${I.copy}Another artwork</button>`;
     acts += `<button class="btn danger" data-d="remove" ${item.locked ? "disabled" : ""}>${I.trash}Remove</button>`;
   } else if (V.kind === "add"){
-    if (A.mode === "commander" || A.mode === "partner") acts = `<button class="btn primary" data-d="pick">${A.mode === "partner" ? "Choose as partner" : "Choose as commander"}</button>`;
+    if (A.mode === "token") acts = `<button class="btn primary" data-d="addTok" title="Adds it with the artwork and edits shown above">+ Add to ${A.side === "options" ? "pool" : "deck"}</button>`;
+    else if (A.mode === "commander" || A.mode === "partner") acts = `<button class="btn primary" data-d="pick">${A.mode === "partner" ? "Choose as partner" : "Choose as commander"}</button>`;
     else {
       const have = d.cards.find(k => k.card.name === c.name);
       acts = have && !canMulti(c) ? `<span class="btn" style="color:var(--ok);border-color:transparent;background:none">✓ In ${have.zone === "deck" ? "deck" : "card pool"}</span>`
@@ -2603,7 +2604,7 @@ function renderDetailParts(){
       <div class="ed-foot">
         <span class="ed-left">${V.cid ? `<button class="btn sm danger" id="custRemove" title="Delete this customized version">${I.trash}Remove</button>` : ""}
         <button class="btn sm" id="custNew" title="${centerIsCustom() ? "Make another version, starting as a copy of this one" : "Start a new customized version of this printing"}">${I.copy}New version</button></span>
-        <span class="ed-save"><button class="btn sm save-btn" id="artSave" ${V.dirty ? "" : "disabled"}>Save changes</button></span></div></div>`;
+        <span class="ed-save">${V.kind === "add" ? `<span class="note" title="Your edits come along when you add the card">Kept when you add it</span>` : `<button class="btn sm save-btn" id="artSave" ${V.dirty ? "" : "disabled"}>Save changes</button>`}</span></div></div>`;
   }
   $("#dvSide").innerHTML = `<div class="dv-acts">${acts}</div>${edit}`;
 }
@@ -3043,10 +3044,15 @@ $("#detailModal").addEventListener("click", async e => {
   else if (a === "changeCmd"){ requestClose(() => openCommanderPicker(), {anim: false}); }
   else if (a === "addPartner" || a === "changePartner"){ requestClose(() => openPartnerPicker(), {anim: false}); }
   else if (a === "removePartner"){ confirmTwice([{title: "Remove the partner?", text: `${esc(d.partner.name)} leaves the command zone. Recommendations go back to ${esc(d.commander.name)} alone.`, yes: "Remove partner"}], () => { closeDetail(true, {anim: false}); d.partner = null; touch(d); render(); toast("Partner removed"); }); }
-  else if (a === "pick"){ setCommander(V.card); }
-  else if (a === "addPool" || a === "addDeck"){
-    if (addCard(plainPrint(V.card), a === "addDeck" ? "deck" : "options")){
-      A.addedNow.add(V.card.name); toast(`${V.card.name} added to ${a === "addDeck" ? "deck" : "card pool"}`);
+  else if (a === "pick" || a === "addPool" || a === "addDeck" || a === "addTok"){
+    const v = V; b.disabled = true;
+    const built = await buildViewCard(v); b.disabled = false;
+    if (!built || V !== v) return;
+    const card = built.card, nm = v.card.name;
+    if (a === "pick"){ setCommander(card, true); return; }
+    if (a === "addTok"){ if (addToken(card, A.side, true)){ toast(`${nm} token added`); closeDetail(true); renderAddBody(); } return; }
+    if (addCard(card, a === "addDeck" ? "deck" : "options", true)){
+      A.addedNow.add(nm); toast(`${nm} added to ${a === "addDeck" ? "deck" : "card pool"}${card.custs ? " with your edits" : ""}`);
       closeDetail(true); renderAddBody();
     }
   }
@@ -3054,6 +3060,14 @@ $("#detailModal").addEventListener("click", async e => {
 /* Close the card view; with unsaved changes, ask first (save, discard or keep editing). */
 function requestClose(after, opts = {}){
   if (!V) return;
+  if (V.kind === "add"){
+    stashCust();
+    if (!V.custs.length || !V.custs.some(s => s.changed)){ closeDetail(true, opts).then(() => after && after()); return; }
+    C = {save: true, after, opts};
+    $("#confirmModal").innerHTML = `<div class="modal-body"><h2>Throw away your edits?</h2><p>You customized <b>${esc(V.card.name)}</b> but haven’t added it yet.</p>
+      <div class="row"><button class="btn" data-c="no">Keep editing</button><button class="btn danger" data-c="discard">Discard</button></div></div>`;
+    showScrim("#confirmScrim"); setTimeout(() => $('#confirmModal [data-c="no"]')?.focus(), 30); return;
+  }
   if (!(V.editable && V.dirty)){ closeDetail(true, opts).then(() => after && after()); return; }
   C = {save: true, after, opts};
   $("#confirmModal").innerHTML = `<div class="modal-body"><h2>Save your changes?</h2><p>You changed the art or name of <b>${esc(V.card.name)}</b>.</p>
@@ -3111,19 +3125,26 @@ async function buildCust(v, s){
   return {cid: s.cid, key, artKey: s.user || s.userKey ? artKey : null, name: (s.name || "").trim(), mode: s.mode, zoom: s.zoom, pan: {...s.pan}, box: [...s.box],
           base: plainPrint(s.custBase), ...(s.legacy ? {legacy: true} : {})};
 }
-async function commitView(v){
-  if (roDeck(cur())) return;
-  const d = cur(), orig = viewTarget(v); if (!d || !orig) return;
+/* The card exactly as set up in the view: the one in the middle, plus every version. Null if an image couldn't load. */
+async function buildViewCard(v){
   const keepV = V; V = v;
   try {
     stashCust();
-    let custs;
-    try { custs = []; for (const s of v.custs) custs.push(await buildCust(v, s)); }
-    catch { toast("Couldn’t build your custom card (image didn’t load), so the change wasn’t saved."); return; }
+    const custs = []; for (const s of v.custs) custs.push(await buildCust(v, s));
     const e = entries()[v.fi];
     const chosen = e && e.t === "c" ? custs.find(c => c.cid === e.cid) : null;
     const baseOf = chosen ? v.custs.find(s => s.cid === chosen.cid).custBase : (e && e.t === "p" ? e.p : v.card);
-    const card = {...plainPrint(baseOf), ...(chosen ? {custom: {key: chosen.key, name: chosen.name || null, cid: chosen.cid}} : {}), ...(custs.length ? {custs} : {})};
+    return {card: {...plainPrint(baseOf), ...(chosen ? {custom: {key: chosen.key, name: chosen.name || null, cid: chosen.cid}} : {}), ...(custs.length ? {custs} : {})}, custs, chosen};
+  } catch { toast("Couldn’t build your custom card (an image didn’t load). Try again."); return null; }
+  finally { V = keepV; }
+}
+async function commitView(v){
+  if (roDeck(cur())) return;
+  const d = cur(), orig = viewTarget(v); if (!d || !orig) return;
+  const built = await buildViewCard(v); if (!built) return;
+  const keepV = V; V = v;
+  try {
+    const {card, custs, chosen} = built;
     const before = [orig.custom && orig.custom.key, ...custList(orig).flatMap(c => [c.key, c.artKey])].filter(Boolean);
     if (v.kind === "commander") d.commander = card;
     else if (v.kind === "partner") d.partner = card;
