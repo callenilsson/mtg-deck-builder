@@ -852,7 +852,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115102722";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115103528";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -2420,8 +2420,9 @@ function syncSel(){
   if (i < 0){ i = 0; V.selKey = list[0] ? entryKey(list[0]) : V.selKey; }
   V.fi = i;
   const e = list[i];
-  if (e && e.t === "c" && V.cid !== e.cid){ loadCust(e.cid); setTimeout(() => { if (V && V.cid === e.cid){ loadBase(); loadUserArt(); updateOverlay(); } }, 0); }
-  else if (e && !V.rebase) unloadCust();
+  if (e && e.t === "c"){
+    if (V.cid !== e.cid){ loadCust(e.cid); setTimeout(() => { if (V && V.cid === e.cid){ loadBase(); loadUserArt(); updateOverlay(); } }, 0); }
+  } else if (e && !V.rebase) unloadCust();
   V.card = e ? (e.t === "c" ? V.custBase : e.p) : V.card;
   V.drawCard = V.rebase ? V.card : V.custBase;
 }
