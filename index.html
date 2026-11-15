@@ -38,6 +38,17 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 /* ---------- Sidebar ---------- */
 #sidebar{width:272px;flex:none;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;transition:margin .22s ease;z-index:30}
 #app.side-closed #sidebar{margin-left:-272px}
+.side-rail{display:none}
+.panel-btn{color:var(--muted)}
+.panel-btn:hover{color:var(--gold)}
+@media (min-width:821px){
+  #sidebar{transition:width .22s ease}
+  #app.side-closed #sidebar{margin-left:0;width:58px;overflow:hidden}
+  #app.side-closed #sidebar>:not(.side-rail){display:none!important}
+  #app.side-closed .side-rail{display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px 0}
+  .rail-brand{color:var(--gold);font-size:22px}
+  #openSide,#railMenu{display:none!important}
+}
 .side-head{padding:18px 16px 12px;display:flex;align-items:center;gap:10px}
 .brand{font-family:var(--display);font-weight:700;letter-spacing:.05em;font-size:16px;white-space:nowrap;color:var(--gold);display:flex;align-items:center;gap:8px}
 .brand .ms{font-size:20px}
@@ -137,6 +148,7 @@ body.ro #stats input{pointer-events:none;opacity:.6}
 body.ro .name-wrap{border-style:solid;border-color:transparent;cursor:default}
 body.ro .name-wrap svg{display:none}
 .pricey-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;padding:6px 9px;border-radius:9px;background:var(--pricey-soft);border:1px solid var(--pricey-line);color:#e2d3ff;font-size:12.5px;font-weight:600;cursor:text;white-space:nowrap}
+.cur-sel{background:rgba(0,0,0,.25);border:1px solid var(--pricey-line);border-radius:6px;color:#fff;font-weight:700;font-size:13px;padding:1px 3px}
 .pricey-row .pr-count{color:var(--muted);font-weight:500}
 .pricey-row input{width:56px;background:rgba(0,0,0,.25);border:1px solid var(--pricey-line);border-radius:6px;padding:2px 5px;text-align:right;font-size:13px;font-weight:700;color:#fff;-moz-appearance:textfield}
 .pricey-row input:focus{outline:none;border-color:#d7c2ff}
@@ -328,7 +340,7 @@ body.ro .name-wrap svg{display:none}
 .cw{display:flex;flex-direction:column;gap:5px;min-width:0;position:relative;container-type:inline-size}
 .cw.ins-before::before,.cw.ins-after::before{content:"";position:absolute;top:2%;height:calc(var(--tile)*1.3);max-height:80%;width:4px;border-radius:3px;background:var(--gold);z-index:3}
 .cw.ins-before::before{left:-8px}.cw.ins-after::before{right:-8px}
-.cw.dragging{opacity:.28}
+.cw.dragging{opacity:.28;outline:2px dashed var(--gold-line);outline-offset:3px;border-radius:6px}
 .ct{position:relative;aspect-ratio:63/88;border-radius:var(--radius-card);background:var(--surface-3);overflow:hidden;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;box-shadow:0 3px 10px rgba(0,0,0,.45);transition:transform .14s ease,box-shadow .14s ease}
 @media (hover:hover){.ct:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(0,0,0,.55),0 0 0 1px rgba(217,171,79,.25)}}
 .ct img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
@@ -771,12 +783,13 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
   <aside id="sidebar" aria-label="Your decks">
     <div class="side-head">
       <div class="brand"><i class="ms ms-commander"></i>MTG Deck Builder</div>
-      <button class="icon-btn" id="closeSide" title="Hide deck list"><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="icon-btn panel-btn" id="closeSide" title="Collapse the deck list"></button>
     </div>
+    <div class="side-rail" id="sideRail"><button class="icon-btn panel-btn" id="railExpand" title="Show the deck list"></button><span class="rail-brand" title="MTG Deck Builder"><i class="ms ms-commander"></i></span><span id="railMe"></span></div>
     <div class="profile" id="profile"></div>
         <div id="deckList"></div>
     <div class="side-foot">
-      <label class="side-row">Prices in<select id="curSel"><option value="eur">€ Euro (Cardmarket)</option><option value="usd">$ Dollar (TCGplayer)</option></select></label>
+
 
       <div class="drive-box" id="driveBox"></div>
       <details class="backup" id="backupBox"><summary>Backup &amp; import</summary>
@@ -802,7 +815,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
           <button class="btn" id="pdfBtn" title="Preview and print proxies at real card size"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg><span class="label">PDF</span></button>
           
           <button class="btn danger" id="wipeBtn" title="Remove every card from this deck"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span class="label">Wipe</span></button>
-          <button class="icon-btn fold-btn" id="foldTop" title="Fold this panel to show more cards"></button>
+          <button class="icon-btn fold-btn panel-btn" id="foldTop" title="Collapse this panel to show more cards"></button>
         </div>
       </div>
       <div class="ro-banner" id="roBanner" hidden></div>
@@ -860,7 +873,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115213949";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115215738";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -903,6 +916,8 @@ const I = {
   foldU:'<svg class="i" viewBox="0 0 24 24"><path d="M7 13l5-5 5 5M7 19l5-5 5 5"/></svg>',
   foldD:'<svg class="i" viewBox="0 0 24 24"><path d="M7 5l5 5 5-5M7 11l5 5 5-5"/></svg>',
   swap:'<svg class="i" viewBox="0 0 24 24"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>',
+  panelL:'<svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/><path d="M15.5 9.5L13 12l2.5 2.5"/></svg>',
+  panelR:'<svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/><path d="M13 9.5l2.5 2.5-2.5 2.5"/></svg>',
   menu:'<svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
   undo:'<svg class="i" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>'
 };
@@ -948,9 +963,14 @@ UI.filter = ""; UI.ctype = "";
 let LAST_ME = null;
 try { LAST_ME = JSON.parse(localStorage.getItem("command-zone-me") || "null"); } catch {}
 function meNow(){ return (typeof DS !== "undefined" && DS.me) || (typeof CLOUD === "function" && CLOUD() ? null : LAST_ME); }
-function isMine(d){ const me = meNow(); return !d || !d.owner || !!(me && d.owner.id === me.id); }
+function libOwner(){ return typeof DS !== "undefined" && DS.file && DS.owner ? DS.owner : null; }
+function isMine(d){
+  const me = meNow(); if (!d) return true;
+  if (!d.owner){ const lo = libOwner(); return !(typeof CLOUD === "function" && CLOUD() && lo && !lo.me); }   // older decks: the library owner's
+  return !!(me && d.owner.id === me.id);
+}
 function roDeck(d){ return !!d && !isMine(d); }
-function ownerName(d){ return d && d.owner ? (d.owner.name || "Someone") : ""; }
+function ownerName(d){ return d && d.owner ? (d.owner.name || "Someone") : (libOwner() ? libOwner().displayName || "The library owner" : ""); }
 /* Stop changes to someone else's deck; returns true when blocked. */
 function guard(d = cur()){
   if (!roDeck(d)) return false;
@@ -1380,7 +1400,11 @@ function renderSidebar(){
   const people = new Map();
   const add = (id, p) => { if (!people.has(id)) people.set(id, {id, name: p.name || "Someone", photo: p.photo || "", decks: []}); const q = people.get(id); if (p.photo && !q.photo) q.photo = p.photo; return q; };
   const mine = [];
-  for (const d of list){ if (isMine(d)) mine.push(d); else add(d.owner.id, d.owner).decks.push(d); }
+  for (const d of list){
+    if (isMine(d)) mine.push(d);
+    else if (d.owner) add(d.owner.id, d.owner).decks.push(d);
+    else { const lo = libOwner() || {}; add(lo.permissionId || "library-owner", {name: lo.displayName || "Library owner", photo: lo.photoLink || ""}).decks.push(d); }
+  }
   for (const [id, m] of Object.entries(DS.members || {})) if (!me || id !== me.id) add(id, m);
   for (const p of DS.perms || []) if (p.type === "user" && p.id && (!me || p.id !== me.id)) add(p.id, {name: p.displayName, photo: p.photoLink});
   const roleOf = id => { const p = (DS.perms || []).find(x => x.id === id); return p ? (p.role === "owner" ? "Owner" : p.role === "writer" ? "Editor" : p.role === "commenter" || p.role === "reader" ? "Viewer" : "") : ""; };
@@ -1412,6 +1436,7 @@ function renderSidebar(){
 function renderProfile(){
   const box = $("#profile"); if (!box) return;
   const me = meNow();
+  const rm = $("#railMe"); if (rm) rm.innerHTML = me ? personAvatar(me) : "";
   if (!driveUsable()){ box.innerHTML = me ? `${personAvatar(me, "lg")}<div class="pf-text"><b>${esc(me.name)}</b><small>Decks on this device</small></div>` : ""; box.hidden = !me; return; }
   box.hidden = false;
   if (!DS.token){
@@ -1437,7 +1462,7 @@ function renderHeader(){
   const tot = $("#total");
   tot.innerHTML = `<b>${n}<span>/100</span></b><small>${n > 100 ? `${n - 100} too many` : n === 100 ? "Complete" : "in deck"}</small>
     ${d.commander ? `<div class="tot-sub"><span title="Locked final picks in the deck">${I.lock}<b>${locked}</b> locked</span><span title="Deck value, commander included (${value.n} of ${n} cards have a price)"><b>${fmtMoney(value.tot, value.sym)}</b> value</span></div>
-    <label class="pricey-row" title="Cards at or above this price get a purple outline and price tag">💎 Expensive from <input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold"><span class="sym">${UI.cur === "usd" ? "$" : "€"}</span><span class="pr-count">· ${[...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length} cards</span></label>` : ""}`;
+    <label class="pricey-row" title="Cards at or above this price get a purple outline and price tag">💎 Expensive from <input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold"><select id="curSel" class="cur-sel" title="Price currency: € from Cardmarket, $ from TCGplayer" aria-label="Currency"><option value="eur" ${UI.cur === "usd" ? "" : "selected"}>€</option><option value="usd" ${UI.cur === "usd" ? "selected" : ""}>$</option></select><span class="pr-count">· ${[...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length} cards</span></label>` : ""}`;
   tot.classList.toggle("full", n === 100); tot.classList.toggle("over", n > 100);
   if (!d.commander) return;
   // commanders
@@ -1463,14 +1488,13 @@ function renderRail(d){
     const k = sumQ(deck.filter(c => c.bucket === t)), lim = d.limits[t] ?? 0;
     return `<span class="r-chip ${k > lim ? "over" : k === lim && lim ? "met" : ""}" title="${PLURAL[t]}: ${k} of ${lim}"><i class="ms ${MS[t]}"></i>${k}/${lim}</span>`;
   }).join("");
-  $("#rail").innerHTML = `<button class="icon-btn" id="railMenu" title="Show or hide your decks">${I.menu}</button>
+  $("#rail").innerHTML = `<button class="icon-btn r-open panel-btn" id="railOpen" title="Show commander and stats">${isPhone() ? I.foldD : I.panelR}</button><button class="icon-btn" id="railMenu" title="Show or hide your decks">${I.menu}</button>
     <button class="r-thumb" data-cmd="commander" title="${esc(d.commander.name)}"><img src="${esc(imgOf(d.commander))}" alt=""></button>
     <div class="r-tot ${n === 100 ? "full" : n > 100 ? "over" : ""}" title="Cards in deck"><b>${n}</b><span>/100</span></div>
     <div class="r-meta" title="Locked final picks">${I.lock}${locked}</div>
     <div class="r-meta" title="Deck value">${fmtMoney(value.tot, value.sym)}</div>
-    <div class="r-types">${chips}</div>
-    <button class="icon-btn r-open" id="railOpen" title="Show commander and stats">${isPhone() ? I.foldD : I.foldR}</button>`;
-  $("#foldTop").innerHTML = isPhone() ? I.foldU : I.foldL;
+    <div class="r-types">${chips}</div>`;
+  $("#foldTop").innerHTML = isPhone() ? I.foldU : I.panelL;
 }
 function renderStats(){
   const d = cur(); if (!d || !d.commander){ $("#stats").innerHTML = ""; return; }
@@ -2002,23 +2026,29 @@ function hitTest(){
   const marks = [];
   const under = document.elementFromPoint(x, y);
   const panel = under && under.closest(".panel");
+  if (!panel){ if (drag.kind !== "card") drag.target = null; return setMarks([]); }   // outside: a card keeps its last place
   drag.panel = panel; drag.target = null;
-  if (!panel) return setMarks([]);
   if (drag.kind === "card"){
     const c = findCard(drag.uid); if (!c) return;
     const zone = panel.dataset.zone;
     const box = panel.querySelector(`.box[data-type="${c.bucket}"]`);
     if (box) marks.push([box, "target"]);
     marks.push([panel, "drop-target"]);
-    const t = under.closest(".cw[data-uid]");
-    const tc = t && findCard(t.dataset.uid);
-    // reorder only in "Your order", and only next to cards in the same group (locked or not)
-    if (UI.sort === "manual" && t && box && box.contains(t) && t.dataset.uid !== drag.uid && tc && tc.locked === c.locked){
-      const r = t.getBoundingClientRect();
-      const after = x > r.left + r.width / 2;
-      marks.push([t, after ? "ins-after" : "ins-before"]);
-      drag.target = {zone, ref: t.dataset.uid, after};
-    } else drag.target = {zone, ref: null};
+    drag.target = {zone, live: true};
+    if (box && !(c.locked && zone !== "deck")){
+      const grid = box.querySelector(".grid"), el = drag.el;
+      let tEl = under.closest(".cw[data-uid]"); if (tEl && (tEl === el || !grid.contains(tEl))) tEl = null;
+      const tc = tEl && findCard(tEl.dataset.uid);
+      // reorder only in "Your order", and only among cards in the same group (locked or not)
+      if (UI.sort === "manual" && tEl && tc && tc.locked === c.locked){
+        const sib = [...grid.children], before = el.parentElement === grid && sib.indexOf(el) < sib.indexOf(tEl);
+        if (before ? tEl.nextElementSibling !== el : tEl.previousElementSibling !== el) liveMove(grid, () => grid.insertBefore(el, before ? tEl.nextElementSibling : tEl));
+      } else if (el.parentElement !== grid){
+        // another side or section: join the end of the matching group
+        const firstUnlocked = [...grid.querySelectorAll(".cw[data-uid]")].find(k => { const kc = findCard(k.dataset.uid); return kc && !kc.locked; });
+        liveMove(grid, () => grid.insertBefore(el, c.locked ? (firstUnlocked || grid.querySelector(".add-tile")) : grid.querySelector(".add-tile")));
+      }
+    }
   } else {
     const box = under.closest(".box");
     if (!box || box.dataset.type === drag.type) return setMarks([]);
@@ -2028,6 +2058,18 @@ function hitTest(){
     drag.target = {type: box.dataset.type, after};
   }
   setMarks(marks);
+}
+/* Move the dragged card's place in the page; the cards around it glide to their new spots. */
+function liveMove(grid, mutate){
+  const old = drag.el.parentElement;
+  const els = [...new Set([...grid.querySelectorAll(".cw"), ...(old ? old.querySelectorAll(".cw") : [])])].filter(e => e !== drag.el);
+  const rects = new Map(els.map(e => [e, e.getBoundingClientRect()]));
+  mutate();
+  if (REDUCED.matches) return;
+  for (const [e, r] of rects){
+    const n = e.getBoundingClientRect(), dx = r.left - n.left, dy = r.top - n.top;
+    if (Math.abs(dx) > .5 || Math.abs(dy) > .5) e.animate([{transform: `translate(${dx}px,${dy}px)`}, {transform: "none"}], {duration: 200, easing: EASE});
+  }
 }
 function autoScroll(){
   if (!drag) return;
@@ -2045,24 +2087,28 @@ function endDrag(commit){
   if (drag && commit) hitTest();
   const dr = drag; drag = null; if (dr.raf) cancelAnimationFrame(dr.raf);
   dr.ghost.remove(); dr.el.classList.remove("dragging", "lifted");
+  if (!commit && dr.kind === "card") renderBoard();
   document.body.classList.remove("is-dragging");
   clearMarks();
   suppressClick = true; setTimeout(() => suppressClick = false, 80);
+  if (DS.renderAfterDrag && !(commit && dr.target)){ DS.renderAfterDrag = false; render(); }
   if (!commit || !dr.target) return;
   const d = cur();
   if (dr.kind === "card"){
-    const c = findCard(dr.uid); if (!c) return;
-    const {zone, ref, after} = dr.target;
-    if (c.locked && zone !== "deck"){ toast("Unlock this card to move it out of the deck"); return; }
-    if (!ref && zone === c.zone) return;
-    const was = c.zone;
-    animateBoard(() => {
-      d.cards.splice(d.cards.indexOf(c), 1);
-      c.zone = zone;
-      if (ref){ let j = d.cards.findIndex(k => k.uid === ref); if (after) j++; d.cards.splice(j, 0, c); }
-      else d.cards.push(c);
-      touch(d); renderAll();
-    });
+    const c = findCard(dr.uid); if (!c){ renderBoard(); return; }
+    const panel = dr.el.closest(".panel"), zone = panel ? panel.dataset.zone : c.zone;
+    if (c.locked && zone !== "deck"){ toast("Unlock this card to move it out of the deck"); renderBoard(); return; }
+    // the card already sits where it was dropped: read its new neighbours from the page
+    const near = (el, dir) => { let s = el[dir]; while (s && !(s.classList && s.classList.contains("cw") && s.dataset.uid)) s = s[dir]; return s && s.dataset.uid; };
+    const prevU = near(dr.el, "previousElementSibling"), nextU = near(dr.el, "nextElementSibling");
+    const was = c.zone, oldIdx = d.cards.indexOf(c);
+    d.cards.splice(oldIdx, 1); c.zone = zone;
+    let j = prevU ? d.cards.findIndex(k => k.uid === prevU) + 1 : nextU ? d.cards.findIndex(k => k.uid === nextU) : d.cards.length;
+    if (j < 0) j = d.cards.length;
+    d.cards.splice(j, 0, c);
+    if (was === zone && d.cards.indexOf(c) === oldIdx){ renderBoard(); if (DS.renderAfterDrag){ DS.renderAfterDrag = false; render(); } return; }
+    DS.renderAfterDrag = false;
+    touch(d); renderAll();
     if (was !== zone) limitWarn(c);
   } else {
     const o = d.typeOrder.filter(t => t !== dr.type);
@@ -2267,7 +2313,6 @@ function resultHTML(r){
     const pct = Math.round(r.incl * 100), syn = r.syn != null ? Math.round(r.syn * 100) : null;
     meta = `<div class="bar"><i style="width:${pct}%"></i></div>In ${pct}% of decks${syn != null ? ` · ${syn >= 0 ? "+" : ""}${syn}% synergy` : ""}`;
   }
-  if (A.mode === "token" && r.arts > 1) tag = `<span class="tag">${r.arts} arts</span>`;
   if (A.mode === "token" && r.pairs && r.pairs.length) meta = `${esc(c.pt || "")} · made by ${r.pairs.slice(0, 3).map(esc).join(", ")}${r.pairs.length > 3 ? "…" : ""}`;
   else if (r.pairs && r.pairs.length){ meta += `${meta ? "<br>" : ""}Pairs with ${r.pairs.map(esc).join(", ")}`; tag = `<span class="tag">Combo ×${r.pairs.length + (r.incl != null ? 1 : 0)}</span>`; }
   if (!meta) meta = esc(c.type);
@@ -3428,7 +3473,7 @@ async function dfetch(path, opts = {}){
   if (!r.ok){ let m = "Google Drive answered " + r.status; try { m = (await r.json()).error.message || m; } catch {} throw new Error(m); }
   return r;
 }
-const DMETA = "id,name,headRevisionId,modifiedTime,webViewLink,capabilities(canEdit,canShare),owners(displayName,me)";
+const DMETA = "id,name,headRevisionId,modifiedTime,webViewLink,capabilities(canEdit,canShare),owners(displayName,me,permissionId,photoLink)";
 function libraryPayload(){
   const images = {}; for (const k of usedImageKeys()) if (IMG.has(k)) images[k] = IMG.get(k);
   // never upload other people's decks as this browser has them: always send the library's own copy of those
@@ -3503,6 +3548,9 @@ async function drivePull(){
     if (!LEGACY) setTimeout(() => { try { ["command-zone-me", PKEY, KEY].forEach(k => localStorage.removeItem(k)); } catch {} idb.wipe(); }, 3000);
   }
   claimNewDecks();
+  // the library's owner takes over decks made before decks had owners, so everyone sees them in the same folder
+  if (DS.owner && DS.owner.me && DS.me) for (const d of Object.values(S.decks)) if (!d.owner && !d.deleted){ d.owner = {...DS.me}; touch(d); }
+  if (drag){ DS.renderAfterDrag = true; return {ahead: Object.values(S.decks).some(d => !DS.known.has(d.ver))}; }
   if (fresh || sig() !== before){ save(false); render(); }
   return {ahead: Object.values(S.decks).some(d => !DS.known.has(d.ver))};
 }
@@ -3709,6 +3757,8 @@ $("#profile").addEventListener("click", e => {
   else if (e.target.closest("#profSync")){ DS.rev = null; driveSync(false); }
   else if (e.target.closest("#profDrive")) $("#driveBox").scrollIntoView({behavior: "smooth", block: "center"});
 });
+$("#closeSide").innerHTML = I.panelL; $("#railExpand").innerHTML = I.panelR;
+$("#railExpand").onclick = () => { S.sidebarOpen = true; save(false); render(); };
 $("#closeSide").onclick = () => { S.sidebarOpen = false; save(false); render(); };
 $("#openSide").onclick = () => { S.sidebarOpen = !S.sidebarOpen; save(false); render(); };
 $("#sideScrim").onclick = () => { S.sidebarOpen = false; render(); };
@@ -3802,9 +3852,9 @@ $("#pdfBtn").onclick = openPdf;
 $("#saveFile").onclick = saveFile;
 $("#importBtn").onclick = () => $("#importFile").click();
 $("#importFile").onchange = e => { const f = e.target.files[0]; if (f) importFile(f); e.target.value = ""; };
-$("#curSel").value = UI.cur;
-$("#curSel").onchange = e => { UI.cur = e.target.value; saveUI(); renderAll(); };
+
 $("#total").addEventListener("change", e => {
+  if (e.target.id === "curSel"){ UI.cur = e.target.value; saveUI(); renderAll(); return; }
   if (e.target.id !== "priceyIn") return;
   const d = cur(); if (!d || guard(d)){ renderHeader(); return; }
   const v = parseFloat(String(e.target.value).replace(",", "."));
