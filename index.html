@@ -2874,8 +2874,17 @@ async function loadPerms(){
   catch { DS.perms = DS.perms || null; }
   renderSidebar();
 }
+const LIB_NAME = "MTG Deck Builder.json";
 function useMeta(m){
   DS.canEdit = !!(m.capabilities && m.capabilities.canEdit);
+  // libraries made before the rename are called "Command Zone decks.json": rename them once (same file, sharing kept)
+  if (/^command zone/i.test(m.name || "") && DS.canEdit && !DS.renaming){
+    DS.renaming = true;
+    dfetch(`/drive/v3/files/${m.id}?supportsAllDrives=true`, {method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({name: LIB_NAME})})
+      .then(() => { if (DS.file && DS.file.id === m.id){ DS.file.name = LIB_NAME; saveDriveFile(); renderDrive(); } })
+      .catch(() => {}).finally(() => { DS.renaming = false; });
+    m = {...m, name: LIB_NAME};
+  }
   DS.link = m.webViewLink || `https://drive.google.com/file/d/${m.id}/view`;
   DS.owner = (m.owners || [])[0] || null;
   DS.file = {id: m.id, name: m.name}; saveDriveFile();
@@ -2954,7 +2963,7 @@ async function driveCreate(){
   try {
     if (DS.me) for (const d of Object.values(S.decks)) if (!d.owner && !d.deleted) d.owner = {...DS.me};
     save(false);
-    const bd = "cz" + uid(), meta = {name: "MTG Deck Builder.json", mimeType: "application/json", description: "Decks for MTG Deck Builder. Share this file to give friends access: Editor can edit decks, Viewer can only look."};
+    const bd = "cz" + uid(), meta = {name: LIB_NAME, mimeType: "application/json", description: "Decks for MTG Deck Builder. Share this file to give friends access: Editor can edit decks, Viewer can only look."};
     const body = `--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${bd}\r\nContent-Type: application/json\r\n\r\n${libraryPayload()}\r\n--${bd}--`;
     const m = await (await dfetch(`/upload/drive/v3/files?uploadType=multipart&fields=${DMETA}`, {method: "POST", headers: {"Content-Type": `multipart/related; boundary=${bd}`}, body})).json();
     useMeta(m); DS.rev = m.headRevisionId || m.modifiedTime; DS.known = null; DS.remote = {...S.decks}; render(); loadPerms();
