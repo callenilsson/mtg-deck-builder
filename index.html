@@ -538,6 +538,8 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .pdf-foot .progress{flex:1;min-width:120px}
 #pdfMsg{font-size:13px;color:var(--muted);flex:1 1 200px}
 
+#updateBar{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:600;padding:9px 16px;border-radius:999px;border:1px solid var(--gold-line);background:var(--surface-3);color:var(--fg);font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.5);animation:rise .25s ease-out}
+#updateBar b{color:var(--gold)}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--surface-3);border:1px solid var(--line);padding:10px 16px;border-radius:10px;opacity:0;transition:.2s;z-index:500;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
 #toast.show{opacity:1;transform:translateX(-50%)}
 #sideScrim{display:none}
@@ -776,6 +778,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 <div class="scrim" id="pdfScrim" hidden><div class="modal pdfm" id="pdfModal" role="dialog" aria-modal="true"></div></div>
 <div class="scrim" id="confirmScrim" hidden><div class="modal confirm" id="confirmModal" role="alertdialog" aria-modal="true"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
+<button id="updateBar" hidden>New version available · <b>Reload</b></button>
 
 <!-- Your decks live here when you use "Save file with decks". -->
 <script id="embedded-decks" type="application/json">{"version":2,"savedAt":0,"decks":{}}</script>
@@ -786,6 +789,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+const BUILD = "20261115085526";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -3142,6 +3146,27 @@ $("#total").addEventListener("change", e => {
   d.pricey = v; touch(d); renderBoard(); renderHeader();
 });
 window.addEventListener("storage", e => { if (e.key === KEY){ try { S.decks = JSON.parse(e.newValue).decks; render(); } catch {} } });
+
+/* Always run the newest version: GitHub Pages lets browsers cache the page for ~10 minutes,
+   so ask for the current build number directly and switch when it's newer. */
+async function latestBuild(){
+  const r = await fetch(location.pathname + "?build-check=" + Date.now(), {cache: "no-store"});
+  const m = (await r.text()).match(/const BUILD = "([^"]+)"/);
+  return m ? m[1] : null;
+}
+const freshUrl = b => location.pathname + "?v=" + encodeURIComponent(b) + location.hash;
+async function checkForUpdate(onStart){
+  if (location.protocol !== "https:" || BUILD === "dev") return;
+  try {
+    const b = await latestBuild();
+    if (!b || b === BUILD) return;
+    if (onStart && !sessionStorage.getItem("mtg-updated-to-" + b)){ sessionStorage.setItem("mtg-updated-to-" + b, "1"); location.replace(freshUrl(b)); return; }
+    $("#updateBar").hidden = false; $("#updateBar").onclick = () => location.replace(freshUrl(b));
+  } catch {}
+}
+checkForUpdate(true);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkForUpdate(false); });
+setInterval(() => checkForUpdate(false), 10 * 60 * 1000);
 
 applyZoom(); applySplit(); applyUiZoom();
 load();
