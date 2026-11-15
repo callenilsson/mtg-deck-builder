@@ -645,6 +645,14 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
   #rail #railMenu{width:30px;height:30px}
   .top-actions .fold-btn{width:32px;height:32px}
 }
+/* ---------- interface size: scales menus, text and buttons, never the card images ---------- */
+:root{--uiz:1}
+#sidebar,#top,#tools,.panel-head,.box-head,.ct-stats,.acts,.add-tile,.modal-head,.modal-top,.dv-body,.flow-foot,.rt-meta,.rt-acts,#confirmModal,.pdf-top,.pdf-foot,#toast,.empty-note{zoom:var(--uiz)}
+.cmds{zoom:calc(1 / var(--uiz))}
+.cmd-col .acts{zoom:var(--uiz)}
+.a-ico{font-family:var(--display);font-weight:700;font-size:15px;line-height:1}
+.a-ico.sm{font-size:10px}
+@media (min-width:821px){ .cmds .cmd-col{width:min(var(--tile,180px),calc(284px * var(--uiz)))} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -692,6 +700,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 
     <div id="tools" hidden>
       <label class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><span class="z-ico"></span><input type="range" id="zoom" min="50" max="250" step="5" value="100" aria-label="Card size"><span class="z-ico big"></span><output id="zoomVal">100%</output></label>
+      <label class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click to reset."><span class="tl">Interface</span><span class="a-ico sm">A</span><input type="range" id="uiZoom" min="80" max="140" step="5" value="100" aria-label="Interface size"><span class="a-ico">A</span><output id="uiZoomVal">100%</output></label>
       <label class="tool"><span class="tl">Sort</span><select id="sortSel">
         <option value="manual">Your order</option><option value="incl">Most played (EDHREC %)</option><option value="syn">Synergy</option>
         <option value="price">Price, high to low</option><option value="cheap">Price, low to high</option><option value="cmc">Mana value</option>
@@ -812,7 +821,7 @@ function canMulti(card){ return !!(card && (card.basic || /deck can have (any nu
 function subtypes(card){ const t = String(card.type || "").split("//")[0].split("—")[1]; return t ? t.trim().split(/\s+/) : []; }
 
 /* ---------------- Per-screen preferences (not part of saved decks) ---------------- */
-const UI = {sort: "manual", filter: "", ctype: "", split: .5, zoom: 100, cur: "eur", pin: false, addSort: "best", pricey: 20, collapsed: {}};
+const UI = {sort: "manual", filter: "", ctype: "", split: .5, zoom: 100, cur: "eur", pin: false, addSort: "best", pricey: 20, collapsed: {}, uiz: 100};
 try { Object.assign(UI, JSON.parse(localStorage.getItem(UIKEY) || "{}")); } catch {}
 try { const z = localStorage.getItem("command-zone-card-size"); if (z && !localStorage.getItem(UIKEY)) UI.zoom = +z; } catch {}
 UI.filter = ""; UI.ctype = "";
@@ -1815,6 +1824,14 @@ function applyZoom(){
 $("#zoom").addEventListener("input", e => { UI.zoom = +e.target.value; applyZoom(); saveUI(); });
 $("#zoom").closest("label").addEventListener("dblclick", () => { UI.zoom = 100; applyZoom(); saveUI(); });
 addEventListener("resize", applyZoom);
+function applyUiZoom(){
+  const z = Math.max(.8, Math.min(1.4, (+UI.uiz || 100) / 100));
+  document.documentElement.style.setProperty("--uiz", z);
+  $("#uiZoom").value = Math.round(z * 100); $("#uiZoomVal").textContent = Math.round(z * 100) + "%";
+  if (V) layoutFlow();
+}
+$("#uiZoom").addEventListener("input", e => { UI.uiz = +e.target.value; applyUiZoom(); saveUI(); });
+$("#uiZoom").closest("label").addEventListener("dblclick", () => { UI.uiz = 100; applyUiZoom(); saveUI(); });
 $("#sortSel").addEventListener("change", e => { UI.sort = e.target.value; saveUI(); animateBoard(() => renderBoard()); if (UI.sort !== "manual") toast("Drag to reorder works in “Your order”. Locked cards always come first."); });
 let filtT;
 $("#filterQ").addEventListener("input", e => { UI.filter = e.target.value; clearTimeout(filtT); filtT = setTimeout(renderBoard, 150); });
@@ -2984,7 +3001,7 @@ let priceyT;
 $("#priceyIn").addEventListener("input", e => { const v = parseFloat(String(e.target.value).replace(",", ".")); if (!(v >= 0)) return; UI.pricey = v; saveUI(); clearTimeout(priceyT); priceyT = setTimeout(renderAll, 200); });
 window.addEventListener("storage", e => { if (e.key === KEY){ try { S.decks = JSON.parse(e.newValue).decks; render(); } catch {} } });
 
-applyZoom(); applySplit();
+applyZoom(); applySplit(); applyUiZoom();
 load();
 render();
 renderDrive(); initGoogle();
