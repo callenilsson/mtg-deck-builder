@@ -2726,7 +2726,8 @@ async function importFile(file){
    The library is a single JSON file ("Command Zone decks.json") in the owner's Drive holding every deck and custom image.
    Access is managed only with Drive's Share button: Editor = can create and edit decks, Viewer = can only look.
    Scope drive.file: the app can only touch files it created or that the person picked in the Google file chooser. */
-const GDRIVE = {clientId: "", apiKey: "", appId: ""};   // filled in once the Google Cloud project exists
+// Public identifiers of the "Command Zone" Google Cloud project. Safe to publish: the key only works from this site and only for the file chooser.
+const GDRIVE = {clientId: "855504134871-ig774jo5lhcedqt2ng4dfqjobmekagcu.apps.googleusercontent.com", apiKey: "AIzaSyBWAuF1yXIKPSONF6YZKedZU3qhNp7Esks", appId: "855504134871"};
 const DKEY = "command-zone-drive";
 const DS = {token: null, exp: 0, user: null, file: null, canEdit: false, rev: null, status: "off", msg: "", last: 0, busy: false, again: false, pushT: 0, warnedView: false, link: ""};
 try { DS.file = JSON.parse(localStorage.getItem(DKEY) || "null"); } catch {}
