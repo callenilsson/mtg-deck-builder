@@ -860,7 +860,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115135643";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115192307";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -3477,7 +3477,16 @@ async function drivePull(){
   const fresh = CLOUD() && !DS.loaded;
   if (fresh){ const keep = S.active; S.decks = {}; S.active = keep; }
   const before = fresh ? "" : sig();
+  const prevVer = fresh ? null : Object.fromEntries(Object.values(S.decks).map(d => [d.id, d.ver]));
   mergeDecks(data.decks || {});
+  if (prevVer){
+    const me = meNow(), news = Object.values(S.decks).filter(d => !d.deleted && prevVer[d.id] !== d.ver && d.owner && (!me || d.owner.id !== me.id));
+    if (news.length){
+      const who = [...new Set(news.map(d => (d.owner.name || "Someone").split(" ")[0]))];
+      toast(news.length === 1 ? `${who[0]} updated ${displayName(news[0])}` : `${who.join(", ")} updated ${news.length} decks`);
+      if (V && V.kind === "item" && !findCard(V.uid)) closeDetail(true, {anim: false});
+    }
+  }
   if (!cur()) S.active = liveDecks()[0]?.id || null;
   DS.known = new Set(); for (const d of Object.values(data.decks || {})){ DS.known.add(d.ver); (d.past || []).forEach(v => DS.known.add(v)); }
   DS.remote = data.decks || {};
@@ -3552,9 +3561,17 @@ function driveSchedule(){
   if (typeof DS === "undefined" || !DS.token || !DS.file) return;
   if (!DS.canEdit){ if (!DS.warnedView){ DS.warnedView = true; toast("View only: your changes stay on this device and aren’t shared"); } return; }
   setDrive("pending");
-  clearTimeout(DS.pushT); DS.pushT = setTimeout(() => driveSync(true), 1500);
+  clearTimeout(DS.pushT); DS.pushT = setTimeout(() => driveSync(true), 800);
 }
-setInterval(() => { if (DS.token && DS.file && document.visibilityState === "visible") driveSync(false); }, 40000);
+/* Near real time: while you're using the app, ask Drive every 3 s whether the file changed (a tiny request; the decks are only
+   downloaded when something did change). After 2 minutes without activity: every 15 s. Hidden tab: paused. */
+let lastInput = Date.now();
+["pointerdown", "keydown", "wheel", "touchstart"].forEach(ev => addEventListener(ev, () => { lastInput = Date.now(); }, {passive: true, capture: true}));
+async function pollLoop(){
+  try { if (DS.token && DS.file && document.visibilityState === "visible" && !DS.busy && DS.status !== "pending") await driveSync(false); } catch {}
+  setTimeout(pollLoop, Date.now() - lastInput < 120000 ? 3000 : 15000);
+}
+setTimeout(pollLoop, 3000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && DS.token && DS.file) driveSync(false); });
 addEventListener("beforeunload", e => { if (DS.status === "pending" || (DS.busy && DS.canEdit)){ e.preventDefault(); e.returnValue = ""; } });
 function setDrive(status, msg){ DS.status = status; DS.msg = msg || ""; renderDrive(); }
