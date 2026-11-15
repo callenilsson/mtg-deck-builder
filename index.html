@@ -860,7 +860,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115192307";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115203606";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -3563,15 +3563,22 @@ function driveSchedule(){
   setDrive("pending");
   clearTimeout(DS.pushT); DS.pushT = setTimeout(() => driveSync(true), 800);
 }
-/* Near real time: while you're using the app, ask Drive every 3 s whether the file changed (a tiny request; the decks are only
-   downloaded when something did change). After 2 minutes without activity: every 15 s. Hidden tab: paused. */
+/* Checking for other people's changes: a tiny "has the file changed?" request (about 1 KB); the decks are only downloaded
+   when something did change. Every 15 s while you use the app (30 s on mobile data or with data saver on),
+   every 2 minutes after 2 minutes without activity, paused while the tab is hidden. */
+function pollDelay(){
+  if (Date.now() - lastInput > 120000) return 120000;
+  const c = navigator.connection;
+  const mobile = c && (c.saveData || c.type === "cellular" || /^(slow-2g|2g|3g)$/.test(c.effectiveType || ""));
+  return mobile ? 30000 : 15000;
+}
 let lastInput = Date.now();
 ["pointerdown", "keydown", "wheel", "touchstart"].forEach(ev => addEventListener(ev, () => { lastInput = Date.now(); }, {passive: true, capture: true}));
 async function pollLoop(){
   try { if (DS.token && DS.file && document.visibilityState === "visible" && !DS.busy && DS.status !== "pending") await driveSync(false); } catch {}
-  setTimeout(pollLoop, Date.now() - lastInput < 120000 ? 3000 : 15000);
+  setTimeout(pollLoop, pollDelay());
 }
-setTimeout(pollLoop, 3000);
+setTimeout(pollLoop, 15000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && DS.token && DS.file) driveSync(false); });
 addEventListener("beforeunload", e => { if (DS.status === "pending" || (DS.busy && DS.canEdit)){ e.preventDefault(); e.returnValue = ""; } });
 function setDrive(status, msg){ DS.status = status; DS.msg = msg || ""; renderDrive(); }
