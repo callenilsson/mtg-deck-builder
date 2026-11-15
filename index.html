@@ -90,6 +90,29 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .avatar{width:28px;height:28px;border-radius:50%;flex:none;object-fit:cover;display:inline-grid;place-items:center;font-size:12px;font-weight:700;color:#fff;border:1px solid var(--line)}
 .avatar.xs{width:18px;height:18px;font-size:9px;margin-right:6px;vertical-align:-4px}
 .side-label{display:flex;align-items:center}
+.profile{display:flex;align-items:center;gap:10px;margin:0 8px 10px;padding:10px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line)}
+.profile .pf-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.profile .pf-text b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.profile .pf-text small{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.pf-status i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.pf-status.syncing i,.pf-status.pending i{background:var(--gold);animation:pulseDot 1s ease-in-out infinite}
+.pf-status.error{color:var(--danger)}.pf-status.error i{background:var(--danger)}
+.avatar.lg{width:38px;height:38px;font-size:15px}
+.folders-bar{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.folders-bar .link-btn{letter-spacing:0;text-transform:none;font-size:11.5px}
+.folder{margin-bottom:4px}
+.folder-head{display:flex;align-items:center;gap:8px;width:100%;padding:7px 8px;border-radius:10px;border:1px solid transparent;background:none;text-align:left}
+.folder-head:hover{background:var(--surface-2);border-color:var(--line)}
+.folder.mine>.folder-head{background:var(--gold-soft);border-color:var(--gold-line)}
+.folder-head .chev{display:grid;place-items:center;color:var(--faint);transition:transform .2s;transform:rotate(-90deg)}
+.folder.open>.folder-head .chev{transform:none}
+.folder-head .chev svg.i{width:14px;height:14px}
+.folder-head .p-name{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.folder-head .p-count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:14px;text-align:right}
+.folder-body{margin:4px 0 6px 18px;padding-left:8px;border-left:2px solid var(--line-soft);display:flex;flex-direction:column;gap:3px}
+.folder.mine .folder-body{border-left-color:var(--gold-line)}
+.new-deck.in-folder{margin:2px 0 4px;padding:7px 10px;justify-content:flex-start;font-size:13px}
+.folder-empty{padding:4px 8px 6px}
 .person{display:flex;align-items:center;gap:9px;width:calc(100% - 4px);margin:6px 2px 2px;padding:7px 8px;border-radius:10px;border:1px solid transparent;background:none;text-align:left}
 .person:hover{background:var(--surface-2);border-color:var(--line)}
 .person.open{background:var(--surface-2)}
@@ -357,7 +380,9 @@ body.pulse-focus .acts [data-act="focus"]{animation:pulse 1.1s ease 2}
 
 .ghost{position:fixed;top:0;left:0;z-index:1000;pointer-events:none;box-shadow:0 18px 40px rgba(0,0,0,.6);opacity:.95}
 .ghost,.ghost *{transition:none!important;animation:none!important}
-.fly{position:fixed;z-index:400;transform-origin:0 0;border-radius:4.6%/3.3%;box-shadow:0 18px 44px rgba(0,0,0,.6);pointer-events:none;object-fit:cover}
+.fly{position:fixed;z-index:400;transform-origin:0 0;pointer-events:none}
+img.fly{object-fit:cover;border-radius:4.6%/3.3%;box-shadow:0 18px 44px rgba(0,0,0,.6)}
+.fly .face{display:block;width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;box-shadow:0 18px 44px rgba(0,0,0,.6)}
 body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!important}
 body.is-dragging .panel-scroll{touch-action:none}
 body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!important}
@@ -380,7 +405,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 #detailScrim:not([hidden])>.modal{animation:none}
 #detailScrim{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(5,6,10,.84)}
 .fly{will-change:transform,opacity;backface-visibility:hidden}
-.fly-r{-webkit-box-reflect:below 4px linear-gradient(transparent 78%,rgba(255,255,255,.18))}
+
 @keyframes fade{from{opacity:0}}
 @keyframes rise{from{opacity:0;transform:translateY(12px) scale(.985)}}
 .modal{background:var(--surface);border:1px solid var(--line);border-radius:16px;width:min(1140px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.6);min-height:0}
@@ -435,11 +460,18 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .flow:focus-visible{box-shadow:inset 0 0 0 2px var(--gold)}
 .flow-stage{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
 .flow-stage.instant .fl{transition:none!important}
-.fl{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;border:0;padding:0;background:none;transition:transform .38s cubic-bezier(.2,.7,.2,1),filter .38s;cursor:pointer;-webkit-box-reflect:below 4px linear-gradient(transparent 78%,rgba(255,255,255,.18))}
-.fl img{width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;display:block;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6)}
+.fl{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;border:0;padding:0;background:none;transition:transform .3s cubic-bezier(.2,.8,.2,1),filter .3s;cursor:pointer}
+.fl .face{width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;display:block;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6)}
+/* our own mirrored reflection: always there, in every browser */
+.fl .refl,.fly .refl{position:absolute;left:0;top:calc(100% + 4px);width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;transform:scaleY(-1);pointer-events:none;opacity:.22;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 76%,#000);mask-image:linear-gradient(to bottom,transparent 76%,#000)}
+.fl .yours{position:absolute;left:50%;top:-20px;transform:translateX(-50%);padding:2px 9px;border-radius:999px;background:linear-gradient(90deg,#c9963a,var(--gold));color:#1b1407;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.5);pointer-events:none}
+.fl-over.rebasing canvas{outline:2px dashed var(--gold);outline-offset:4px}
+.rebase-cap{color:var(--gold)}
+.base-name{max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fl:not(.center){filter:brightness(.5) saturate(.85)}
 .fl-over{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;transform:translateX(-50%);pointer-events:none;z-index:150}
-.fl-over canvas{width:100%;height:100%;border-radius:4.6%/3.3%;display:none;pointer-events:none;-webkit-box-reflect:below 4px linear-gradient(transparent 78%,rgba(255,255,255,.18));box-shadow:0 14px 34px rgba(0,0,0,.6)}
+.fl-over canvas{width:100%;height:100%;border-radius:4.6%/3.3%;display:none;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6)}
 .fl-over.custom canvas{display:block}
 .fl-over.user canvas{pointer-events:auto;cursor:move;touch-action:none}
 .fl-over.stale canvas,.fl-over.stale .name-over,.fl-over.stale .name-pen{display:none}
@@ -712,7 +744,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
       <div class="brand"><i class="ms ms-commander"></i>MTG Deck Builder</div>
       <button class="icon-btn" id="closeSide" title="Hide deck list"><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
     </div>
-    <button class="new-deck" id="newDeck"><span class="card-plus-ico" style="width:16px;height:21px;font-size:13px">+</span>New deck</button>
+    <div class="profile" id="profile"></div>
         <div id="deckList"></div>
     <div class="side-foot">
       <label class="side-row">Prices in<select id="curSel"><option value="eur">€ Euro (Cardmarket)</option><option value="usd">$ Dollar (TCGplayer)</option></select></label>
@@ -799,7 +831,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115090522";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115094110";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -915,8 +947,11 @@ const largeOf = c => (c.custom && IMG.get(c.custom.key)) || c.large || c.img;
 function usedImageKeys(){
   const keys = new Set();
   for (const d of Object.values(S.decks)){ if (d.deleted) continue;
-    for (const k of [d.commander, d.partner]) if (k && k.custom) keys.add(k.custom.key);
-    for (const c of d.cards || []) if (c.card.custom) keys.add(c.card.custom.key); }
+    for (const k of [d.commander, d.partner, ...(d.cards || []).map(c => c.card)]){
+      if (!k) continue;
+      if (k.custom) keys.add(k.custom.key);
+      if (k.cust){ if (k.cust.key) keys.add(k.cust.key); if (k.cust.artKey) keys.add(k.cust.artKey); }
+    } }
   return keys;
 }
 async function storeImages(images){
@@ -1273,6 +1308,9 @@ function deckItemHTML(d, mine){
       <span class="deck-acts">${acts}</span></div>`;
 }
 /* Decks grouped by who made them: yours first, then everyone else in the library (also people without decks yet). */
+/* The deck list is a set of folders, one per person: yours first (with New deck inside), then everyone in the library.
+   Each folder collapses on its own; the state is remembered per device. */
+function folderOpen(id, mineFolder){ const o = UI.openPeople || {}; return mineFolder ? o[id] !== false : o[id] === true; }
 function renderSidebar(){
   const list = liveDecks(), me = meNow();
   const people = new Map();
@@ -1283,17 +1321,44 @@ function renderSidebar(){
   for (const p of DS.perms || []) if (p.type === "user" && p.id && (!me || p.id !== me.id)) add(p.id, {name: p.displayName, photo: p.photoLink});
   const roleOf = id => { const p = (DS.perms || []).find(x => x.id === id); return p ? (p.role === "owner" ? "Owner" : p.role === "writer" ? "Editor" : p.role === "commenter" || p.role === "reader" ? "Viewer" : "") : ""; };
   const others = [...people.values()].sort((a, b) => a.name.localeCompare(b.name));
-  let h = me ? `<div class="person me open" title="Your decks">${personAvatar(me)}<span class="p-name">${esc(me.name || "You")}</span><span class="p-role you">You</span><span class="p-count">${mine.length}</span></div>`
-             : `<div class="side-label">Your decks</div>`;
-  h += mine.length ? mine.map(d => deckItemHTML(d, true)).join("") : `<div class="side-note" style="padding:4px 10px 8px">No decks yet. Start one with “New deck”.</div>`;
-  if (me && !others.length) h += `<div class="side-note people-hint">${DS.file ? (DS.permErr ? `Couldn’t read who the library is shared with (${esc(DS.permErr)}).` : "When friends join your library, their decks show up here, one folder per person.") : "Create or open a shared library (Google Drive below) to see friends’ decks here."}</div>`;
-  for (const p of others){
-    const open = !!(UI.openPeople || {})[p.id] || p.decks.some(d => d.id === S.active);
-    const role = roleOf(p.id);
-    h += `<button class="person ${open ? "open" : ""}" data-person="${esc(p.id)}" title="${open ? "Hide" : "Show"} ${esc(p.name)}’s decks">${personAvatar(p)}<span class="p-name">${esc(p.name)}</span>${role ? `<span class="p-role">${role}</span>` : ""}<span class="p-count">${p.decks.length}</span>${I.down}</button>`;
-    if (open) h += p.decks.length ? `<div class="person-decks">${p.decks.map(d => deckItemHTML(d, false)).join("")}</div>` : `<div class="side-note" style="padding:2px 12px 8px">No decks yet.</div>`;
-  }
+  const myId = me ? me.id : "me";
+  const folder = (id, person, decks, isMe) => {
+    const open = folderOpen(id, isMe), role = isMe ? "You" : roleOf(id);
+    let h = `<div class="folder ${isMe ? "mine" : ""} ${open ? "open" : ""}">
+      <button class="folder-head" data-folder="${esc(id)}" data-mine="${isMe ? 1 : ""}" aria-expanded="${open}" title="${open ? "Collapse" : "Expand"} ${esc(person.name)}’s decks">
+        <span class="chev">${I.down}</span>${personAvatar(person)}<span class="p-name">${esc(person.name)}</span>${role ? `<span class="p-role ${isMe ? "you" : ""}">${role}</span>` : ""}<span class="p-count">${decks.length}</span></button>`;
+    if (open){
+      h += `<div class="folder-body">`;
+      if (isMe) h += `<button class="new-deck in-folder" data-newdeck="1"><span class="card-plus-ico" style="width:15px;height:20px;font-size:12px">+</span>New deck</button>`;
+      h += decks.length ? decks.map(d => deckItemHTML(d, isMe)).join("") : `<div class="side-note folder-empty">${isMe ? "No decks yet." : "No decks yet."}</div>`;
+      h += `</div>`;
+    }
+    return h + `</div>`;
+  };
+  const all = [myId, ...others.map(p => p.id)];
+  const anyOpen = all.some(id => folderOpen(id, id === myId));
+  let h = `<div class="folders-bar"><span>Decks</span>${others.length ? `<button class="link-btn" id="foldAll">${anyOpen ? "Collapse all" : "Expand all"}</button>` : ""}</div>`;
+  h += folder(myId, me || {name: "My decks"}, mine, true);
+  for (const p of others) h += folder(p.id, p, p.decks, false);
+  if (!others.length) h += `<div class="side-note people-hint">${!me ? "Sign in with Google (top) to share decks with friends." : DS.file ? (DS.permErr ? `Couldn’t read who the library is shared with (${esc(DS.permErr)}).` : "When friends join your library, each gets a folder here.") : "Create or open a shared library (Google Drive, below) to see friends’ folders here."}</div>`;
   $("#deckList").innerHTML = h;
+  renderProfile();
+}
+/* Signed-in person at the top of the sidebar. */
+function renderProfile(){
+  const box = $("#profile"); if (!box) return;
+  const me = meNow();
+  if (!driveUsable()){ box.innerHTML = me ? `${personAvatar(me, "lg")}<div class="pf-text"><b>${esc(me.name)}</b><small>Decks on this device</small></div>` : ""; box.hidden = !me; return; }
+  box.hidden = false;
+  if (!DS.token){
+    box.innerHTML = me
+      ? `${personAvatar(me, "lg")}<div class="pf-text"><b>${esc(me.name)}</b><small>Not syncing</small></div><button class="btn sm drv-main" id="profConnect">Sync</button>`
+      : `<div class="pf-text"><b>Sign in</b><small>to sync and share decks</small></div><button class="btn sm drv-main" id="profConnect">Sign in with Google</button>`;
+    return;
+  }
+  const st = DS.status === "syncing" ? "Syncing…" : DS.status === "pending" ? "Saving…" : DS.status === "error" ? "Sync problem" : DS.file ? (DS.last ? `Synced ${agoText(DS.last)}` : "Connected") : "No library yet";
+  box.innerHTML = `${personAvatar(me || {name: "?"}, "lg")}<div class="pf-text"><b>${esc((me && me.name) || "Signed in")}</b><small class="pf-status ${DS.status}"><i></i>${st}</small></div>
+    <button class="icon-btn" id="${DS.file ? "profSync" : "profDrive"}" title="${DS.file ? "Sync now" : "Set up the shared library"}">${DS.file ? I.flip : I.right}</button>`;
 }
 function deckTotals(d){
   const deck = d.cards.filter(c => c.zone === "deck");
@@ -2119,6 +2184,11 @@ async function corsImage(url){
   return loadImage(URL.createObjectURL(await r.blob()));
 }
 let V = null, vTok = 0;
+/* ---------------- Card view state ----------------
+   The cover flow holds every official printing, plus your customization as its own card ("✦ Yours"), placed just before the
+   printing it's built on. Whatever is in the middle when you press Save is what the deck uses; the customization is kept either way.
+   A card stores it as  card.cust = {key (finished image), artKey (your picture), name, mode, zoom, pan, box, base (the printing)}
+   and, while the custom version is the one in use, card.custom = {key, name}. */
 function viewTarget(v){
   const d = cur(); if (!d || !v) return null;
   if (v.kind === "item") return findCard(v.uid)?.card || null;
@@ -2126,35 +2196,59 @@ function viewTarget(v){
   if (v.kind === "partner") return d.partner;
   return v.card0;
 }
-const plainPrint = c => { const p = {...c}; delete p.custom; return p; };
+const plainPrint = c => { const p = {...c}; delete p.custom; delete p.cust; return p; };
 function initView(o){
   const card = o.kind === "add" ? o.card : (o.kind === "item" ? findCard(o.uid).card : o.kind === "commander" ? cur().commander : cur().partner);
+  // older customizations (made before customizations were kept separately) only have the finished image
+  const cust = card.cust ? JSON.parse(JSON.stringify(card.cust))
+    : card.custom ? {key: card.custom.key, name: card.custom.name || "", artKey: null, legacy: true, base: plainPrint(card)} : null;
+  const custBase = cust ? plainPrint(cust.base || card) : null;
   const v = {kind: o.kind, uid: o.uid, card0: o.kind === "add" ? o.card : null, rec: o.rec || null,
-    card: JSON.parse(JSON.stringify(card)), prints: V && V.prints && V.prints[0] && V.prints[0].name === card.name ? V.prints : [plainPrint(card)], fi: 0,
-    base: null, user: null, mode: "frame", box: [...frameOf(card).box], zoom: 1, pan: {x: 0, y: 0},
-    name: (card.custom && card.custom.name) || "", customBase: !!(card.custom && IMG.get(card.custom.key)),
-    dirty: false, back: false, editable: o.kind !== "add" && !roDeck(cur()), token: ++vTok, flying: false, busy: false};
-  const i = v.prints.findIndex(p => p.id === card.id); v.fi = i < 0 ? 0 : i;
-  if (i < 0) v.prints = [plainPrint(card)];
+    editable: o.kind !== "add" && !roDeck(cur()), token: ++vTok, flying: false, back: false, dirty: false, custChanged: false,
+    prints: [plainPrint(custBase && card.custom ? custBase : card)],
+    hasCust: !!cust, custBase, legacy: !!(cust && cust.legacy), legacyKey: cust && cust.legacy ? cust.key : null,
+    snap: cust && IMG.get(cust.key) || "", custKey: cust ? cust.key : null,
+    name: cust ? cust.name || "" : "", mode: (cust && cust.mode) || "frame", zoom: (cust && cust.zoom) || 1,
+    pan: (cust && cust.pan) ? {...cust.pan} : {x: 0, y: 0}, box: (cust && cust.box) ? [...cust.box] : [...frameOf(custBase || card).box],
+    userKey: cust ? cust.artKey || null : null, user: null, base: null, baseFor: null, rebase: false,
+    selKey: card.custom ? "c" : card.id, fi: 0, card: plainPrint(card)};
+  if (custBase && !v.prints.some(p => p.id === custBase.id)) v.prints.push(custBase);
   return v;
 }
+function entries(){
+  const list = V.prints.map(p => ({t: "p", p}));
+  if (V.hasCust && !V.rebase){ let i = V.prints.findIndex(p => p.id === V.custBase.id); if (i < 0) i = 0; list.splice(i, 0, {t: "c"}); }
+  return list;
+}
+const entryKey = e => e.t === "c" ? "c" : e.p.id;
+function syncSel(){
+  const list = entries();
+  let i = list.findIndex(e => entryKey(e) === V.selKey);
+  if (i < 0){ i = 0; V.selKey = list[0] ? entryKey(list[0]) : V.selKey; }
+  V.fi = i;
+  const e = list[i];
+  V.card = e ? (e.t === "c" ? V.custBase : e.p) : V.card;
+  V.drawCard = V.rebase ? V.card : V.custBase;
+}
+const centerIsCustom = () => V && !V.rebase && V.selKey === "c";
 function openDetail(o, srcEl){
   if (o.kind === "item" && !findCard(o.uid)) return;
-  V = initView(o); V.srcEl = srcEl;
+  V = initView(o); V.srcEl = srcEl; syncSel(); V.startKey = V.selKey;
   prev.hidden = true; showScrim("#detailScrim"); renderDetail();
   animateOpen(srcEl);
-  loadBase(); loadPrints();
+  loadUserArt(); loadBase(); loadPrints();
 }
-/* Cards fly between the board and the cover flow along a soft S-curve, tilting one way then the other, and settle. */
-/* One smooth curve (cubic Bézier with a gentle S), sampled finely so speed and direction never change abruptly.
-   Ease-out: quick start, soft landing. */
-/* CSS-style cubic-bezier easing, solved numerically. (.32,0,.18,1): soft start, long gentle glide in. */
+
+/* ---------------- Flights between the board and the cover flow ----------------
+   One smooth curve (cubic Bézier with a gentle S), sampled finely so speed and direction never change abruptly.
+   The duration follows the distance: close cards arrive quickly, far ones take a little longer. */
 function bezierEase(x1, y1, x2, y2){
   const bx = s => 3 * (1 - s) * (1 - s) * s * x1 + 3 * (1 - s) * s * s * x2 + s * s * s;
   const by = s => 3 * (1 - s) * (1 - s) * s * y1 + 3 * (1 - s) * s * s * y2 + s * s * s;
   return u => { let lo = 0, hi = 1; for (let i = 0; i < 30; i++){ const m = (lo + hi) / 2; if (bx(m) < u) lo = m; else hi = m; } return by((lo + hi) / 2); };
 }
 const FLY_EASE = bezierEase(.32, 0, .18, 1);
+const flightMs = dist => Math.round(Math.max(220, Math.min(520, 200 + dist * .32)));
 function sFlight(fly, r0, r1, dur){
   Object.assign(fly.style, {left: r1.left + "px", top: r1.top + "px", width: r1.width + "px", height: r1.height + "px", transformOrigin: "50% 50%"});
   const dx = (r0.left + r0.width / 2) - (r1.left + r1.width / 2), dy = (r0.top + r0.height / 2) - (r1.top + r1.height / 2);
@@ -2167,27 +2261,30 @@ function sFlight(fly, r0, r1, dur){
     const u = i / N, e = FLY_EASE(u);
     frames.push({transform: `translate(${bez(0, e).toFixed(2)}px,${bez(1, e).toFixed(2)}px) scale(${(s0 + (1 - s0) * e).toFixed(4)})`, offset: u});
   }
-  return fly.animate(frames, {duration: dur, easing: "linear"});
+  return fly.animate(frames, {duration: dur || flightMs(dist), easing: "linear"});
 }
 /* Hand over from the flying copy to the real card without a visible swap: reveal the card underneath, then fade the copy. */
 function fadeAway(fly, after){
   const a = fly.animate([{opacity: 1}, {opacity: 0}], {duration: 120, easing: "linear", fill: "forwards"});
   a.onfinish = a.oncancel = () => { fly.remove(); after && after(); };
 }
-function makeFly(src, r){
-  const fly = document.createElement("img"); fly.src = src; fly.className = "fly";
+/* The flying card; with refl it carries the same mirrored reflection as the cover flow. */
+function makeFly(src, r, refl){
+  const fly = document.createElement("div"); fly.className = "fly";
+  fly.innerHTML = `<img class="face" src="${esc(src)}" alt="">${refl ? `<img class="refl" src="${esc(src)}" alt="">` : ""}`;
   Object.assign(fly.style, {left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", transformOrigin: "50% 50%"});
   document.body.appendChild(fly); return fly;
 }
+function setFlImg(el, src){ if (!el) return; el.querySelectorAll("img").forEach(im => { if (im.getAttribute("src") !== src) im.src = src; }); }
 function animateOpen(srcEl){
   const img = srcEl && (srcEl.tagName === "IMG" ? srcEl : srcEl.querySelector("img"));
   if (!img || REDUCED.matches || !V) return;
   const tok = V.token, r0 = srcEl.getBoundingClientRect();
   const src = img.currentSrc || img.src;
-  const fly = makeFly(src, r0); fly.classList.add("fly-r");
+  const fly = makeFly(src, r0, true);
   V.flying = true;
   // the cover flow's card starts with the very same picture, so the hand-over is invisible
-  const ci = $("#flowStage .fl.center img"); if (ci && !V.customBase) ci.src = src;
+  setFlImg($("#flowStage .fl.center"), src);
   const hideTarget = on => { const c = $("#flowStage .fl.center"), o = $("#flOver"); if (c) c.style.visibility = on ? "hidden" : ""; if (o) o.style.visibility = on ? "hidden" : ""; };
   hideTarget(true);
   srcEl.style.visibility = "hidden";
@@ -2196,10 +2293,9 @@ function animateOpen(srcEl){
     if (V && V.token === tok){ V.flying = false; hideTarget(false); fadeAway(fly, () => { if (V && V.token === tok) upgradeCenter(); }); }
     else fly.remove();
   };
-  // start right away: the cover flow is laid out in its final place already, so the target doesn't move
   const target = $("#flowStage .fl.center");
   if (!target){ done(); return; }
-  const a = sFlight(fly, r0, target.getBoundingClientRect(), 460);
+  const a = sFlight(fly, r0, target.getBoundingClientRect());
   a.onfinish = a.oncancel = done;
   V.flyAnim = a;
 }
@@ -2208,9 +2304,8 @@ function closeFly(v){
   if (!v || REDUCED.matches) return null;
   const c = $("#flowStage .fl.center"); if (!c || c.style.visibility === "hidden" || v.back) return null;
   const r = c.getBoundingClientRect(); if (!r.width) return null;
-  const over = $("#flOver"), cv = $("#artCanvas");
-  let src = c.querySelector("img").src;
-  if (over && over.classList.contains("custom") && !over.classList.contains("stale")) try { src = cv.toDataURL("image/jpeg", .85); } catch {}
+  let src = c.querySelector("img.face").src;
+  if ($("#flOver").classList.contains("custom")) try { src = $("#artCanvas").toDataURL("image/jpeg", .85); } catch {}
   return {fly: makeFly(src, r), r};
 }
 function landFly(f, v){
@@ -2226,10 +2321,11 @@ function landFly(f, v){
     a.onfinish = a.oncancel = () => f.fly.remove(); return;
   }
   dest.style.visibility = "hidden";
-  const a = sFlight(f.fly, f.r, r, 400);
+  const a = sFlight(f.fly, f.r, r);
   a.onfinish = a.oncancel = () => { dest.style.visibility = ""; fadeAway(f.fly); };
 }
-function customView(){ return !!(V && (V.user || V.name.trim() || V.customBase)); }
+
+/* ---------------- Card view ---------------- */
 function renderDetail(){
   const c = V.card;
   $("#detailModal").innerHTML = `<div class="modal-head"><h2>${esc(c.name)} <span class="mana">${manaHTML(c.mana)}</span></h2><button class="icon-btn" data-close title="Close">${I.close}</button></div>
@@ -2259,7 +2355,7 @@ function renderDetailParts(){
   }
   chips.push(`<span class="chip-st price${isPricey(c) ? " pricey" : ""}" title="This printing${pa && pa.e != null ? ` · €${pa.e.toFixed(2)}` : ""}${pa && pa.u != null ? ` · $${pa.u.toFixed(2)}` : ""}"><b>${pr ? fmtMoney(pr.v, pr.sym) : "–"}</b></span>`);
   if (V.rec && V.rec.pairs && V.rec.pairs.length) chips.push(`<span class="chip-st" title="Also played with ${V.rec.pairs.map(esc).join(", ")}">Combo ×${V.rec.pairs.length}</span>`);
-  $("#dvInfo").innerHTML = `<div class="type-line">${esc(c.type)}${c.custom && c.custom.name ? ` · printed as “${esc(c.custom.name)}”` : ""}</div>
+  $("#dvInfo").innerHTML = `<div class="type-line">${esc(c.type)}${centerIsCustom() && V.name.trim() ? ` · printed as “${esc(V.name.trim())}”` : ""}</div>
     <div class="oracle">${manaHTML(c.text)}</div>${c.pt ? `<div class="pt">${esc(c.pt)}</div>` : ""}
     <div class="chip-row">${chips.join("")}</div>
     <div class="dv-links"><a href="https://edhrec.com/cards/${slugify(c.name)}" target="_blank" rel="noopener">EDHREC ↗</a><a href="https://scryfall.com/search?q=${encodeURIComponent(`!"${c.name.split(" // ")[0]}"`)}" target="_blank" rel="noopener">Scryfall ↗</a><a href="https://www.cardmarket.com/en/Magic/Products/Search?searchString=${encodeURIComponent(c.name.split(" // ")[0])}" target="_blank" rel="noopener">Cardmarket ↗</a></div>`;
@@ -2287,9 +2383,9 @@ function renderDetailParts(){
   }
   let edit = "";
   if (V.editable){
-    const hasCustom = !!(V.user || V.name.trim() || V.customBase || (viewTarget(V) || {}).custom);
+    const hint = V.rebase ? "Swipe to pick the card under your customization" : V.dirty ? "Unsaved changes" : V.hasCust ? "Swipe between your version and the originals" : "Rename or upload art to make your own version";
     edit = `<div class="dv-edit ${V.dirty ? "dirty" : ""}">
-      <div class="ed-head"><span class="ed-title">✦ Customize</span><span class="ed-hint">${V.dirty ? "Unsaved changes" : "Swipe the cards above to change art"}</span></div>
+      <div class="ed-head"><span class="ed-title">✦ Customize</span><span class="ed-hint">${hint}</span></div>
       <div class="ed-row"><span class="ed-lbl">${I.pencil}Name</span><span class="ed-field"><input id="artName2" maxlength="40" autocomplete="off" spellcheck="false" placeholder="${esc(c.name.split(" // ")[0])}" value="${esc(V.name)}" aria-label="Name on the card">${V.name ? `<button class="x" id="nameClear" title="Use the real name">×</button>` : ""}</span></div>
       <div class="ed-row"><span class="ed-lbl">${I.brush}Art</span><div class="ed-btns">
         <button class="btn sm" id="artUpload" title="Use any picture: AI-made art, a photo, a drawing. You can also paste an image.">${I.upload}Upload</button>
@@ -2297,31 +2393,43 @@ function renderDetailParts(){
         <button class="btn sm" id="artOrig" title="Download the current art, for example to attach in your AI image tool">Download</button></div></div>
       ${V.user ? `<div class="ed-row"><span class="ed-lbl">Fit</span><div class="ed-btns" title="${V.mode === "frame" ? "Drag the picture on the card to frame it; drag the gold corners to fit the art window" : "Drag the picture on the card to position it"}">
         <div class="seg"><button data-mode="frame" class="${V.mode === "frame" ? "on" : ""}">In frame</button><button data-mode="whole" class="${V.mode === "whole" ? "on" : ""}">Whole card</button></div>
-        <input type="range" id="artZoom" min="1" max="4" step="0.01" value="${V.zoom}" aria-label="Zoom"><button class="btn sm" id="artDrop">Remove</button></div></div>` : ""}
+        <input type="range" id="artZoom" min="1" max="4" step="0.01" value="${V.zoom}" aria-label="Zoom"><button class="btn sm" id="artDrop">Remove picture</button></div></div>` : ""}
+      ${V.hasCust ? `<div class="ed-row"><span class="ed-lbl">${I.copy}Base</span><div class="ed-btns">${V.rebase
+          ? `<span class="note">Swipe above, then</span><button class="btn sm primary" id="rebaseDone">Done</button>`
+          : `<span class="note base-name" title="The official card your version is built on">${esc(V.custBase.set || "This printing")}</span><button class="btn sm" id="rebaseStart" title="Keep your customization and swipe to put it on another printing">Change base card</button>`}</div></div>` : ""}
       <input type="file" id="artFile" accept="image/*" hidden>
       <div class="ed-foot">
-        ${hasCustom ? `<button class="link-btn" id="artReset" title="Back to the official art and name">Reset to original</button>` : "<span></span>"}
-        <span class="ed-save"><button class="btn sm" id="artUndo" ${V.dirty ? "" : "disabled"} title="Throw away the changes">${I.undo}Discard</button>
-        <button class="btn sm save-btn" id="artSave" ${V.dirty ? "" : "disabled"}>Save changes</button></span></div></div>`;
+        ${V.hasCust ? `<button class="btn sm danger" id="custRemove" title="Delete your customized version of this card">${I.trash}Remove customization</button>` : "<span></span>"}
+        <span class="ed-save"><button class="btn sm save-btn" id="artSave" ${V.dirty ? "" : "disabled"}>Save changes</button></span></div></div>`;
   }
   $("#dvSide").innerHTML = `<div class="dv-acts">${acts}</div>${edit}`;
 }
-function renderFlow(){
+function flHTML(e, i){
+  if (e.t === "c") return `<button class="fl custom-entry" data-fi="${i}" aria-label="Your version"><img class="face" src="${esc(V.snap || V.custBase.img)}" alt="" draggable="false"><img class="refl" src="${esc(V.snap || V.custBase.img)}" alt="" draggable="false"><span class="yours">✦ Yours</span></button>`;
+  const src = V.back && e.p.back && i === V.fi ? e.p.back.large : e.p.img, lazy = Math.abs(i - V.fi) < 6 ? "eager" : "lazy";
+  return `<button class="fl" data-fi="${i}" aria-label="${esc(e.p.set)}"><img class="face" src="${esc(src)}" alt="" loading="${lazy}" draggable="false"><img class="refl" src="${esc(src)}" alt="" loading="${lazy}" draggable="false"></button>`;
+}
+function renderFlow(popCustom){
   const st = $("#flowStage"); if (!st || !V) return;
-  const centerSrc = p => V.back && p.back ? p.back.large : (V.customBase && V.card.custom && p.id === V.card.id ? IMG.get(V.card.custom.key) : p.img);
-  st.innerHTML = V.prints.map((p, i) => `<button class="fl" data-fi="${i}" aria-label="${esc(p.set)}"><img src="${esc(i === V.fi ? centerSrc(p) : p.img)}" alt="" loading="${Math.abs(i - V.fi) < 6 ? "eager" : "lazy"}" draggable="false"></button>`).join("");
-  upgradeCenter();
+  syncSel();
+  const list = entries();
+  st.innerHTML = list.map(flHTML).join("");
   const sc = $("#flowScrub");
-  if (sc){ sc.hidden = V.prints.length < 2; sc.max = V.prints.length - 1; sc.value = V.fi; }
+  if (sc){ sc.hidden = list.length < 2; sc.max = list.length - 1; sc.value = V.fi; }
   // place freshly built cards straight into position (no slide-in), so the center card never moves under a landing flight
   st.classList.add("instant"); layoutFlow(); void st.offsetWidth; st.classList.remove("instant");
   if (V.flying){ const c = $("#flowStage .fl.center"); if (c) c.style.visibility = "hidden"; }
+  if (popCustom && !REDUCED.matches){
+    const el = st.querySelector(".custom-entry");
+    if (el) el.animate([{opacity: 0, scale: .6}, {opacity: 1, scale: 1.06, offset: .7}, {opacity: 1, scale: 1}], {duration: 380, easing: "cubic-bezier(.2,.8,.2,1)"});
+  }
+  upgradeCenter();
 }
 function upgradeCenter(){
-  if (V && V.flying) return;
-  const p = V && V.prints[V.fi]; if (!p || !p.large || V.back || (V.customBase && p.id === V.card.id)) return;
-  const tok = V.token, fi = V.fi, im = new Image(), hi = /cards\.scryfall\.io\/large\//.test(p.large) ? pngOf(p.large) : p.large;
-  im.onload = () => { (im.decode ? im.decode() : Promise.resolve()).catch(() => {}).then(() => { if (!V || V.token !== tok || V.fi !== fi) return; const el = $("#flowStage") && $("#flowStage").children[fi]; const i2 = el && el.querySelector("img"); if (i2 && i2.src !== im.src) i2.src = im.src; }); };
+  if (!V || V.flying || V.back) return;
+  const e = entries()[V.fi]; if (!e || e.t !== "p" || !e.p.large) return;
+  const p = e.p, tok = V.token, fi = V.fi, im = new Image(), hi = /cards\.scryfall\.io\/large\//.test(p.large) ? pngOf(p.large) : p.large;
+  im.onload = () => { (im.decode ? im.decode() : Promise.resolve()).catch(() => {}).then(() => { if (!V || V.token !== tok || V.fi !== fi) return; setFlImg($("#flowStage") && $("#flowStage").children[fi], im.src); }); };
   im.onerror = () => { if (hi !== p.large){ im.onerror = null; im.src = p.large; } };
   im.src = hi;
 }
@@ -2348,28 +2456,43 @@ function layoutFlow(){
     el.style.zIndex = 100 - a;
     el.classList.toggle("center", o === 0);
   });
-  const sc = $("#flowScrub"); if (sc && +sc.value !== V.fi) sc.value = V.fi;
-  const p = V.prints[V.fi], cap = $("#flowCap");
-  if (cap && p){
-    const pr = priceOf(p);
-    cap.innerHTML = `<b>${esc(p.set || "This version")}</b>${p.artist ? ` · art by ${esc(p.artist)}` : ""}${pr ? ` · <span class="price">${fmtMoney(pr.v, pr.sym)}</span>` : ""} · ${V.fi + 1} of ${V.prints.length}${V.prints.length < 2 ? " (loading other artworks…)" : ""}`;
+  const list = entries(), sc = $("#flowScrub"); if (sc && +sc.value !== V.fi) sc.value = V.fi;
+  const e = list[V.fi], cap = $("#flowCap");
+  if (cap && e){
+    const p = e.t === "c" ? V.custBase : e.p, pr = priceOf(p);
+    const what = e.t === "c" ? `<b>✦ Your version</b> · based on ${esc(p.set || "this printing")}`
+      : `${V.rebase ? `<b class="rebase-cap">New base:</b> ` : ""}<b>${esc(p.set || "This version")}</b>${p.artist ? ` · art by ${esc(p.artist)}` : ""}`;
+    cap.innerHTML = `${what}${pr ? ` · <span class="price">${fmtMoney(pr.v, pr.sym)}</span>` : ""} · ${V.fi + 1} of ${list.length}${V.prints.length < 2 ? " (loading other artworks…)" : ""}`;
   }
   updateOverlay();
 }
 function updateOverlay(){
   const o = $("#flOver"); if (!o || !V) return;
-  const stale = V.back || !V.prints[V.fi] || V.prints[V.fi].id !== V.card.id;
-  o.classList.toggle("stale", stale);
-  o.classList.toggle("custom", customView() && !!V.base);
-  o.classList.toggle("user", !!V.user);
+  const show = !V.back && (V.rebase || centerIsCustom());
+  o.classList.toggle("stale", !!V.back);
+  o.classList.toggle("custom", show && !!V.base);
+  o.classList.toggle("user", show && !!V.user);
+  o.classList.toggle("rebasing", !!V.rebase);
 }
+/* the picture the customization is drawn on: the chosen printing (or, for older customizations, their finished image) */
 async function loadBase(){
-  if (!V || !V.editable) return;
-  const tok = V.token, c = V.card;
-  const src = V.customBase ? IMG.get(c.custom.key) : (c.large || c.img);
-  const hi = !V.customBase && /cards\.scryfall\.io\/large\//.test(src) ? pngOf(src) : null;
-  try { let im; try { im = await corsImage(hi || src); } catch (err){ if (!hi) throw err; im = await corsImage(src); } if (V && V.token === tok && V.card.id === c.id){ V.base = im; drawArt(); updateOverlay(); } }
-  catch (e){ if (V && V.token === tok && customView()) toast(e.message); }
+  if (!V || !V.editable || !V.hasCust) return;
+  const tok = V.token, target = V.rebase ? V.card : V.custBase;
+  const useLegacy = V.legacy && V.legacyKey && IMG.get(V.legacyKey) && !V.rebase;
+  const key = useLegacy ? "legacy:" + V.legacyKey : target.id;
+  if (V.baseFor === key && V.base) return;
+  const src = useLegacy ? IMG.get(V.legacyKey) : (target.large || target.img);
+  const hi = !useLegacy && /cards\.scryfall\.io\/large\//.test(src) ? pngOf(src) : null;
+  try {
+    let im; try { im = await corsImage(hi || src); } catch (err){ if (!hi) throw err; im = await corsImage(src); }
+    const now = V && V.token === tok && (V.rebase ? V.card : V.custBase).id === target.id;
+    if (now){ V.base = im; V.baseFor = key; drawArt(); updateOverlay(); }
+  } catch (e){ if (V && V.token === tok) toast(e.message); }
+}
+async function loadUserArt(){
+  if (!V || !V.userKey || !IMG.get(V.userKey)) return;
+  const tok = V.token;
+  try { const im = await loadImage(IMG.get(V.userKey)); if (V && V.token === tok){ V.user = im; drawArt(); updateOverlay(); renderDetailParts(); } } catch {}
 }
 async function loadPrints(){
   const tok = V.token, name = V.card.name.split(" // ")[0];
@@ -2379,32 +2502,40 @@ async function loadPrints(){
     const list = (j ? j.data : []).map(toCard).filter(p => p.img);
     savePrices();
     if (!list.length) return;
-    let i = list.findIndex(p => p.id === V.card.id || (V.card.ill && p.ill === V.card.ill));
-    if (i < 0){ list.unshift(plainPrint(V.card)); i = 0; }
-    else if (list[i].id !== V.card.id) list[i] = plainPrint(V.card); // same art, other printing: keep yours
-    V.prints = list; V.fi = i;
+    // keep the exact printings this card and its customization use (same art, other set: keep yours)
+    for (const keep of [V.card, V.custBase].filter(Boolean)){
+      const i = list.findIndex(p => p.id === keep.id || (keep.ill && p.ill === keep.ill));
+      if (i < 0) list.unshift(plainPrint(keep)); else if (list[i].id !== keep.id) list[i] = plainPrint(keep);
+    }
+    V.prints = list;
     renderFlow(); renderDetailParts();
   } catch {}
 }
 let flowT;
-function setFlow(i){
-  if (!V || !V.prints) return;
-  i = Math.max(0, Math.min(V.prints.length - 1, i));
+/* Clicks and keys switch at once; drags and the wheel settle for a moment first. */
+function setFlow(i, settle){
+  if (!V) return;
+  const list = entries();
+  i = Math.max(0, Math.min(list.length - 1, i));
   if (i === V.fi) return;
-  V.fi = i; V.back = false; layoutFlow();
-  clearTimeout(flowT); flowT = setTimeout(() => applyPrint(V.prints[V.fi]), 240);
-}
-async function applyPrint(p){
-  if (!V || p.id === V.card.id) return;
-  Object.assign(V.card, {id: p.id, img: p.img, large: p.large, art: p.art, back: p.back, frame: p.frame, fullArt: p.fullArt, set: p.set, artist: p.artist, ill: p.ill});
-  V.box = [...frameOf(V.card).box];
-  V.customBase = false; V.base = null;
-  if (V.editable) markDirty();
-  updateOverlay(); renderDetailParts();
-  upgradeCenter();
-  loadBase();
+  V.selKey = entryKey(list[i]); V.back = false;
+  syncSel(); layoutFlow();
+  if (!V.rebase && V.editable && V.selKey !== V.startKey) markDirty();
+  clearTimeout(flowT);
+  const apply = () => { if (!V) return; renderDetailParts(); upgradeCenter(); if (V.rebase){ V.box = [...frameOf(V.card).box]; loadBase(); } };
+  if (settle) flowT = setTimeout(apply, 120); else apply();
 }
 function markDirty(){ if (V && !V.dirty){ V.dirty = true; const a = document.activeElement, id = a && a.id, pos = a && a.selectionStart; renderDetailParts(); if (id === "artName2"){ const n = $("#artName2"); n.focus(); try { n.setSelectionRange(pos, pos); } catch {} } } }
+function markCust(){ V.custChanged = true; markDirty(); }
+/* Start a customization on the printing in the middle (or keep the existing one) and show it as its own card. */
+function ensureCust(){
+  if (V.hasCust){ if (!centerIsCustom() && !V.rebase){ V.selKey = "c"; renderFlow(); } return; }
+  const e = entries()[V.fi];
+  V.hasCust = true; V.custBase = e && e.t === "p" ? e.p : V.card; V.legacy = false; V.legacyKey = null; V.removed = false;
+  V.box = [...frameOf(V.custBase).box]; V.base = null; V.baseFor = null; V.snap = "";
+  V.selKey = "c";
+  renderFlow(true); renderDetailParts(); markCust(); loadBase();
+}
 let flowDrag = null, flowWheel = 0, flowMoved = false;
 $("#detailModal").addEventListener("pointerdown", e => {
   const f = e.target.closest("#flow"); if (!f || !V || e.target.closest(".name-over,.name-pen") || (e.target.id === "artCanvas" && V.user)) return;
@@ -2414,17 +2545,17 @@ window.addEventListener("pointermove", e => {
   if (!flowDrag || !V) return;
   const dx = e.clientX - flowDrag.x;
   if (Math.abs(dx) > 6) flowMoved = true;
-  if (flowMoved) setFlow(flowDrag.fi - Math.round(dx / 55));
+  if (flowMoved) setFlow(flowDrag.fi - Math.round(dx / 55), true);
 });
 window.addEventListener("pointerup", () => { flowDrag = null; });
 window.addEventListener("pointercancel", () => { flowDrag = null; });
 $("#detailModal").addEventListener("wheel", e => {
-  if (!e.target.closest("#flow") || !V || V.prints.length < 2) return;
+  if (!e.target.closest("#flow") || !V || entries().length < 2) return;
   // sideways wheel / trackpad swipe (or shift + wheel) flips artworks; normal wheel scrolls the view
   if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) && !e.shiftKey) return;
   e.preventDefault();
   flowWheel += e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX;
-  while (Math.abs(flowWheel) >= 60){ setFlow(V.fi + Math.sign(flowWheel)); flowWheel -= 60 * Math.sign(flowWheel); }
+  while (Math.abs(flowWheel) >= 60){ setFlow(V.fi + Math.sign(flowWheel), true); flowWheel -= 60 * Math.sign(flowWheel); }
 }, {passive: false});
 $("#detailModal").addEventListener("keydown", e => {
   if (e.target.id !== "flow" || !V) return;
@@ -2443,9 +2574,9 @@ function coverDraw(ctx, im, x, y, w, h, zoom, pan){
   ctx.drawImage(im, x + (w - dw) / 2 + pan.x, y + (h - dh) / 2 + pan.y, dw, dh);
 }
 function paintName(ctx){
-  const nm = V.name.trim(); if (!nm || !V.base) return;
-  const f = frameOf(V.card), [nx, ny1, ny2] = f.name;
-  const front = String(V.card.mana || "").split(" // ")[0];
+  const nm = V.name.trim(), card = V.drawCard || V.card; if (!nm || !V.base) return;
+  const f = frameOf(card), [nx, ny1, ny2] = f.name;
+  const front = String(card.mana || "").split(" // ")[0];
   const pips = (front.match(/\{[^}]+\}/g) || []).length;
   const right = 616 - pips * 33 - 10;
   const S = ctx.getTransform().a || 1;
@@ -2463,9 +2594,9 @@ function paintName(ctx){
   ctx.textBaseline = "middle";
   ctx.fillText(nm, nx + 6, (ny1 + ny2) / 2 + 1);
   // keep the real name visible on the card (and on printed proxies): a small label at the top of the art
-  const real = V.card.name.split(" // ")[0];
+  const real = card.name.split(" // ")[0];
   if (nm.toLowerCase() !== real.toLowerCase()){
-    const [bx, by] = frameOf(V.card).box;
+    const [bx, by] = frameOf(card).box;
     let fs = 21; ctx.font = `italic 600 ${fs}px Georgia, "Times New Roman", serif`;
     while (ctx.measureText(real).width > 500 && fs > 13){ fs--; ctx.font = `italic 600 ${fs}px Georgia, "Times New Roman", serif`; }
     const tw = ctx.measureText(real).width, x = bx + 8, y = by + 7, w = tw + 22, h = fs + 12;
@@ -2498,7 +2629,20 @@ function compose(ctx, overlay){
     for (const [hx, hy] of [[x1, y1], [x2, y2]]){ ctx.beginPath(); ctx.arc(hx, hy, 16, 0, Math.PI * 2); ctx.fill(); }
   }
 }
-function drawArt(){ const cv = $("#artCanvas"); if (cv && V && V.base) compose(cv.getContext("2d"), true); }
+let snapT;
+function drawArt(){
+  const cv = $("#artCanvas"); if (!cv || !V || !V.base || !V.hasCust) return;
+  compose(cv.getContext("2d"), true);
+  // a small picture of your version for its card in the flow (and its reflection)
+  if (V.rebase) return;
+  clearTimeout(snapT); snapT = setTimeout(() => {
+    if (!V || !V.base) return;
+    const sm = document.createElement("canvas"); sm.width = 488; sm.height = 680;
+    compose(sm.getContext("2d"), false);
+    try { V.snap = sm.toDataURL("image/jpeg", .86); } catch { return; }
+    setFlImg($("#flowStage .custom-entry"), V.snap);
+  }, 160);
+}
 function canvasPoint(e){ const cv = $("#artCanvas"), r = cv.getBoundingClientRect(); return {x: (e.clientX - r.left) * 672 / r.width, y: (e.clientY - r.top) * 936 / r.height}; }
 let artDrag = null;
 $("#detailModal").addEventListener("pointerdown", e => {
@@ -2514,17 +2658,17 @@ $("#detailModal").addEventListener("pointermove", e => {
   if (artDrag.kind === "pan") V.pan = {x: artDrag.pan.x + dx, y: artDrag.pan.y + dy};
   else if (artDrag.kind === "tl") V.box = [Math.max(0, Math.min(b[2] - 60, b[0] + dx)), Math.max(0, Math.min(b[3] - 60, b[1] + dy)), b[2], b[3]];
   else V.box = [b[0], b[1], Math.min(672, Math.max(b[0] + 60, b[2] + dx)), Math.min(936, Math.max(b[1] + 60, b[3] + dy))];
-  drawArt(); markDirty();
+  drawArt(); markCust();
 });
 $("#detailModal").addEventListener("pointerup", () => { artDrag = null; });
 $("#detailModal").addEventListener("input", e => {
   if (!V) return;
-  if (e.target.id === "flowScrub"){ setFlow(+e.target.value); return; }
-  if (e.target.id === "artZoom"){ V.zoom = +e.target.value; drawArt(); markDirty(); }
+  if (e.target.id === "flowScrub"){ setFlow(+e.target.value, true); return; }
+  if (e.target.id === "artZoom"){ V.zoom = +e.target.value; drawArt(); markCust(); }
   if (e.target.id === "artName" || e.target.id === "artName2"){
     V.name = e.target.value;
     const other = $(e.target.id === "artName" ? "#artName2" : "#artName"); if (other && other.value !== V.name) other.value = V.name;
-    updateOverlay(); drawArt(); markDirty();
+    ensureCust(); updateOverlay(); drawArt(); markCust();
   }
 });
 $("#detailModal").addEventListener("keydown", e => { if ((e.target.id === "artName" || e.target.id === "artName2") && e.key === "Enter") e.target.blur(); });
@@ -2536,22 +2680,53 @@ document.addEventListener("paste", e => {
 async function useUserFile(file){
   try {
     const url = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(file); });
-    V.user = await loadImage(url); V.zoom = 1; V.pan = {x: 0, y: 0};
-    if (!V.base) await loadBase();
-    V.dirty = true; updateOverlay(); drawArt(); renderDetailParts();
+    const im = await loadImage(url);
+    ensureCust();
+    V.user = im; V.userKey = null; V.zoom = 1; V.pan = {x: 0, y: 0};
+    // a picture now lives on its own, so an older customization's finished image is no longer needed as the base
+    if (V.legacy){ V.legacy = false; V.base = null; V.baseFor = null; }
+    await loadBase();
+    markCust(); updateOverlay(); drawArt(); renderDetailParts();
   } catch { toast("That file isn’t a picture this browser can open."); }
+}
+function startRebase(){
+  if (!V.hasCust) return;
+  V.rebase = true; V.selKey = V.custBase.id;
+  renderFlow(); renderDetailParts(); loadBase();
+}
+function finishRebase(){
+  if (!V.rebase) return;
+  const changed = V.card.id !== V.custBase.id;
+  V.rebase = false;
+  if (changed){
+    V.custBase = V.card; V.box = [...frameOf(V.custBase).box];
+    if (V.legacy){ V.legacy = false; if (!V.user) toast("This customization was made before pictures were kept separately. Upload the picture again if it’s missing."); }
+    V.base = null; V.baseFor = null; markCust();
+  }
+  V.selKey = "c";
+  renderFlow(); renderDetailParts(); loadBase();
+}
+function removeCust(){
+  confirmTwice([{title: "Remove your customization?", text: "Your version of this card (its name and art) disappears from the cover flow. Press Save to make it final; the official card stays.", yes: "Remove customization"}], () => {
+    if (!V) return;
+    const base = V.custBase;
+    Object.assign(V, {hasCust: false, removed: true, rebase: false, user: null, userKey: null, name: "", legacy: false, legacyKey: null, base: null, baseFor: null, snap: ""});
+    V.selKey = base ? base.id : V.selKey;
+    ["#artName", "#artName2"].forEach(s => { if ($(s)) $(s).value = ""; });
+    renderFlow(); renderDetailParts(); markCust();
+  });
 }
 $("#detailModal").addEventListener("click", async e => {
   if (!V) return;
   if (e.target.closest("#namePen")){ const n = $("#artName"); n.focus(); n.select(); return; }
-  if (e.target.id === "nameClear" || e.target.closest("#nameClear")){ V.name = ""; ["#artName", "#artName2"].forEach(s => { if ($(s)) $(s).value = ""; }); updateOverlay(); drawArt(); markDirty(); renderDetailParts(); return; }
+  if (e.target.id === "nameClear" || e.target.closest("#nameClear")){ V.name = ""; ["#artName", "#artName2"].forEach(s => { if ($(s)) $(s).value = ""; }); updateOverlay(); drawArt(); markCust(); renderDetailParts(); return; }
   if (e.target.closest("#flow") && !e.target.closest(".name-over") && !(e.target.id === "artCanvas" && V.user)){
     // 3D-tilted cards don't hit-test reliably, so find the front-most card under the pointer by its on-screen box
     if (flowMoved) return;
     let best = null;
     document.querySelectorAll("#flowStage .fl").forEach(el => {
       if (el.style.visibility === "hidden") return;
-      const r = el.getBoundingClientRect(), i = +el.dataset.fi;
+      const r = el.querySelector("img.face").getBoundingClientRect(), i = +el.dataset.fi;
       if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && (best == null || Math.abs(i - V.fi) < Math.abs(best - V.fi))) best = i;
     });
     if (best != null) setFlow(best);
@@ -2562,16 +2737,11 @@ $("#detailModal").addEventListener("click", async e => {
   if (b.id === "artSave"){ closeDetail(false); return; }
   if (b.id === "dFlip"){ V.back = !V.back; renderFlow(); return; }
   if (b.id === "artUpload"){ $("#artFile").click(); return; }
-  if (b.dataset.mode){ V.mode = b.dataset.mode; V.pan = {x: 0, y: 0}; drawArt(); markDirty(); renderDetailParts(); return; }
-  if (b.id === "artDrop"){ V.user = null; updateOverlay(); drawArt(); markDirty(); renderDetailParts(); return; }
-  if (b.id === "artUndo"){ const keep = V.prints; const o = {kind: V.kind, uid: V.uid, card: V.card0, rec: V.rec}; V = initView(o); if (keep.length > 1 && keep[0].name === V.card.name){ V.prints = keep; const i = keep.findIndex(p => p.id === V.card.id); V.fi = i < 0 ? 0 : i; } renderDetail(); loadBase(); return; }
-  if (b.id === "artReset"){
-    const t = viewTarget(V);
-    V.user = null; V.name = ""; V.customBase = false; V.base = null; V.dirty = true;
-    if (t && t.custom){ Object.assign(V.card, plainPrint(t)); delete V.card.custom; }
-    ["#artName", "#artName2"].forEach(s => { if ($(s)) $(s).value = ""; });
-    updateOverlay(); renderDetailParts(); loadBase(); return;
-  }
+  if (b.id === "rebaseStart"){ startRebase(); return; }
+  if (b.id === "rebaseDone"){ finishRebase(); return; }
+  if (b.id === "custRemove"){ removeCust(); return; }
+  if (b.dataset.mode){ V.mode = b.dataset.mode; V.pan = {x: 0, y: 0}; drawArt(); markCust(); renderDetailParts(); return; }
+  if (b.id === "artDrop"){ V.user = null; V.userKey = null; if (V.legacy){ V.legacy = false; V.base = null; V.baseFor = null; loadBase(); } updateOverlay(); drawArt(); markCust(); renderDetailParts(); return; }
   if (b.id === "artPrompt"){
     const c = V.card;
     const text = `Create a new fantasy illustration for the Magic: The Gathering card "${c.name.split(" // ")[0]}" (${c.type}). `
@@ -2614,7 +2784,6 @@ $("#detailModal").addEventListener("click", async e => {
     }
   }
 });
-/* Closing keeps art and name changes (pass discard=true to drop them). */
 /* Close the card view; with unsaved changes, ask first (save, discard or keep editing). */
 function requestClose(after, opts = {}){
   if (!V) return;
@@ -2628,37 +2797,57 @@ function requestClose(after, opts = {}){
 async function closeDetail(discard, opts = {}){
   const v = V;
   if (v && v.flyAnim) v.flyAnim.cancel();
+  if (v && !discard && v.rebase){ V = v; finishRebase(); }
   const f = opts.anim === false ? null : closeFly(v);
-  V = null; flowDrag = null; artDrag = null; clearTimeout(flowT);
+  V = null; flowDrag = null; artDrag = null; clearTimeout(flowT); clearTimeout(snapT);
   $("#detailScrim").hidden = true;
   if (v && !discard && v.editable && v.dirty) await commitView(v);
   if (f) landFly(f, v);
 }
+/* Save: the card in the middle becomes the one the deck uses; the customization is stored alongside it. */
 async function commitView(v){
   if (roDeck(cur())) return;
-  // a flow position that wasn't applied yet still counts
-  const p = v.prints[v.fi]; if (p && p.id !== v.card.id) Object.assign(v.card, {id: p.id, img: p.img, large: p.large, art: p.art, back: p.back, frame: p.frame, fullArt: p.fullArt, set: p.set, artist: p.artist, ill: p.ill});
   const d = cur(), orig = viewTarget(v); if (!d || !orig) return;
-  let card;
-  if (v.user || v.name.trim() || v.customBase){
-    if (v.customBase && !v.user && v.name.trim() === ((orig.custom && orig.custom.name) || "")){ card = {...orig}; }
-    else {
-      if (!v.base){ try { v.base = await corsImage(v.customBase ? IMG.get(orig.custom.key) : (v.card.large || v.card.img)); } catch { toast("Couldn’t load the card image, so the art change wasn’t saved."); return; } }
-      const cv = document.createElement("canvas"); cv.width = 672 * ART_SCALE; cv.height = 936 * ART_SCALE;
-      const keepV = V; V = v; compose(cv.getContext("2d"), false); V = keepV;
-      let data;
-      try { data = cv.toDataURL("image/jpeg", 0.93); } catch { toast("This picture can’t be combined with the card. Try another file."); return; }
-      const key = "img_" + uid();
-      IMG.set(key, data); await idb.set(key, data);
-      card = {...plainPrint(v.card), custom: {key, name: v.name.trim() || null}};
+  const keepV = V; V = v;
+  try {
+    let cust = null;
+    if (v.hasCust){
+      let key = v.custKey;
+      if (v.custChanged || !key || !IMG.get(key)){
+        if (!v.base || v.baseFor !== (v.legacy && v.legacyKey ? "legacy:" + v.legacyKey : v.custBase.id)){
+          const src = v.legacy && v.legacyKey && IMG.get(v.legacyKey) ? IMG.get(v.legacyKey) : (v.custBase.large || v.custBase.img);
+          try { v.base = await corsImage(/cards\.scryfall\.io\/large\//.test(src) ? pngOf(src) : src); } catch { try { v.base = await corsImage(src); } catch { toast("Couldn’t load the card image, so the change wasn’t saved."); return; } }
+        }
+        v.drawCard = v.custBase;
+        const cv = document.createElement("canvas"); cv.width = 672 * ART_SCALE; cv.height = 936 * ART_SCALE;
+        compose(cv.getContext("2d"), false);
+        let data;
+        try { data = cv.toDataURL("image/jpeg", 0.93); } catch { toast("This picture can’t be combined with the card. Try another file."); return; }
+        key = "img_" + uid(); IMG.set(key, data); await idb.set(key, data);
+      }
+      // keep your picture on its own (scaled to at most 1600 px), so the customization can move to another printing later
+      let artKey = v.userKey;
+      if (v.user && !artKey){
+        const s = Math.min(1, 1600 / Math.max(v.user.width, v.user.height)), c2 = document.createElement("canvas");
+        c2.width = Math.round(v.user.width * s); c2.height = Math.round(v.user.height * s);
+        const x = c2.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(v.user, 0, 0, c2.width, c2.height);
+        try { const art = c2.toDataURL("image/jpeg", .9); artKey = "art_" + uid(); IMG.set(artKey, art); await idb.set(artKey, art); } catch { artKey = null; }
+      }
+      cust = {key, artKey: v.user ? artKey : null, name: v.name.trim(), mode: v.mode, zoom: v.zoom, pan: {...v.pan}, box: [...v.box],
+              base: plainPrint(v.custBase), ...(v.legacy ? {legacy: true} : {})};
     }
-  } else card = plainPrint(v.card);
-  if (orig.custom && (!card.custom || card.custom.key !== orig.custom.key)){ const k = orig.custom.key; setTimeout(() => { if (!usedImageKeys().has(k)){ IMG.delete(k); idb.del(k); } }, 0); }
-  if (v.kind === "commander") d.commander = card;
-  else if (v.kind === "partner") d.partner = card;
-  else { const it = findCard(v.uid); if (!it) return; it.card = card; }
-  touch(d); renderAll(); refreshPrices(d);
-  toast("Card updated");
+    const e = entries()[v.fi];
+    const card = e && e.t === "c" && cust
+      ? {...plainPrint(v.custBase), custom: {key: cust.key, name: cust.name || null}, cust}
+      : {...plainPrint(e && e.t === "p" ? e.p : v.card), ...(cust ? {cust} : {})};
+    const before = [orig.custom && orig.custom.key, orig.cust && orig.cust.key, orig.cust && orig.cust.artKey].filter(Boolean);
+    if (v.kind === "commander") d.commander = card;
+    else if (v.kind === "partner") d.partner = card;
+    else { const it = findCard(v.uid); if (!it) return; it.card = card; }
+    setTimeout(() => { const used = usedImageKeys(); for (const k of before) if (!used.has(k)){ IMG.delete(k); idb.del(k); } }, 0);
+    touch(d); renderAll(); refreshPrices(d);
+    toast(card.custom ? "Saved · using your version" : cust ? "Saved · using the official card (your version is kept)" : "Card updated");
+  } finally { V = keepV; }
 }
 
 /* ---------------- Confirm & report ---------------- */
@@ -3020,6 +3209,7 @@ function driveForget(){
 }
 function agoText(t){ const s = Math.round((Date.now() - t) / 1000); return s < 10 ? "just now" : s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} h ago`; }
 function renderDrive(){
+  renderProfile();
   const box = $("#driveBox"); if (!box) return;
   const cloud = '<svg class="i" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 9.1 4.5 4.5 0 0 0 7 18z"/></svg>';
   let h = `<div class="drv-title">${cloud}Google Drive</div>`;
@@ -3067,7 +3257,11 @@ document.addEventListener("keydown", e => {
 });
 
 /* ---------------- Wiring ---------------- */
-$("#newDeck").onclick = newDeck;
+$("#profile").addEventListener("click", e => {
+  if (e.target.closest("#profConnect")) driveConnect();
+  else if (e.target.closest("#profSync")){ DS.rev = null; driveSync(false); }
+  else if (e.target.closest("#profDrive")) $("#driveBox").scrollIntoView({behavior: "smooth", block: "center"});
+});
 $("#closeSide").onclick = () => { S.sidebarOpen = false; save(false); render(); };
 $("#openSide").onclick = () => { S.sidebarOpen = !S.sidebarOpen; save(false); render(); };
 $("#sideScrim").onclick = () => { S.sidebarOpen = false; render(); };
@@ -3075,8 +3269,14 @@ $("#deckList").addEventListener("click", e => {
   const del = e.target.closest("[data-deldeck]"); if (del){ deleteDeck(del.dataset.deldeck); return; }
   const ren = e.target.closest("[data-renamedeck]"); if (ren){ renameInList(ren.dataset.renamedeck); return; }
   const dup = e.target.closest("[data-dupdeck]"); if (dup){ duplicateDeck(dup.dataset.dupdeck); return; }
-  const per = e.target.closest("[data-person]");
-  if (per){ UI.openPeople = UI.openPeople || {}; const k = per.dataset.person; if (UI.openPeople[k]) delete UI.openPeople[k]; else UI.openPeople[k] = true; saveUI(); renderSidebar(); return; }
+  if (e.target.closest("[data-newdeck]")){ newDeck(); return; }
+  const fh = e.target.closest("[data-folder]");
+  if (fh){ UI.openPeople = UI.openPeople || {}; const k = fh.dataset.folder, mineF = !!fh.dataset.mine; UI.openPeople[k] = !folderOpen(k, mineF); saveUI(); renderSidebar(); return; }
+  if (e.target.closest("#foldAll")){
+    const me = meNow(), myId = me ? me.id : "me", ids = [...document.querySelectorAll("#deckList [data-folder]")].map(b => b.dataset.folder);
+    const anyOpen = ids.some(id => folderOpen(id, id === myId));
+    UI.openPeople = UI.openPeople || {}; ids.forEach(id => UI.openPeople[id] = !anyOpen); saveUI(); renderSidebar(); return;
+  }
   if (e.target.closest(".deck-rename")) return;
   const it = e.target.closest("[data-deck]"); if (!it) return;
   S.active = it.dataset.deck; if (innerWidth <= 820) S.sidebarOpen = false; save(false); render();
