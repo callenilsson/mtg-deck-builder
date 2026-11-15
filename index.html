@@ -115,6 +115,12 @@ body.ro .name-wrap svg{display:none}
 .pricey-set input:focus{border-color:var(--pricey-line);outline:none}
 .pricey-set input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .pricey-set input:disabled{opacity:.7}
+.backup summary{cursor:pointer;font-size:12.5px;color:var(--muted);padding:4px 4px;list-style:none;display:flex;align-items:center;gap:6px}
+.backup summary::-webkit-details-marker{display:none}
+.backup summary::before{content:"›";display:inline-block;transition:transform .2s;color:var(--faint)}
+.backup[open] summary::before{transform:rotate(90deg)}
+.backup summary:hover{color:var(--fg)}
+.backup-body{display:grid;gap:6px;padding-top:6px}
 .unsaved-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);margin-left:auto;box-shadow:0 0 0 3px var(--gold-soft)}
 
 /* ---------- Buttons ---------- */
@@ -700,10 +706,13 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
       <label class="side-row">Prices in<select id="curSel"><option value="eur">€ Euro (Cardmarket)</option><option value="usd">$ Dollar (TCGplayer)</option></select></label>
 
       <div class="drive-box" id="driveBox"></div>
-      <button class="btn" id="saveFile" title="Download a copy of this page with every deck saved inside it"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Save file with decks<span class="unsaved-dot" id="unsavedDot" hidden></span></button>
+      <details class="backup" id="backupBox"><summary>Backup &amp; import</summary>
+        <div class="backup-body">
+      <button class="btn" id="saveFile" title="Download a file with all your decks, as a backup or to send to someone"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Download backup<span class="unsaved-dot" id="unsavedDot" hidden></span></button>
       <button class="btn" id="importBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg>Import decks from a file</button>
       <input type="file" id="importFile" accept=".html,.htm,.json,.txt" hidden>
-      <div class="side-note">“Save file with decks” makes a copy of this page with all your decks inside. Send that one file to your partner. Opening it, or importing it, adds the decks. If you both edited the same deck, you keep both versions.</div>
+      <div class="side-note">Decks save to Google Drive automatically. Use these to keep an extra backup, or to bring in decks from an old file.</div>
+        </div></details>
     </div>
   </aside>
   <div id="sideScrim"></div>
@@ -1145,7 +1154,7 @@ function load(){
 function save(changed = true){
   if (changed){ S.lastChange = Date.now(); driveSchedule(); }
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {}
-  $("#unsavedDot").hidden = !(S.lastChange > S.lastFileSave && liveDecks().length);
+  $("#unsavedDot").hidden = !(S.lastChange > S.lastFileSave && liveDecks().length) || !!(typeof DS !== "undefined" && DS.token && DS.file);
 }
 function liveDecks(){ return Object.values(S.decks).filter(d => !d.deleted).sort((a, b) => (b.updated || 0) - (a.updated || 0)); }
 function cur(){ return S.decks[S.active] && !S.decks[S.active].deleted ? S.decks[S.active] : null; }
