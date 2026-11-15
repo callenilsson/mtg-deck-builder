@@ -532,12 +532,15 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
   background:radial-gradient(120% 140% at 0% 0%,rgba(217,171,79,.10),transparent 55%),linear-gradient(180deg,#1f2232,#191b28);
   box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);transition:border-color .25s,box-shadow .25s}
 .dv-edit.dirty{border-color:var(--gold-line);box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 0 3px rgba(217,171,79,.10),inset 0 1px 0 rgba(255,255,255,.05)}
-.ed-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.ed-head{display:flex;align-items:baseline;justify-content:space-between;gap:4px 10px;flex-wrap:wrap}
+.ed-title{white-space:nowrap}
+.ed-hint{text-align:right;margin-left:auto}
 .ed-title{font-family:var(--display);font-weight:700;letter-spacing:.08em;color:var(--gold);font-size:14px;text-shadow:0 0 14px rgba(217,171,79,.35)}
 .ed-hint{font-size:12px;color:var(--faint)}
 .dv-edit.dirty .ed-hint{color:var(--gold)}
 .ed-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line-soft);padding-top:12px;margin-top:2px}
 .ed-save{display:flex;gap:8px;margin-left:auto}
+.ed-left{display:flex;gap:8px;flex-wrap:wrap}
 .link-btn{border:0;background:none;color:var(--muted);font-size:12.5px;padding:4px 0;text-decoration:underline;text-underline-offset:3px}
 .link-btn:hover{color:var(--danger)}
 .save-btn{background:var(--surface-3);color:var(--faint);border-color:var(--line);font-weight:600}
@@ -845,7 +848,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115100631";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261115101505";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -968,7 +971,7 @@ function usedImageKeys(){
     for (const k of [d.commander, d.partner, ...(d.cards || []).map(c => c.card), ...(d.tokens || []).map(c => c.card)]){
       if (!k) continue;
       if (k.custom) keys.add(k.custom.key);
-      if (k.cust){ if (k.cust.key) keys.add(k.cust.key); if (k.cust.artKey) keys.add(k.cust.artKey); }
+      for (const c of custList(k)){ if (c.key) keys.add(c.key); if (c.artKey) keys.add(c.artKey); }
     } }
   return keys;
 }
@@ -1243,7 +1246,7 @@ function addCard(card, zone){
   if (cmdrs(d).some(k => k.name === card.name)){ toast(`${card.name} is your commander`); return null; }
   if (!canMulti(card) && d.cards.some(c => c.card.name === card.name)){ toast(`${card.name} is already in this deck`); return null; }
   if (canMulti(card)){
-    const st = d.cards.find(k => k.zone === zone && k.card.id === card.id && !k.card.custom && !k.card.cust);
+    const st = d.cards.find(k => k.zone === zone && k.card.id === card.id && !hasCustoms(k.card));
     if (st){ st.qty = qOf(st) + 1; touch(d); renderAll(); return st.uid; }
   }
   const item = {uid: uid(), card: {...card}, bucket: bucketOf(card.type), zone, locked: false, focus: false};
@@ -1298,7 +1301,7 @@ function normalizeStacks(d){
   if (!d || !isMine(d)) return false;
   const seen = new Map(); let merged = false;
   d.cards = d.cards.filter(c => {
-    if (!canMulti(c.card) || c.card.custom || c.card.cust) return true;
+    if (!canMulti(c.card) || hasCustoms(c.card)) return true;
     const k = `${c.zone}|${c.card.id}|${c.locked ? 1 : 0}`, st = seen.get(k);
     if (!st){ seen.set(k, c); return true; }
     st.qty = qOf(st) + qOf(c); merged = true; return false;
@@ -1579,7 +1582,7 @@ async function addBasics(n){
       for (const s of split){
         let card = cardCache.get("basic:" + s.name);
         if (!card){ const j = await sf(`/cards/named?exact=${encodeURIComponent(s.name)}`); if (!j) continue; card = toCard(j); cardCache.set("basic:" + s.name, card); }
-        const st = d.cards.find(k => k.zone === "deck" && k.card.name === card.name && !k.card.custom && !k.card.cust);
+        const st = d.cards.find(k => k.zone === "deck" && k.card.name === card.name && !hasCustoms(k.card));
         if (st){ st.qty = qOf(st) + s.count; added.push(st.uid); }
         else { const item = {uid: uid(), card: {...card}, bucket: "Land", zone: "deck", locked: false, focus: false, qty: s.count}; d.cards.push(item); added.push(item.uid); }
       }
@@ -1723,7 +1726,7 @@ function tokenBoxHTML(d){
 function addToken(card){
   const d = cur(); if (!d || guard(d)) return null;
   d.tokens = d.tokens || [];
-  const st = d.tokens.find(k => k.card.id === card.id && !k.card.custom && !k.card.cust);
+  const st = d.tokens.find(k => k.card.id === card.id && !hasCustoms(k.card));
   if (st) st.qty = qOf(st) + 1;
   else d.tokens.push({uid: uid(), card: plainPrint(card), qty: 1});
   touch(d); renderBoard();
@@ -2335,41 +2338,78 @@ function viewTarget(v){
   if (v.kind === "token") return (d.tokens || []).find(k => k.uid === v.uid)?.card || null;
   return v.card0;
 }
-const plainPrint = c => { const p = {...c}; delete p.custom; delete p.cust; return p; };
+const plainPrint = c => { const p = {...c}; delete p.custom; delete p.cust; delete p.custs; return p; };
+const hasCustoms = c => !!(c && (c.custom || c.cust || (c.custs && c.custs.length)));
+/* all customizations of a card (older single-customization and pre-customization cards included) */
+function custList(card){
+  if (card.custs) return card.custs;
+  if (card.cust) return [card.cust];
+  if (card.custom) return [{key: card.custom.key, name: card.custom.name || "", artKey: null, legacy: true, base: plainPrint(card)}];
+  return [];
+}
+const SLOT_FIELDS = ["name", "userKey", "user", "mode", "zoom", "pan", "box", "custBase", "legacy", "legacyKey", "custKey", "snap"];
+function slotFrom(c, card){
+  const base = plainPrint(c.base || card);
+  return {cid: c.cid || uid(), name: c.name || "", userKey: c.artKey || null, user: null, mode: c.mode || "frame", zoom: c.zoom || 1,
+    pan: c.pan ? {...c.pan} : {x: 0, y: 0}, box: c.box ? [...c.box] : [...frameOf(base).box], custBase: base,
+    legacy: !!c.legacy, legacyKey: c.legacy ? c.key : null, custKey: c.key || null, snap: (c.key && IMG.get(c.key)) || "", changed: false};
+}
 function initView(o){
   const card = o.kind === "add" ? o.card : o.kind === "token" ? cur().tokens.find(k => k.uid === o.uid).card : (o.kind === "item" ? findCard(o.uid).card : o.kind === "commander" ? cur().commander : cur().partner);
-  // older customizations (made before customizations were kept separately) only have the finished image
-  const cust = card.cust ? JSON.parse(JSON.stringify(card.cust))
-    : card.custom ? {key: card.custom.key, name: card.custom.name || "", artKey: null, legacy: true, base: plainPrint(card)} : null;
-  const custBase = cust ? plainPrint(cust.base || card) : null;
+  const custs = custList(card).map(c => slotFrom(c, card));
+  const active = card.custom ? (custs.find(s => card.custom.cid && s.cid === card.custom.cid) || custs.find(s => s.custKey === card.custom.key) || custs[0]) : null;
   const v = {kind: o.kind, uid: o.uid, card0: o.kind === "add" ? o.card : null, rec: o.rec || null,
     editable: o.kind !== "add" && !roDeck(cur()), token: ++vTok, flying: false, back: false, dirty: false, custChanged: false,
-    prints: [plainPrint(custBase && card.custom ? custBase : card)],
-    hasCust: !!cust, custBase, legacy: !!(cust && cust.legacy), legacyKey: cust && cust.legacy ? cust.key : null,
-    snap: cust && IMG.get(cust.key) || "", custKey: cust ? cust.key : null,
-    name: cust ? cust.name || "" : "", mode: (cust && cust.mode) || "frame", zoom: (cust && cust.zoom) || 1,
-    pan: (cust && cust.pan) ? {...cust.pan} : {x: 0, y: 0}, box: (cust && cust.box) ? [...cust.box] : [...frameOf(custBase || card).box],
-    userKey: cust ? cust.artKey || null : null, user: null, base: null, baseFor: null, rebase: false,
-    selKey: card.custom ? "c" : card.id, fi: 0, card: plainPrint(card)};
-  if (custBase && !v.prints.some(p => p.id === custBase.id)) v.prints.push(custBase);
+    prints: [plainPrint(active ? active.custBase : card)], custs, cid: null, hasCust: false,
+    name: "", userKey: null, user: null, mode: "frame", zoom: 1, pan: {x: 0, y: 0}, box: [...frameOf(card).box], custBase: null,
+    legacy: false, legacyKey: null, custKey: null, snap: "", base: null, baseFor: null, rebase: false,
+    selKey: active ? "c:" + active.cid : card.id, fi: 0, card: plainPrint(card)};
+  for (const s of custs) if (!v.prints.some(p => p.id === s.custBase.id)) v.prints.push(s.custBase);
   return v;
 }
+const slotOf = cid => V.custs.find(s => s.cid === cid);
+/* the version in the middle is "loaded": its settings live on V while you edit it */
+function stashCust(){
+  if (!V || !V.cid) return;
+  const s = slotOf(V.cid); if (!s) return;
+  for (const f of SLOT_FIELDS) s[f] = V[f];
+  s.changed = s.changed || V.custChanged;
+}
+function loadCust(cid){
+  if (V.cid === cid) return;
+  stashCust();
+  const s = slotOf(cid); if (!s) return;
+  for (const f of SLOT_FIELDS) V[f] = s[f];
+  V.cid = cid; V.hasCust = true; V.custChanged = s.changed; V.base = null; V.baseFor = null;
+  ["#artName", "#artName2"].forEach(x => { if ($(x)) $(x).value = V.name; });
+}
+function unloadCust(){
+  if (!V.cid) return;
+  stashCust();
+  Object.assign(V, {cid: null, hasCust: false, custChanged: false, name: "", user: null, userKey: null, custBase: null, legacy: false, legacyKey: null, custKey: null, snap: "", base: null, baseFor: null, mode: "frame", zoom: 1, pan: {x: 0, y: 0}});
+  ["#artName", "#artName2"].forEach(x => { if ($(x)) $(x).value = ""; });
+}
 function entries(){
-  const list = V.prints.map(p => ({t: "p", p}));
-  if (V.hasCust && !V.rebase){ let i = V.prints.findIndex(p => p.id === V.custBase.id); if (i < 0) i = 0; list.splice(i, 0, {t: "c"}); }
+  const list = [], placed = new Set();
+  const custsFor = id => V.rebase ? [] : V.custs.filter(s => s.custBase.id === id);
+  for (const p of V.prints){ for (const s of custsFor(p.id)){ list.push({t: "c", cid: s.cid}); placed.add(s.cid); } list.push({t: "p", p}); }
+  if (!V.rebase) V.custs.filter(s => !placed.has(s.cid)).forEach(s => list.unshift({t: "c", cid: s.cid}));
   return list;
 }
-const entryKey = e => e.t === "c" ? "c" : e.p.id;
+const entryKey = e => e.t === "c" ? "c:" + e.cid : e.p.id;
 function syncSel(){
   const list = entries();
   let i = list.findIndex(e => entryKey(e) === V.selKey);
   if (i < 0){ i = 0; V.selKey = list[0] ? entryKey(list[0]) : V.selKey; }
   V.fi = i;
   const e = list[i];
+  if (e && e.t === "c") loadCust(e.cid);
+  else if (e && !V.rebase) unloadCust();
   V.card = e ? (e.t === "c" ? V.custBase : e.p) : V.card;
   V.drawCard = V.rebase ? V.card : V.custBase;
 }
-const centerIsCustom = () => V && !V.rebase && V.selKey === "c";
+const centerIsCustom = () => !!(V && !V.rebase && String(V.selKey).startsWith("c:"));
+const custNumber = cid => V.custs.findIndex(s => s.cid === cid) + 1;
 function openDetail(o, srcEl){
   if (o.kind === "item" && !findCard(o.uid)) return;
   if (o.kind === "token" && !(cur().tokens || []).some(k => k.uid === o.uid)) return;
@@ -2527,7 +2567,7 @@ function renderDetailParts(){
   }
   let edit = "";
   if (V.editable){
-    const hint = V.rebase ? "Swipe to pick the card under your customization" : V.dirty ? "Unsaved changes" : V.hasCust ? "Swipe between your version and the originals" : "Rename or upload art to make your own version";
+    const hint = V.rebase ? "Swipe to pick the card under this version" : V.dirty ? "Unsaved changes" : centerIsCustom() ? `Editing your version${V.custs.length > 1 ? " " + custNumber(V.cid) : ""}` : V.custs.length ? "Swipe to your versions, or edit this one to make a new one" : "Rename or upload art to make your own version";
     edit = `<div class="dv-edit ${V.dirty ? "dirty" : ""}">
       <div class="ed-head"><span class="ed-title">✦ Customize</span><span class="ed-hint">${hint}</span></div>
       <div class="ed-row"><span class="ed-lbl">${I.pencil}Name</span><span class="ed-field"><input id="artName2" maxlength="40" autocomplete="off" spellcheck="false" placeholder="${esc(c.name.split(" // ")[0])}" value="${esc(V.name)}" aria-label="Name on the card">${V.name ? `<button class="x" id="nameClear" title="Use the real name">×</button>` : ""}</span></div>
@@ -2543,13 +2583,17 @@ function renderDetailParts(){
           : `<span class="note base-name" title="The official card your version is built on">${esc(V.custBase.set || "This printing")}</span><button class="btn sm" id="rebaseStart" title="Keep your customization and swipe to put it on another printing">Change base card</button>`}</div></div>` : ""}
       <input type="file" id="artFile" accept="image/*" hidden>
       <div class="ed-foot">
-        ${V.hasCust ? `<button class="btn sm danger" id="custRemove" title="Delete your customized version of this card">${I.trash}Remove customization</button>` : "<span></span>"}
+        <span class="ed-left">${V.cid ? `<button class="btn sm danger" id="custRemove" title="Delete this customized version">${I.trash}Remove</button>` : ""}
+        <button class="btn sm" id="custNew" title="${centerIsCustom() ? "Make another version, starting as a copy of this one" : "Start a new customized version of this printing"}">${I.copy}New version</button></span>
         <span class="ed-save"><button class="btn sm save-btn" id="artSave" ${V.dirty ? "" : "disabled"}>Save changes</button></span></div></div>`;
   }
   $("#dvSide").innerHTML = `<div class="dv-acts">${acts}</div>${edit}`;
 }
 function flHTML(e, i){
-  if (e.t === "c") return `<button class="fl custom-entry" data-fi="${i}" aria-label="Your version"><img class="face" src="${esc(V.snap || V.custBase.img)}" alt="" draggable="false"><img class="refl" src="${esc(V.snap || V.custBase.img)}" alt="" draggable="false"><span class="yours">✦ Yours</span></button>`;
+  if (e.t === "c"){
+    const s = slotOf(e.cid), live = V.cid === e.cid, src = (live ? V.snap : s.snap) || (live ? V.custBase : s.custBase).img, n = custNumber(e.cid);
+    return `<button class="fl custom-entry" data-fi="${i}" data-cid="${e.cid}" aria-label="Your version ${n}"><img class="face" src="${esc(src)}" alt="" draggable="false"><img class="refl" src="${esc(src)}" alt="" draggable="false"><span class="yours">✦ Yours${V.custs.length > 1 ? " " + n : ""}</span></button>`;
+  }
   const src = V.back && e.p.back && i === V.fi ? e.p.back.large : e.p.img, lazy = Math.abs(i - V.fi) < 6 ? "eager" : "lazy";
   return `<button class="fl" data-fi="${i}" aria-label="${esc(e.p.set)}"><img class="face" src="${esc(src)}" alt="" loading="${lazy}" draggable="false"><img class="refl" src="${esc(src)}" alt="" loading="${lazy}" draggable="false"></button>`;
 }
@@ -2564,7 +2608,7 @@ function renderFlow(popCustom){
   st.classList.add("instant"); layoutFlow(); void st.offsetWidth; st.classList.remove("instant");
   if (V.flying){ const c = $("#flowStage .fl.center"); if (c) c.style.visibility = "hidden"; }
   if (popCustom && !REDUCED.matches){
-    const el = st.querySelector(".custom-entry");
+    const el = st.querySelector(`.custom-entry[data-cid="${V.cid}"]`);
     if (el) el.animate([{opacity: 0, scale: .6}, {opacity: 1, scale: 1.06, offset: .7}, {opacity: 1, scale: 1}], {duration: 380, easing: "cubic-bezier(.2,.8,.2,1)"});
   }
   upgradeCenter();
@@ -2603,8 +2647,8 @@ function layoutFlow(){
   const list = entries(), sc = $("#flowScrub"); if (sc && +sc.value !== V.fi) sc.value = V.fi;
   const e = list[V.fi], cap = $("#flowCap");
   if (cap && e){
-    const p = e.t === "c" ? V.custBase : e.p, pr = priceOf(p);
-    const what = e.t === "c" ? `<b>✦ Your version</b> · based on ${esc(p.set || "this printing")}`
+    const p = e.t === "c" ? slotOf(e.cid).custBase : e.p, pr = priceOf(p);
+    const what = e.t === "c" ? `<b>✦ Your version${V.custs.length > 1 ? " " + custNumber(e.cid) : ""}</b> · based on ${esc(p.set || "this printing")}`
       : `${V.rebase ? `<b class="rebase-cap">New base:</b> ` : ""}<b>${esc(p.set || "This version")}</b>${p.artist ? ` · art by ${esc(p.artist)}` : ""}`;
     cap.innerHTML = `${what}${pr ? ` · <span class="price">${fmtMoney(pr.v, pr.sym)}</span>` : ""} · ${V.fi + 1} of ${list.length}${V.prints.length < 2 ? " (loading other artworks…)" : ""}`;
   }
@@ -2629,14 +2673,14 @@ async function loadBase(){
   const hi = !useLegacy && /cards\.scryfall\.io\/large\//.test(src) ? pngOf(src) : null;
   try {
     let im; try { im = await corsImage(hi || src); } catch (err){ if (!hi) throw err; im = await corsImage(src); }
-    const now = V && V.token === tok && (V.rebase ? V.card : V.custBase).id === target.id;
+    const now = V && V.token === tok && V.custBase && (V.rebase ? V.card : V.custBase).id === target.id;
     if (now){ V.base = im; V.baseFor = key; drawArt(); updateOverlay(); }
   } catch (e){ if (V && V.token === tok) toast(e.message); }
 }
 async function loadUserArt(){
-  if (!V || !V.userKey || !IMG.get(V.userKey)) return;
-  const tok = V.token;
-  try { const im = await loadImage(IMG.get(V.userKey)); if (V && V.token === tok){ V.user = im; drawArt(); updateOverlay(); renderDetailParts(); } } catch {}
+  if (!V || V.user || !V.userKey || !IMG.get(V.userKey)) return;
+  const tok = V.token, cid = V.cid;
+  try { const im = await loadImage(IMG.get(V.userKey)); if (V && V.token === tok && V.cid === cid){ V.user = im; drawArt(); updateOverlay(); renderDetailParts(); } } catch {}
 }
 async function loadPrints(){
   const tok = V.token, name = V.card.name.split(" // ")[0];
@@ -2649,7 +2693,7 @@ async function loadPrints(){
     savePrices();
     if (!list.length) return;
     // keep the exact printings this card and its customization use (same art, other set: keep yours)
-    for (const keep of [V.card, V.custBase].filter(Boolean)){
+    for (const keep of [V.card, ...V.custs.map(s => s.custBase)].filter(Boolean)){
       const i = list.findIndex(p => p.id === keep.id || (keep.ill && p.ill === keep.ill));
       if (i < 0) list.unshift(plainPrint(keep)); else if (list[i].id !== keep.id) list[i] = plainPrint(keep);
     }
@@ -2668,19 +2712,30 @@ function setFlow(i, settle){
   syncSel(); layoutFlow();
   if (!V.rebase && V.editable && V.selKey !== V.startKey) markDirty();
   clearTimeout(flowT);
-  const apply = () => { if (!V) return; renderDetailParts(); upgradeCenter(); if (V.rebase){ V.box = [...frameOf(V.card).box]; loadBase(); } };
+  const apply = () => { if (!V) return; renderDetailParts(); upgradeCenter(); if (V.rebase){ V.box = [...frameOf(V.card).box]; loadBase(); } else if (centerIsCustom()){ loadBase(); loadUserArt(); } };
   if (settle) flowT = setTimeout(apply, 120); else apply();
 }
 function markDirty(){ if (V && !V.dirty){ V.dirty = true; const a = document.activeElement, id = a && a.id, pos = a && a.selectionStart; renderDetailParts(); if (id === "artName2"){ const n = $("#artName2"); n.focus(); try { n.setSelectionRange(pos, pos); } catch {} } } }
 function markCust(){ V.custChanged = true; markDirty(); }
-/* Start a customization on the printing in the middle (or keep the existing one) and show it as its own card. */
+/* Editing an official printing starts a new version of it, shown as its own card next to it. */
+function newCustFrom(base, copy){
+  const s = copy ? {...copy, cid: uid(), pan: {...copy.pan}, box: [...copy.box], custKey: null, changed: true}
+                 : {cid: uid(), name: "", userKey: null, user: null, mode: "frame", zoom: 1, pan: {x: 0, y: 0}, box: [...frameOf(base).box], custBase: base, legacy: false, legacyKey: null, custKey: null, snap: "", changed: true};
+  const at = copy ? V.custs.findIndex(x => x.cid === copy.cid) + 1 : V.custs.length;
+  V.custs.splice(at, 0, s);
+  V.selKey = "c:" + s.cid;
+  renderFlow(true); renderDetailParts(); markCust(); loadBase(); loadUserArt();
+  return s;
+}
 function ensureCust(){
-  if (V.hasCust){ if (!centerIsCustom() && !V.rebase){ V.selKey = "c"; renderFlow(); } return; }
+  if (centerIsCustom() || V.rebase) return;
   const e = entries()[V.fi];
-  V.hasCust = true; V.custBase = e && e.t === "p" ? e.p : V.card; V.legacy = false; V.legacyKey = null; V.removed = false;
-  V.box = [...frameOf(V.custBase).box]; V.base = null; V.baseFor = null; V.snap = "";
-  V.selKey = "c";
-  renderFlow(true); renderDetailParts(); markCust(); loadBase();
+  newCustFrom(e && e.t === "p" ? e.p : V.card);
+}
+/* New version: copies the version in the middle (same art, name and framing), or starts fresh on an official printing. */
+function newVersion(){
+  if (centerIsCustom()){ stashCust(); newCustFrom(null, slotOf(V.cid)); toast("New version made from this one. Change it as you like."); }
+  else { ensureCust(); setTimeout(() => $("#artName2")?.focus(), 50); }
 }
 let flowDrag = null, flowWheel = 0, flowMoved = false;
 /* one card per ~half a card width of finger or mouse movement; a quick flick glides on a little */
@@ -2794,7 +2849,8 @@ function drawArt(){
     const sm = document.createElement("canvas"); sm.width = 488; sm.height = 680;
     compose(sm.getContext("2d"), false);
     try { V.snap = sm.toDataURL("image/jpeg", .86); } catch { return; }
-    setFlImg($("#flowStage .custom-entry"), V.snap);
+    const s = slotOf(V.cid); if (s) s.snap = V.snap;
+    setFlImg($(`#flowStage .custom-entry[data-cid="${V.cid}"]`), V.snap);
   }, 160);
 }
 function canvasPoint(e){ const cv = $("#artCanvas"), r = cv.getBoundingClientRect(); return {x: (e.clientX - r.left) * 672 / r.width, y: (e.clientY - r.top) * 936 / r.height}; }
@@ -2820,9 +2876,12 @@ $("#detailModal").addEventListener("input", e => {
   if (e.target.id === "flowScrub"){ setFlow(+e.target.value, true); return; }
   if (e.target.id === "artZoom"){ V.zoom = +e.target.value; drawArt(); markCust(); }
   if (e.target.id === "artName" || e.target.id === "artName2"){
-    V.name = e.target.value;
-    const other = $(e.target.id === "artName" ? "#artName2" : "#artName"); if (other && other.value !== V.name) other.value = V.name;
-    ensureCust(); updateOverlay(); drawArt(); markCust();
+    const val = e.target.value, id = e.target.id;
+    ensureCust();
+    V.name = val;
+    const self = $("#" + id); if (self && self.value !== val){ self.value = val; self.focus(); }
+    const other = $(id === "artName" ? "#artName2" : "#artName"); if (other && other.value !== val) other.value = val;
+    updateOverlay(); drawArt(); markCust();
   }
 });
 $("#detailModal").addEventListener("keydown", e => { if ((e.target.id === "artName" || e.target.id === "artName2") && e.key === "Enter") e.target.blur(); });
@@ -2844,7 +2903,7 @@ async function useUserFile(file){
   } catch { toast("That file isn’t a picture this browser can open."); }
 }
 function startRebase(){
-  if (!V.hasCust) return;
+  if (!V.cid) return;
   V.rebase = true; V.selKey = V.custBase.id;
   renderFlow(); renderDetailParts(); loadBase();
 }
@@ -2857,16 +2916,17 @@ function finishRebase(){
     if (V.legacy){ V.legacy = false; if (!V.user) toast("This customization was made before pictures were kept separately. Upload the picture again if it’s missing."); }
     V.base = null; V.baseFor = null; markCust();
   }
-  V.selKey = "c";
+  V.selKey = "c:" + V.cid;
   renderFlow(); renderDetailParts(); loadBase();
 }
 function removeCust(){
-  confirmTwice([{title: "Remove your customization?", text: "Your version of this card (its name and art) disappears from the cover flow. Press Save to make it final; the official card stays.", yes: "Remove customization"}], () => {
-    if (!V) return;
-    const base = V.custBase;
-    Object.assign(V, {hasCust: false, removed: true, rebase: false, user: null, userKey: null, name: "", legacy: false, legacyKey: null, base: null, baseFor: null, snap: ""});
+  const n = V.custs.length > 1 ? ` ${custNumber(V.cid)}` : "";
+  confirmTwice([{title: `Remove your version${n}?`, text: "This customized version (its name and art) disappears from the cover flow. Your other versions and the official card stay. Press Save to make it final.", yes: "Remove version"}], () => {
+    if (!V || !V.cid) return;
+    const cid = V.cid, base = V.custBase;
+    V.rebase = false; unloadCust();
+    V.custs = V.custs.filter(s => s.cid !== cid);
     V.selKey = base ? base.id : V.selKey;
-    ["#artName", "#artName2"].forEach(s => { if ($(s)) $(s).value = ""; });
     renderFlow(); renderDetailParts(); markCust();
   });
 }
@@ -2894,6 +2954,7 @@ $("#detailModal").addEventListener("click", async e => {
   if (b.id === "rebaseStart"){ startRebase(); return; }
   if (b.id === "rebaseDone"){ finishRebase(); return; }
   if (b.id === "custRemove"){ removeCust(); return; }
+  if (b.id === "custNew"){ newVersion(); return; }
   if (b.dataset.mode){ V.mode = b.dataset.mode; V.pan = {x: 0, y: 0}; drawArt(); markCust(); renderDetailParts(); return; }
   if (b.id === "artDrop"){ V.user = null; V.userKey = null; if (V.legacy){ V.legacy = false; V.base = null; V.baseFor = null; loadBase(); } updateOverlay(); drawArt(); markCust(); renderDetailParts(); return; }
   if (b.id === "artPrompt"){
@@ -2971,59 +3032,61 @@ async function saveInPlace(){
   await commitView(v);
   v.saving = false;
   if (V !== v) return;
-  const card = viewTarget(v);
-  if (card){
-    v.custKey = card.cust ? card.cust.key : null;
-    v.userKey = card.cust ? card.cust.artKey || null : null;
-    v.legacy = !!(card.cust && card.cust.legacy); v.legacyKey = v.legacy ? card.cust.key : null;
-  }
   v.dirty = false; v.custChanged = false; v.removed = false; v.startKey = v.selKey;
   renderDetailParts();
 }
-/* Save: the card in the middle becomes the one the deck uses; the customization is stored alongside it. */
+/* Save: the card in the middle becomes the one the deck uses; every version is stored with it. */
+async function buildCust(v, s){
+  let key = s.custKey;
+  if (s.changed || !key || !IMG.get(key)){
+    let base = v.cid === s.cid && v.base && v.baseFor === (s.legacy && s.legacyKey ? "legacy:" + s.legacyKey : s.custBase.id) ? v.base : null;
+    if (!base){
+      const src = s.legacy && s.legacyKey && IMG.get(s.legacyKey) ? IMG.get(s.legacyKey) : (s.custBase.large || s.custBase.img);
+      try { base = await corsImage(/cards\.scryfall\.io\/large\//.test(src) ? pngOf(src) : src); } catch { base = await corsImage(src); }
+    }
+    let user = s.user;
+    if (!user && s.userKey && IMG.get(s.userKey)) user = await loadImage(IMG.get(s.userKey));
+    const cv = document.createElement("canvas"); cv.width = 672 * ART_SCALE; cv.height = 936 * ART_SCALE;
+    const keep = V; V = {...v, ...s, user, base, drawCard: s.custBase};
+    try { compose(cv.getContext("2d"), false); } finally { V = keep; }
+    const data = cv.toDataURL("image/jpeg", 0.93);
+    key = "img_" + uid(); IMG.set(key, data); await idb.set(key, data);
+  }
+  // keep your picture on its own (at most 1600 px), so the version can move to another printing later
+  let artKey = s.userKey;
+  if (s.user && !artKey){
+    const sc = Math.min(1, 1600 / Math.max(s.user.width, s.user.height)), c2 = document.createElement("canvas");
+    c2.width = Math.round(s.user.width * sc); c2.height = Math.round(s.user.height * sc);
+    const x = c2.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(s.user, 0, 0, c2.width, c2.height);
+    try { const art = c2.toDataURL("image/jpeg", .9); artKey = "art_" + uid(); IMG.set(artKey, art); await idb.set(artKey, art); } catch { artKey = null; }
+  }
+  return {cid: s.cid, key, artKey: s.user || s.userKey ? artKey : null, name: (s.name || "").trim(), mode: s.mode, zoom: s.zoom, pan: {...s.pan}, box: [...s.box],
+          base: plainPrint(s.custBase), ...(s.legacy ? {legacy: true} : {})};
+}
 async function commitView(v){
   if (roDeck(cur())) return;
   const d = cur(), orig = viewTarget(v); if (!d || !orig) return;
   const keepV = V; V = v;
   try {
-    let cust = null;
-    if (v.hasCust){
-      let key = v.custKey;
-      if (v.custChanged || !key || !IMG.get(key)){
-        if (!v.base || v.baseFor !== (v.legacy && v.legacyKey ? "legacy:" + v.legacyKey : v.custBase.id)){
-          const src = v.legacy && v.legacyKey && IMG.get(v.legacyKey) ? IMG.get(v.legacyKey) : (v.custBase.large || v.custBase.img);
-          try { v.base = await corsImage(/cards\.scryfall\.io\/large\//.test(src) ? pngOf(src) : src); } catch { try { v.base = await corsImage(src); } catch { toast("Couldn’t load the card image, so the change wasn’t saved."); return; } }
-        }
-        v.drawCard = v.custBase;
-        const cv = document.createElement("canvas"); cv.width = 672 * ART_SCALE; cv.height = 936 * ART_SCALE;
-        compose(cv.getContext("2d"), false);
-        let data;
-        try { data = cv.toDataURL("image/jpeg", 0.93); } catch { toast("This picture can’t be combined with the card. Try another file."); return; }
-        key = "img_" + uid(); IMG.set(key, data); await idb.set(key, data);
-      }
-      // keep your picture on its own (scaled to at most 1600 px), so the customization can move to another printing later
-      let artKey = v.userKey;
-      if (v.user && !artKey){
-        const s = Math.min(1, 1600 / Math.max(v.user.width, v.user.height)), c2 = document.createElement("canvas");
-        c2.width = Math.round(v.user.width * s); c2.height = Math.round(v.user.height * s);
-        const x = c2.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(v.user, 0, 0, c2.width, c2.height);
-        try { const art = c2.toDataURL("image/jpeg", .9); artKey = "art_" + uid(); IMG.set(artKey, art); await idb.set(artKey, art); } catch { artKey = null; }
-      }
-      cust = {key, artKey: v.user ? artKey : null, name: v.name.trim(), mode: v.mode, zoom: v.zoom, pan: {...v.pan}, box: [...v.box],
-              base: plainPrint(v.custBase), ...(v.legacy ? {legacy: true} : {})};
-    }
+    stashCust();
+    let custs;
+    try { custs = []; for (const s of v.custs) custs.push(await buildCust(v, s)); }
+    catch { toast("Couldn’t build your custom card (image didn’t load), so the change wasn’t saved."); return; }
     const e = entries()[v.fi];
-    const card = e && e.t === "c" && cust
-      ? {...plainPrint(v.custBase), custom: {key: cust.key, name: cust.name || null}, cust}
-      : {...plainPrint(e && e.t === "p" ? e.p : v.card), ...(cust ? {cust} : {})};
-    const before = [orig.custom && orig.custom.key, orig.cust && orig.cust.key, orig.cust && orig.cust.artKey].filter(Boolean);
+    const chosen = e && e.t === "c" ? custs.find(c => c.cid === e.cid) : null;
+    const baseOf = chosen ? v.custs.find(s => s.cid === chosen.cid).custBase : (e && e.t === "p" ? e.p : v.card);
+    const card = {...plainPrint(baseOf), ...(chosen ? {custom: {key: chosen.key, name: chosen.name || null, cid: chosen.cid}} : {}), ...(custs.length ? {custs} : {})};
+    const before = [orig.custom && orig.custom.key, ...custList(orig).flatMap(c => [c.key, c.artKey])].filter(Boolean);
     if (v.kind === "commander") d.commander = card;
     else if (v.kind === "partner") d.partner = card;
     else if (v.kind === "token"){ const k = (d.tokens || []).find(x => x.uid === v.uid); if (!k) return; k.card = card; }
     else { const it = findCard(v.uid); if (!it) return; it.card = card; }
+    // the view now continues from what was saved
+    for (const c of custs){ const s = v.custs.find(x => x.cid === c.cid); if (s){ s.custKey = c.key; s.userKey = c.artKey; s.changed = false; s.legacy = !!c.legacy; s.legacyKey = c.legacy ? c.key : null; } }
+    if (v.cid){ const s = v.custs.find(x => x.cid === v.cid); if (s){ v.custKey = s.custKey; v.userKey = s.userKey; v.legacy = s.legacy; v.legacyKey = s.legacyKey; } }
     setTimeout(() => { const used = usedImageKeys(); for (const k of before) if (!used.has(k)){ IMG.delete(k); idb.del(k); } }, 0);
     touch(d); renderAll(); refreshPrices(d);
-    toast(card.custom ? "Saved · using your version" : cust ? "Saved · using the official card (your version is kept)" : "Card updated");
+    toast(card.custom ? `Saved · using your version${custs.length > 1 ? " " + (custs.findIndex(c => c.cid === chosen.cid) + 1) : ""}` : custs.length ? `Saved · using the official card (your ${custs.length > 1 ? custs.length + " versions are" : "version is"} kept)` : "Card updated");
   } finally { V = keepV; }
 }
 
