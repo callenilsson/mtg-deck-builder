@@ -220,6 +220,9 @@ body.ro .name-wrap svg{display:none}
 .combo{grid-area:combo;display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;min-width:0}
 .combo-lbl{display:flex;flex-direction:column;gap:2px;max-width:190px}
 .eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.ba-chip{display:inline-flex;align-items:center;gap:3px;padding:0 2px 0 8px;border-radius:999px;background:var(--gold-soft);border:1px solid var(--gold-line);white-space:nowrap}
+.ba-chip button{border:0;background:none;color:var(--muted);padding:0 5px;font-size:14px;line-height:1}
+.ba-chip button:hover{color:var(--danger)}
 .combo-lbl .eyebrow .i{width:13px;height:13px;vertical-align:-2px;margin-right:2px}
 .combo-lbl small .i{width:12px;height:12px;vertical-align:-2px}
 .combo-lbl small{font-size:11.5px;color:var(--muted);line-height:1.35}
@@ -909,7 +912,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117005939";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117010405";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1574,9 +1577,9 @@ function renderHeader(){
   $("#cmds").innerHTML = cm;
   // combine row: always shows the empty slot, so it's clear there's room for more
   const foc = d.cards.filter(c => c.focus);
-  $("#combo").innerHTML = `<div class="combo-lbl" title="Add cards suggests cards that work with your commander${foc.length ? " and these cards" : ". Press the two circles under any card to add it here"}"><span class="eyebrow">${I.focus} Suggestions also use</span>${foc.length ? "" : `<small>Press ${I.focus} under a card</small>`}</div>
-    ${foc.map(c => `<button class="mini" data-open="${c.uid}" data-img="${esc(largeOf(c.card))}" title="${esc(c.card.name)}"><img src="${esc(imgOf(c.card))}" alt="${esc(c.card.name)}"><span class="x" data-unfocus="${c.uid}" title="Stop combining">×</span></button>`).join("")}
-    <button class="mini empty" id="comboAdd" title="Use another card for suggestions">+</button>`;
+  $("#combo").innerHTML = `<div class="combo-lbl" title="Add cards suggests cards that work with your commander${foc.length ? " and with these cards" : ". Press the two circles under any card to build around it too"}"><span class="eyebrow">${I.focus} Build around</span><small>${foc.length ? "Add cards also suggests cards for these" : `Press ${I.focus} under a card`}</small></div>
+    ${foc.map(c => `<button class="mini" data-open="${c.uid}" data-img="${esc(largeOf(c.card))}" title="${esc(c.card.name)}"><img src="${esc(imgOf(c.card))}" alt="${esc(c.card.name)}"><span class="x" data-unfocus="${c.uid}" title="Stop building around this card">×</span></button>`).join("")}
+    <button class="mini empty" id="comboAdd" title="Build around another card">+</button>`;
   renderStats();
   renderRail(d);
 }
@@ -1837,12 +1840,12 @@ function tileHTML(c, over, d){
       <img src="${esc(imgOf(c.card))}" ${srcsetAttr(c.card)} alt="${esc(c.card.name)}" loading="lazy" draggable="false" onerror="this.remove()">
       ${canMulti(c.card) ? qtyHTML(c) : ""}
       ${isPricey(c.card) ? `<span class="pricey-tag" title="Pricey: ${esc(priceText(c.card))}">💎 ${esc(priceText(c.card))}</span>` : ""}
-      <div class="ct-badges">${c.locked ? `<i title="Locked">${I.lock}</i>` : ""}${c.focus ? `<i title="Used for suggestions">${I.focus}</i>` : ""}</div>
+      <div class="ct-badges">${c.locked ? `<i title="Locked">${I.lock}</i>` : ""}${c.focus ? `<i title="Building around this card">${I.focus}</i>` : ""}</div>
     </div>
     ${tileStatsHTML(c, d)}
     <div class="acts">
       <button data-act="edit" title="Edit: art, name and versions">${I.brush}</button>
-      <button data-act="focus" class="${c.focus ? "on" : ""}" title="${c.focus ? "In your suggestions: click to stop using this card for suggestions" : "Add to suggestions: find cards that work with this one"}">${I.focus}</button>
+      <button data-act="focus" class="${c.focus ? "on" : ""}" title="${c.focus ? "Building around this card: click to stop" : "Build around this card: Add cards also suggests cards that work with it"}">${I.focus}</button>
       ${lock || `<span class="act-slot" aria-hidden="true"></span>`}
       <button class="del" data-act="remove" title="Delete card" ${c.locked ? "disabled" : ""}>${I.trash}</button>
     </div></div>`;
@@ -2005,7 +2008,7 @@ function renderTools(d){
 /* ---------------- Card actions ---------------- */
 function findCard(u){ const d = cur(); return d && d.cards.find(c => c.uid === u); }
 function toggleLock(u){ const c = findCard(u); if (!c || guard()) return; animateBoard(() => { c.locked = !c.locked; touch(cur()); renderBoard(); renderHeader(); }); }
-function toggleFocus(u){ const c = findCard(u); if (!c || guard()) return; c.focus = !c.focus; touch(cur()); renderBoard(); renderHeader(); toast(c.focus ? `Suggestions now also use ${c.card.name}` : `${c.card.name} no longer used for suggestions`); }
+function toggleFocus(u){ const c = findCard(u); if (!c || guard()) return; c.focus = !c.focus; touch(cur()); renderBoard(); renderHeader(); toast(c.focus ? `Building around ${c.card.name}: Add cards now also suggests cards for it` : `No longer building around ${c.card.name}`); }
 function moveOther(u){ const c = findCard(u); if (c) moveZone(u, c.zone === "deck" ? "options" : "deck"); }
 function moveZone(u, zone){
   const d = cur(), c = findCard(u); if (!c || c.zone === zone || guard(d)) return;
@@ -2261,14 +2264,34 @@ function endDrag(commit){
 }
 
 /* ---------------- Resizable divider between card pool and deck ---------------- */
+/* When the divider moves and a row gains or loses a column, the visible cards glide to their new spots instead of jumping. */
+function splitFlip(apply){
+  if (REDUCED.matches){ apply(); return; }
+  const vis = [];
+  for (const el of document.querySelectorAll("#board .cw")){
+    const r = el.getBoundingClientRect();
+    if (r.bottom > 0 && r.top < innerHeight && r.width) vis.push([el, r, el.offsetLeft, el.offsetTop]);
+  }
+  apply();
+  for (const [el, r, ox, oy] of vis){
+    // offsetLeft/Top ignore animations: a real jump means the card changed row or column inside its panel
+    if (Math.abs(el.offsetLeft - ox) < 20 && Math.abs(el.offsetTop - oy) < 20) continue;
+    if (el._sa){ el._sa.cancel(); el._sa = null; }
+    const n = el.getBoundingClientRect(), dx = r.left - n.left, dy = r.top - n.top;
+    el._sa = el.animate([{transform: `translate(${dx}px,${dy}px)`}, {transform: "none"}], {duration: 340, easing: "cubic-bezier(.22,1,.36,1)"});
+    el._sa.onfinish = () => { el._sa = null; };
+  }
+}
 function applySplit(){ $("#board").style.setProperty("--sp", (UI.split * 100).toFixed(2) + "%"); }
 (() => {
   const sp = $("#splitter"); let on = false;
   sp.addEventListener("pointerdown", e => { on = true; sp.setPointerCapture(e.pointerId); sp.classList.add("on"); document.body.classList.add("splitting"); e.preventDefault(); });
+  let want = null, raf = 0;
   sp.addEventListener("pointermove", e => {
     if (!on) return;
     const r = $("#board").getBoundingClientRect();
-    UI.split = Math.max(.15, Math.min(.85, (e.clientX - r.left) / r.width)); applySplit();
+    want = Math.max(.15, Math.min(.85, (e.clientX - r.left) / r.width));
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; const v = want; splitFlip(() => { UI.split = v; applySplit(); }); });
   });
   const end = () => { if (!on) return; on = false; sp.classList.remove("on"); document.body.classList.remove("splitting"); saveUI(); };
   sp.addEventListener("pointerup", end); sp.addEventListener("pointercancel", end);
@@ -2434,7 +2457,7 @@ function renderAddBody(){
     const foc = d.cards.filter(c => c.focus).map(c => esc(c.card.name));
     $("#basis").innerHTML = A.q.trim()
       ? `Search results for <b>“${esc(A.q.trim())}”</b>${A.bucket !== "Any" ? ` among ${PLURAL[A.bucket].toLowerCase()}` : ""}. Clear the search to see EDHREC picks again.`
-      : `EDHREC picks for <b>${esc(cmdKey(d))}</b>${foc.length ? ` combined with <b>${foc.join(", ")}</b>` : ""}.
+      : `EDHREC picks for <b>${esc(cmdKey(d))}</b>${foc.length ? `, built around ${d.cards.filter(c => c.focus).map(c => `<span class="ba-chip"><b>${esc(c.card.name)}</b><button data-unfocus="${c.uid}" title="Stop building around ${esc(c.card.name)}">×</button></span>`).join(" ")}` : ""}.
         <select id="addSort" aria-label="Sort picks"><option value="best">Best match first</option><option value="incl">% of decks</option><option value="syn">Highest synergy</option><option value="cheap">Cheapest</option><option value="price">Most expensive</option></select>`;
     if ($("#addSort")) $("#addSort").value = UI.addSort;
     document.querySelectorAll("#chips .chip").forEach(ch => ch.classList.toggle("on", ch.dataset.bucket === A.bucket));
@@ -2530,6 +2553,7 @@ $("#addModal").addEventListener("keydown", e => { if (e.key === "Enter" && e.tar
 $("#addModal").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.hasAttribute("data-close")) return hideScrim("#addScrim");
+  if (b.dataset.unfocus){ toggleFocus(b.dataset.unfocus); loadAdd(); return; }
   if (b.id === "clearQ"){ A.q = ""; $("#addQ").value = ""; loadAdd(); if (HOVER.matches) $("#addQ").focus(); return; }
   if (b.dataset.bucket){ A.bucket = b.dataset.bucket; loadAdd(); return; }
   if (b.id === "moreBtn"){ A.page++; loadAdd(true); return; }
@@ -3994,7 +4018,7 @@ $("#cmds").addEventListener("click", e => {
 $("#combo").addEventListener("click", e => {
   const x = e.target.closest("[data-unfocus]"); if (x){ e.stopPropagation(); toggleFocus(x.dataset.unfocus); return; }
   if (e.target.closest("#comboAdd")){
-    toast("Press the two circles under any card to use it for suggestions");
+    toast("Press the two circles under any card to build around it");
     document.body.classList.remove("pulse-focus"); void document.body.offsetWidth; document.body.classList.add("pulse-focus");
     setTimeout(() => document.body.classList.remove("pulse-focus"), 2300); return;
   }
