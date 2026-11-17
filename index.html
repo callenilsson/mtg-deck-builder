@@ -307,6 +307,14 @@ body.ro .name-wrap svg{display:none}
 #infoPop{position:fixed;z-index:1200;padding:10px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--gold-line);box-shadow:0 16px 40px rgba(0,0,0,.6);font-size:12px;line-height:1.5;color:var(--muted);animation:popIn .14s ease-out}
 #infoPop[hidden]{display:none}
 #infoPop b{color:var(--fg);font-weight:600}
+#infoPop p{margin:0 0 6px}
+#infoPop ul{margin:0 0 6px;padding:0;list-style:none;display:grid;gap:5px}
+#infoPop li{display:grid;grid-template-columns:auto;padding-left:10px;border-left:2px solid var(--gold-line)}
+#infoPop li b{display:block;color:var(--gold);font-size:11.5px}
+#infoPop .tip{margin:6px 0 0;padding-top:6px;border-top:1px solid var(--line-soft);color:var(--faint);font-size:11.5px}
+#infoPop .tip b{color:var(--muted)}
+#infoPop .up{color:var(--ok)}#infoPop .dn{color:var(--gold)}
+#infoPop>:last-child{margin-bottom:0}
 #infoPop::before{content:"";position:absolute;top:-6px;left:calc(var(--ax) - 6px);width:10px;height:10px;background:var(--surface);border-left:1px solid var(--gold-line);border-top:1px solid var(--gold-line);transform:rotate(45deg)}
 #infoPop.above::before{top:auto;bottom:-6px;transform:rotate(225deg)}
 @keyframes popIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
@@ -325,6 +333,21 @@ button.vrow:hover{background:var(--surface-2)}
 .role.ok .vbar i{background:var(--ok)}
 .vn{font-size:11.5px;color:var(--muted);white-space:nowrap}
 .vn b{color:var(--fg)}
+.cb3-q{margin:0 0 4px;font-size:12px;color:var(--fg)}
+.cb3{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"name name verdict" "l1 d1 n1" "l2 d2 n2";align-items:center;column-gap:8px;row-gap:3px;padding:6px 8px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line-soft);margin-bottom:4px}
+.cb3.short{border-color:rgba(239,90,95,.35)}
+.cb3-name{grid-area:name;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+.cb3-name .ms{font-size:13px}
+.cb3-v{grid-area:verdict;font-size:11.5px;font-weight:600}
+.cb3-v.good{color:var(--ok)}.cb3-v.bad{color:#f1a08f}
+.cb3-l{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.cb3-n{font-size:11px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.cb3-bar{display:block;height:8px;border-radius:999px;background:var(--surface-3);overflow:hidden;min-width:40px}
+.cb3-bar i{display:block;height:100%;border-radius:999px}
+.cb3-n b{color:var(--fg)}
+.dots{display:flex;gap:3px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--surface-3);flex:none}
+.mc-t-W .on{background:#efe8c4}.mc-t-U .on{background:#7fb6e6}.mc-t-B .on{background:#b3a4b0}.mc-t-R .on{background:#e57a5d}.mc-t-G .on{background:#6dbb7c}
 .cb2-row{display:grid;grid-template-columns:78px 1fr;align-items:center;gap:8px;font-size:12px}
 .cb2-bar{display:flex;height:16px;border-radius:5px;overflow:hidden;gap:2px;background:var(--surface-3)}
 .cb2-bar i{display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden;font:700 10px/1 system-ui,sans-serif;font-style:normal;color:#111;white-space:nowrap}
@@ -1038,7 +1061,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117021140";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117021421";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1764,16 +1787,41 @@ const isGC = c => !!(GC && c && (GC.has(c.name) || GC.has(String(c.name).split("
 /* A small "?" beside each stats title: tap to read how that part works (works on phones, unlike hover text). */
 const INFO_OPEN = new Set();
 const INFO = {
-  types: sg => `<b>Deck</b>: cards of each type in your deck. <b>🔒</b>: locked final picks. <b>Limit</b>: how many of each type you're aiming for; with your commander they should add up to 100.
-    <b>EDHREC</b>: what similar decks run. The app finds the EDHREC theme whose cards best match yours${sg ? ` (now: ${esc(sg.short)})` : ""}, takes that theme's average type counts, adjusts lands to your mana curve, and keeps the total at 100. The small +1 / −1 is the difference from your limit. <b>Use EDHREC numbers</b> copies them into your limits.`,
-  power: () => `The colored numbers count how many cards in the deck have each color in their color identity. <b>Game Changers</b> is the official list of the strongest Commander cards (from Scryfall). Even one moves a deck up a power bracket, so it's a quick “too strong for our table?” check. Click it to see which.`,
-  curve: () => `Every spell in the deck (lands not counted), grouped by mana value: the total mana it costs. The big number is the average. Most Commander decks land around 3; lower means a faster deck.`,
-  roles: () => `Read from each card's rules text, so it's an estimate. <b>Ramp</b>: makes mana or gets lands out (mana rocks, mana creatures, land search, Treasure, extra land drops). <b>Card draw</b>: draws you cards. <b>Removal</b>: destroys, exiles, damages, shrinks, fights, bounces or counters one thing. <b>Board wipes</b>: hit everything at once. A card can count for more than one.
-    The goals (about 10 ramp, 10 draw, 8 removal, 2 wipes) are the common Commander guideline; the bar turns green when you reach one. Click a row to see those cards.`,
-  balance: () => `<b>Spells need</b>: the share of each color among the colored mana symbols in your spells' costs ({B}{B}{G} is 2 black and 1 green). <b>Lands make</b>: the share of each color among the mana your lands can make (a dual land counts for both colors, basics by their type). When a color's land share is clearly lower than what your spells need, you get a hint which basic to swap.`,
-  pricey: () => `Cards whose <b>cheapest printing</b> costs this much or more get a purple outline and price tag, here and in Add cards. The price is the cheapest version of the card (not the artwork you picked), from Cardmarket in € or TCGplayer in $, so a fancy printing doesn't change it. It's a quick hint for cards that may be too strong or too sought-after for a casual table. The number on the right counts them in this deck and pool. Each deck has its own limit.`,
-  build: () => `Pick cards you want to <b>build around</b> with the two-circles button under them. <b>Add cards</b> then also suggests cards that EDHREC players run together with those cards, mixed in with your commander's suggestions. Remove one with its × here, or in Add cards.`,
-  ctypes: () => `Shown when 8 or more creatures share a type, so typal decks can see their count at a glance. Changelings are every creature type, so they count for each. Click a type to see those cards.`
+  types: sg => `<p>How many cards of each type you have, and how many you're aiming for.</p>
+    <ul><li><b>Deck</b> cards of this type in your deck</li>
+    <li><b>🔒</b> locked final picks</li>
+    <li><b>Limit</b> your goal; with your commander, the limits add up to 100</li>
+    <li><b>EDHREC</b> what similar decks run; <span class="up">+1</span> / <span class="dn">−1</span> is the difference from your limit</li></ul>
+    <p class="tip">The EDHREC numbers come from the EDHREC theme that best matches your cards${sg ? ` (now: ${esc(sg.short)})` : ""}, with lands adjusted to your mana curve. <b>Use EDHREC numbers</b> copies them into your limits.</p>`,
+  power: () => `<ul><li><b>Colored numbers</b> how many cards have each color</li>
+    <li><b>◆ Game Changers</b> cards on the official list of the strongest Commander cards. Even one makes a deck play at a higher power level.</li></ul>
+    <p class="tip">Click Game Changers to see which cards.</p>`,
+  curve: () => `<p>Your spells grouped by how much mana they cost (lands not counted).</p>
+    <ul><li><b>Bars</b> how many spells cost 0, 1, 2 … 7+ mana</li>
+    <li><b>Big number</b> the average cost</li></ul>
+    <p class="tip">Most Commander decks average about 3. Lower means a faster deck.</p>`,
+  roles: () => `<p>What your cards do, read from their rules text (an estimate).</p>
+    <ul><li><b>Ramp</b> makes extra mana or gets lands out: mana rocks, mana creatures, land search, Treasure</li>
+    <li><b>Card draw</b> draws you more cards</li>
+    <li><b>Removal</b> gets rid of one thing: destroy, exile, damage, fight, bounce, counter</li>
+    <li><b>Board wipes</b> get rid of everything at once</li></ul>
+    <p class="tip">Common goal: about 10 ramp, 10 draw, 8 removal, 2 wipes. The bar turns green when you reach it. Click a row to see those cards.</p>`,
+  balance: () => `<p>If your spells need a color that your lands rarely make, you'll get stuck with cards you can't cast.</p>
+    <ul><li><b>Spells</b> of all colored mana symbols in your spells' costs, how many are this color ({B}{B}{G} is 2 black, 1 green)</li>
+    <li><b>Lands</b> how many of your lands can make this color (a land with two colors counts for both)</li></ul>
+    <p class="tip">The two bars should be about as long. If the Lands bar is clearly shorter, the hint says which basic lands to swap.</p>`,
+  pricey: () => `<p>Marks cards that cost a lot, as a hint they may be too strong for a casual table.</p>
+    <ul><li><b>Price</b> the card's cheapest printing (Cardmarket €, TCGplayer $), not the artwork you picked</li>
+    <li><b>Marked</b> purple outline and price tag, here and in Add cards</li>
+    <li><b>Number on the right</b> how many in this deck and pool</li></ul>
+    <p class="tip">Each deck has its own limit.</p>`,
+  build: () => `<p>Get suggestions for cards that work with a card you like, not only with your commander.</p>
+    <ul><li><b>Add a card</b> press the two circles under it</li>
+    <li><b>Add cards</b> then also suggests cards that EDHREC players run together with it</li>
+    <li><b>Remove</b> with its ×, here or in Add cards</li></ul>`,
+  ctypes: () => `<p>Your most common creature types. Only shown when 8 or more creatures share a type.</p>
+    <ul><li><b>Changelings</b> are every type, so they count for each</li></ul>
+    <p class="tip">Click a type to see those cards.</p>`
 };
 function infoBtn(k){ return `<button class="info-q" data-info="${k}" aria-label="How is this worked out?">?</button>`; }
 function infoText(){ return ""; }
@@ -1864,16 +1912,28 @@ function colorBalanceHTML(d, deck){
       parts.forEach(p => { if (need[p] != null) need[p] += q / (m[1].includes("/P") ? 1 : parts.length || 1); });
     }
   }
-  const tn = Object.values(need).reduce((a, b) => a + b, 0) || 1, ts = Object.values(src).reduce((a, b) => a + b, 0) || 1;
-  const np = c => need[c] / tn * 100, sp = c => src[c] / ts * 100;
-  const bar = (label, pct, tip) => `<div class="cb2-row"><span class="vl">${label}</span><span class="cb2-bar" title="${tip}">${ci.map(c => pct(c) >= .5 ? `<i class="mc-${c}" style="flex:${pct(c).toFixed(2)}"><span>${c} ${Math.round(pct(c))}%</span></i>` : "").join("")}</span></div>`;
-  const short = ci.filter(c => np(c) - sp(c) >= 12).sort((a, b) => (np(b) - sp(b)) - (np(a) - sp(a)));
+  // real counts: colored mana symbols in your spells, and how many of your lands make each color
+  const tn = Object.values(need).reduce((a, b) => a + b, 0) || 1;
+  const lands = deck.filter(c => /\bLand\b/.test(String(c.card.type).split("//")[0]) && landColors(c.card, ci).length).reduce((a, c) => a + qOf(c), 0) || 1;
+  const np = c => need[c] / tn * 100, sp = c => src[c] / lands * 100;
+  const fmt = v => Number.isInteger(v) ? v : v.toFixed(1);
+  const bar = (pct, c) => `<span class="cb3-bar"><i class="mc-${c}" style="width:${Math.min(100, pct).toFixed(1)}%"></i></span>`;
+  const isShort = c => np(c) - sp(c) >= 12;
+  const rows = [...ci].sort((a, b) => np(b) - np(a)).map(c => `<div class="cb3 ${isShort(c) ? "short" : ""}">
+      <span class="cb3-name"><i class="ms ms-${c.toLowerCase()} ms-cost"></i>${COLOR_NAME[c][0].toUpperCase() + COLOR_NAME[c].slice(1)}</span>
+      <span class="cb3-l">Spells</span>${bar(np(c), c)}<span class="cb3-n"><b>${fmt(need[c])}</b> of ${fmt(tn)} mana symbols</span>
+      <span class="cb3-l">Lands</span>${bar(sp(c), c)}<span class="cb3-n"><b>${src[c]}</b> of ${lands} lands</span>
+      <span class="cb3-v ${isShort(c) ? "bad" : "good"}">${isShort(c) ? "⚠ too few lands" : "✓ enough"}</span></div>`).join("");
+  const short = ci.filter(isShort).sort((a, b) => (np(b) - sp(b)) - (np(a) - sp(a)));
   const most = ci.filter(c => !short.includes(c)).sort((a, b) => (sp(b) - np(b)) - (sp(a) - np(a)))[0];
-  const hint = short.length ? `<p class="cb2-hint">⚠ <b>${COLOR_NAME[short[0]][0].toUpperCase() + COLOR_NAME[short[0]].slice(1)}</b> is short: spells need ${Math.round(np(short[0]))}%, lands make ${Math.round(sp(short[0]))}%.${most ? ` Swap a ${BASIC_OF[most]} for a ${BASIC_OF[short[0]]}?` : ""}</p>`
-    : `<p class="cb2-hint ok">✓ Your lands match the colors your spells need.</p>`;
-  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Color balance ${infoBtn("balance")}</span><small>spells vs lands</small></div>${infoText("balance")}
-    ${bar("Spells need", np, "Share of the colored mana symbols in your spells' costs")}
-    ${bar("Lands make", sp, "Share of your lands' colored mana (a dual land counts for each color it makes)")}
+  let hint;
+  if (short.length){
+    const c = short[0], add = Math.max(1, Math.round((np(c) - sp(c)) / 100 * lands));
+    hint = `<p class="cb2-hint">⚠ Add about <b>${add} ${BASIC_OF[c]}${add > 1 ? "s" : ""}</b>${most ? ` (swap out ${BASIC_OF[most]}s)` : ""}, so more of your lands make ${COLOR_NAME[c]}.</p>`;
+  } else hint = `<p class="cb2-hint ok">✓ Your lands make the colors your spells need.</p>`;
+  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Color balance ${infoBtn("balance")}</span></div>
+    <p class="cb3-q">Do your lands make the colors your spells need?</p>
+    ${rows}
     ${hint}</div>`;
 }
 /* ---- Creature types: only shown when the deck is clearly about a type ---- */
