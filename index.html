@@ -575,12 +575,12 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .fl-over.user canvas{pointer-events:auto;cursor:move;touch-action:none}
 .fl-over.stale canvas,.fl-over.stale .name-over,.fl-over.stale .name-pen{display:none}
 .name-over{position:absolute;left:7.2%;top:5.1%;width:63%;height:5%;pointer-events:auto;font:700 calc(var(--flw) * .047) Georgia,"Times New Roman",serif;padding:0 5px;border-radius:4px;border:1px dashed transparent;background:transparent;color:transparent;caret-color:var(--gold);cursor:text}
-.name-over{border:1.5px solid rgba(217,171,79,.85)!important;background:rgba(255,255,255,.10);box-shadow:inset 0 1px 3px rgba(0,0,0,.35),0 0 0 3px rgba(217,171,79,.18)}
+.name-over{border:2px dashed rgba(255,255,255,.95)!important;background:rgba(255,255,255,.06);box-shadow:0 0 0 1px rgba(0,0,0,.55),inset 0 0 0 1px rgba(0,0,0,.45)}
 .name-over:focus{border-color:var(--gold)!important}
 .name-over::placeholder{color:transparent}
-.name-pen{position:absolute;left:7.2%;top:calc(5.1% - 21px);height:20px;display:inline-flex;align-items:center;gap:4px;padding:0 8px 0 6px;border-radius:7px 7px 0 0;background:var(--gold);color:#1b1407;border:0;font:700 11px/1 system-ui,sans-serif;pointer-events:auto;box-shadow:0 -2px 8px rgba(0,0,0,.35);transition:filter .15s}
-.name-pen:hover{filter:brightness(1.1)}
-.name-pen svg.i{width:12px;height:12px;stroke-width:2.4}
+.name-pen{position:absolute;left:-14px;top:4.4%;width:28px;height:28px;border-radius:50%;background:var(--gold);color:#1b1407;border:2px solid var(--bg);display:grid;place-items:center;pointer-events:auto;padding:0;box-shadow:0 4px 12px rgba(0,0,0,.5);transition:transform .15s}
+.name-pen:hover{transform:scale(1.1)}
+.name-pen svg.i{width:14px;height:14px;stroke-width:2.2}
 .name-over:hover{border-color:var(--gold);background:rgba(10,10,14,.25)}
 .name-over:focus{outline:none;border-style:solid;border-color:var(--gold);background:rgba(10,10,14,.92);color:#f2ecd9}
 .name-over:focus::placeholder{color:#8a8ca3}
@@ -961,7 +961,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117013142";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117013553";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -2957,13 +2957,18 @@ function landFly(f, v){
 }
 
 /* ---------------- Card view ---------------- */
+/* Width of the name area on a card (in % of the card): the frame starts at 7.2% and the mana symbols take ~5.5% each from the right. */
+function nameFieldWidth(c){
+  const n = ((String(c.mana || "").split(" // ")[0]).match(/\{[^}]+\}/g) || []).length;
+  return Math.max(40, Math.min(84, 93 - 7.2 - n * 5.5 - (n ? 2 : 0))).toFixed(1);
+}
 function renderDetail(){
   const c = V.card;
   $("#detailModal").innerHTML = `<button class="icon-btn dv-close" data-close title="Close">${I.close}</button><div class="dv-scroll">
       <div class="flow" id="flow" tabindex="0" aria-label="Every artwork of this card. Drag, swipe, scroll or use the arrow keys. Click a card to jump to it.">
         <div class="flow-stage" id="flowStage"></div>
         <div class="fl-over" id="flOver"><canvas id="artCanvas" width="1344" height="1872"></canvas>
-          ${V.editable ? `<input class="name-over" id="artName" maxlength="40" autocomplete="off" spellcheck="false" placeholder="${esc(c.name.split(" // ")[0])}" value="${esc(V.name)}" title="Click to rename this card" aria-label="Name on the card"><button class="name-pen" id="namePen" title="Rename this card">${I.pencil}<span>Edit name</span></button>` : ""}</div>
+          ${V.editable ? `<input class="name-over" id="artName" style="width:${nameFieldWidth(c)}%" maxlength="40" autocomplete="off" spellcheck="false" placeholder="${esc(c.name.split(" // ")[0])}" value="${esc(V.name)}" title="Click to rename this card" aria-label="Name on the card"><button class="name-pen" id="namePen" title="Rename this card">${I.pencil}</button>` : ""}</div>
       </div>
       <div class="flow-foot"><div class="flow-cap" id="flowCap"></div>${c.back ? `<button class="btn sm" id="dFlip">${I.flip}Flip</button>` : ""}<input type="range" class="flow-scrub" id="flowScrub" min="0" max="0" value="0" aria-label="Jump to artwork" hidden></div>
       <div class="dv-box">
@@ -3113,7 +3118,7 @@ function layoutFlow(){
       : `${V.rebase ? `<b class="rebase-cap">New base:</b> ` : ""}<b>${esc(p.set || "This version")}</b>${p.artist ? ` · art by ${esc(p.artist)}` : ""}`;
     const yr = e.t === "p" && p.year ? ` (${p.year})` : "";
     const ap = printPrice(p);
-    cap.innerHTML = `${what}${yr}${ap ? ` · <span class="art-price" title="Price of this exact artwork. The cheapest printing is what counts for the deck.">this art ${fmtMoney(ap.v, ap.sym)}</span>` : ""} · ${V.fi + 1} of ${list.length}${V.artQ && V.artQ.trim() ? ` matching “${esc(V.artQ.trim())}”` : ""}${V.morePrints ? " (loading more artworks…)" : !V.printsDone ? " (loading other artworks…)" : V.printsFailed ? " (couldn’t load other artworks right now)" : list.length < 2 && !(V.artQ && V.artQ.trim()) ? " (the only artwork of this card)" : ""}`;
+    cap.innerHTML = `${what}${yr}${ap ? ` · <span class="art-price" title="Price of this exact artwork. The cheapest printing is what counts for the deck.">this art ${fmtMoney(ap.v, ap.sym)}</span>` : ""} · ${V.fi + 1} of ${list.length}${V.artQ && V.artQ.trim() ? ` matching “${esc(V.artQ.trim())}”` : ""}${V.morePrints ? " (loading more artworks…)" : !V.printsDone ? " (loading other artworks…)" : V.printsFailed ? " (couldn’t load other artworks right now)" : ""}`;
   }
   updateOverlay();
 }
