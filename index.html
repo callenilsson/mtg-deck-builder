@@ -961,7 +961,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117013009";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117013142";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -2923,22 +2923,37 @@ function closeFly(v){
   if ($("#flOver").classList.contains("custom")) try { src = $("#artCanvas").toDataURL("image/jpeg", .85); } catch {}
   return {fly: makeFly(src, r), r};
 }
+/* Hide a card's spot with a style rule, so it stays hidden even if the board is redrawn meanwhile. */
+function hideSpot(sel){ let st = document.getElementById("flyHide"); if (!st){ st = document.createElement("style"); st.id = "flyHide"; document.head.appendChild(st); } st.textContent = sel ? `${sel}{visibility:hidden!important}` : ""; }
+/* Short glide of a flying card from where it is now to a rectangle (it scales around its centre). */
+function glideFly(fly, to, ms = 140){
+  const base = fly.getBoundingClientRect();
+  fly.getAnimations().forEach(x => x.cancel());
+  const b0 = fly.getBoundingClientRect(), cx = r => r.left + r.width / 2, cy = r => r.top + r.height / 2;
+  return fly.animate([{transform: `translate(${cx(base) - cx(b0)}px,${cy(base) - cy(b0)}px) scale(${base.width / b0.width})`},
+                      {transform: `translate(${cx(to) - cx(b0)}px,${cy(to) - cy(b0)}px) scale(${to.width / b0.width})`}], {duration: ms, easing: "cubic-bezier(.2,.8,.2,1)", fill: "forwards"});
+}
 function landFly(f, v){
   if (!f) return;
-  let dest = null;
-  if (v.kind === "item") dest = document.querySelector(`#board .cw[data-uid="${v.uid}"] .ct`);
-  else if (v.kind === "token") dest = document.querySelector(`#board .cw[data-tok="${v.uid}"] .ct`);
-  else if (v.kind === "commander" || v.kind === "partner") dest = document.querySelector(`#cmds [data-cmd="${v.kind}"]`);
-  else if (v.srcEl && v.srcEl.isConnected) dest = v.srcEl;
-  const r = dest && dest.getBoundingClientRect();
-  const onScreen = r && r.width && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
-  if (!onScreen){
+  const sel = v.kind === "item" ? `#board .cw[data-uid="${v.uid}"] .ct` : v.kind === "token" ? `#board .cw[data-tok="${v.uid}"] .ct`
+    : v.kind === "commander" || v.kind === "partner" ? `#cmds [data-cmd="${v.kind}"]` : null;
+  const find = () => sel ? document.querySelector(sel) : (v.srcEl && v.srcEl.isConnected ? v.srcEl : null);
+  const vis = r => r && r.width && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+  const dest = find(), r = dest && dest.getBoundingClientRect();
+  if (!vis(r)){
     const a = f.fly.animate([{opacity: 1, transform: "none"}, {opacity: 0, transform: "scale(.85) translateY(20px)"}], {duration: 220, easing: "ease-in"});
     a.onfinish = a.oncancel = () => f.fly.remove(); return;
   }
-  dest.style.visibility = "hidden";
+  if (sel) hideSpot(sel); else dest.style.visibility = "hidden";
+  const finish = () => { if (sel) hideSpot(null); else if (dest) dest.style.visibility = ""; f.fly.remove(); };
   const a = sFlight(f.fly, f.r, r);
-  a.onfinish = a.oncancel = () => { dest.style.visibility = ""; fadeAway(f.fly); };
+  a.onfinish = a.oncancel = () => {
+    // the board may have been redrawn or moved during the flight: land exactly on where the card is now
+    const d2 = find(), r2 = d2 && d2.getBoundingClientRect(), now = f.fly.getBoundingClientRect();
+    if (vis(r2) && (Math.abs(now.left - r2.left) > 1 || Math.abs(now.top - r2.top) > 1 || Math.abs(now.width - r2.width) > 1)){
+      const g = glideFly(f.fly, r2); g.onfinish = g.oncancel = finish;
+    } else requestAnimationFrame(finish);
+  };
 }
 
 /* ---------------- Card view ---------------- */
