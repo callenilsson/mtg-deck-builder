@@ -148,6 +148,8 @@ body.ro #stats input{pointer-events:none;opacity:.6}
 body.ro .name-wrap{border-style:solid;border-color:transparent;cursor:default}
 body.ro .name-wrap svg{display:none}
 .pricey-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;padding:6px 9px;border-radius:9px;background:var(--pricey-soft);border:1px solid var(--pricey-line);color:#e2d3ff;font-size:12.5px;font-weight:600;cursor:text;white-space:nowrap}
+.art-price{color:#e9d9a8}
+.chip-st .sub{color:var(--muted);font-weight:400}
 .cur-sel{background:rgba(0,0,0,.25);border:1px solid var(--pricey-line);border-radius:6px;color:#fff;font-weight:700;font-size:13px;padding:1px 3px}
 .pricey-row .pr-count{color:var(--muted);font-weight:500}
 .pricey-row input{width:56px;background:rgba(0,0,0,.25);border:1px solid var(--pricey-line);border-radius:6px;padding:2px 5px;text-align:right;font-size:13px;font-weight:700;color:#fff;-moz-appearance:textfield}
@@ -496,6 +498,9 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .detail .flow-top{background:#0b0c12;padding:12px 8px 0}
 .detail .flow-foot{background:#0b0c12;border-bottom:1px solid var(--line)!important;padding:8px 14px!important}
 .dv-box{background:none}
+.detail{position:relative}
+.dv-close{position:absolute;top:10px;right:10px;z-index:300;background:rgba(11,12,18,.75);border:1px solid var(--line);backdrop-filter:blur(4px)}
+.dv-close:hover{background:var(--surface-2)}
 .dv-box .modal-head{flex-wrap:wrap;border-top:0}
 .dv-x{position:absolute;right:4px;top:4px;z-index:300;background:rgba(10,10,14,.6);color:var(--fg)}
 .detail .flow-foot{border:0;padding:6px 8px 4px;color:var(--muted)}
@@ -537,7 +542,8 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .flow-empty{display:grid;place-items:center;height:100%;color:var(--muted)}
 .flow-foot{display:flex;align-items:center;gap:12px;padding:8px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .flow-top{display:flex;justify-content:center;padding:2px 8px 0}
-.art-find{display:inline-flex;align-items:center;gap:7px;background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:999px;padding:3px 6px 3px 12px;color:var(--gold);min-width:0;width:min(380px,100%)}
+.art-find{margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:999px;padding:3px 6px 3px 12px;color:var(--gold);min-width:0;width:min(320px,100%)}
+@media (max-width:640px){.dv-box .modal-head .art-find{order:3;width:100%;margin-left:0}}
 .art-find .af-lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .art-find-old{padding:0 8px;flex:0 1 230px;min-width:150px}
 .art-find:focus-within{border-color:var(--gold-line)}
@@ -891,7 +897,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117004600";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117005419";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1126,6 +1132,7 @@ async function refreshCheap(d){
   if (!d || cheapBusy) return;
   cheapBusy = true;
   try {
+    await refreshPrices(d);             // printing prices first: cheap cards don't need a lookup at all
     const mine = !roDeck(d), week = 7 * 864e5;
     const cards = [...cmdrs(d), ...d.cards.map(c => c.card)].filter(usesCheapest);
     let wrote = false, got = 0;
@@ -1135,6 +1142,12 @@ async function refreshCheap(d){
       // background work: wait while a card view or the add window is open, so artworks and search load first
       while ((V || !$("#addScrim").hidden) && cur() === d) await sleep(500);
       if (cur() !== d) break;
+      const own = PRICES[c.id];
+      if (!CHEAP_MEM[c.name] && own && (own.e != null || own.u != null) && (own.e ?? Infinity) < 1 && (own.u ?? Infinity) < 1.2){
+        CHEAP_MEM[c.name] = {e: own.e, u: own.u, t: Date.now()};
+        if (mine && (!c.cheap || c.cheap.t !== CHEAP_MEM[c.name].t)){ c.cheap = CHEAP_MEM[c.name]; wrote = true; }
+        continue;
+      }
       const had = !!CHEAP_MEM[c.name];
       if (!had) await sleep(380);            // background lookups go gently (about 2 a second)
       const r = await fetchCheapest(c.name);
@@ -1147,6 +1160,11 @@ async function refreshCheap(d){
   cheapBusy = false;
 }
 function fmtMoney(v, sym){ return sym + (v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2)); }
+function printPrice(card){            // this exact printing, ignoring the cheapest-printing rule
+  const p = card && PRICES[card.id]; if (!p) return null;
+  const want = UI.cur === "usd" ? "u" : "e", other = want === "u" ? "e" : "u";
+  return p[want] != null ? {v: p[want], sym: want === "u" ? "$" : "€"} : p[other] != null ? {v: p[other], sym: other === "u" ? "$" : "€"} : null;
+}
 function priceText(card){ const p = priceOf(card); return p ? fmtMoney(p.v, p.sym) : "–"; }
 function priceyTh(d = cur()){ return d && d.pricey != null ? +d.pricey : 20; }
 function isPricey(card){ const p = priceOf(card), th = priceyTh(); return !!(p && th > 0 && p.v >= th); }
@@ -2706,8 +2724,7 @@ function landFly(f, v){
 /* ---------------- Card view ---------------- */
 function renderDetail(){
   const c = V.card;
-  $("#detailModal").innerHTML = `<div class="dv-scroll">
-      <div class="flow-top"><label class="art-find" title="Show only artworks whose set name, set code, artist or year match">${I.search}<span class="af-lbl">Find art</span><input id="artQ" type="search" placeholder="set, artist or year" autocomplete="off" value="${esc(V.artQ || "")}"></label></div>
+  $("#detailModal").innerHTML = `<button class="icon-btn dv-close" data-close title="Close">${I.close}</button><div class="dv-scroll">
       <div class="flow" id="flow" tabindex="0" aria-label="Every artwork of this card. Drag, swipe, scroll or use the arrow keys. Click a card to jump to it.">
         <div class="flow-stage" id="flowStage"></div>
         <div class="fl-over" id="flOver"><canvas id="artCanvas" width="1344" height="1872"></canvas>
@@ -2716,7 +2733,7 @@ function renderDetail(){
       <div class="flow-foot"><div class="flow-cap" id="flowCap"></div>${c.back ? `<button class="btn sm" id="dFlip">${I.flip}Flip</button>` : ""}<input type="range" class="flow-scrub" id="flowScrub" min="0" max="0" value="0" aria-label="Jump to artwork" hidden></div>
       <div class="dv-box">
         <div class="modal-head"><h2>${esc(c.name)} <span class="mana">${manaHTML(c.mana)}</span></h2>
-          <button class="icon-btn" data-close title="Close">${I.close}</button></div>
+          <label class="art-find" title="Show only artworks whose set name, set code, artist or year match">${I.search}<span class="af-lbl">Find art</span><input id="artQ" type="search" placeholder="set, artist or year" autocomplete="off" value="${esc(V.artQ || "")}"></label></div>
         <div class="dv-body"><div class="dv-info" id="dvInfo"></div><div class="dv-side" id="dvSide"></div></div>
       </div>
     </div>`;
@@ -2735,7 +2752,8 @@ function renderDetailParts(){
       if (syn != null) chips.push(`<span class="chip-st" title="Synergy: how much more often it's played with this commander than in other decks that could play it"><b class="${syn > 0 ? "pos" : syn < 0 ? "neg" : ""}">${syn > 0 ? "+" : ""}${syn}%</b> synergy</span>`);
     } else chips.push(`<span class="chip-st" title="Not on ${esc(cmdKey(d))}'s EDHREC page">Not on EDHREC</span>`);
   }
-  chips.push(`<span class="chip-st price${isPricey(c) ? " pricey" : ""}" title="Price of the cheapest printing of this card"><b>${pr ? fmtMoney(pr.v, pr.sym) : "–"}</b> cheapest</span>`);
+  const ap = printPrice(c);
+  chips.push(`<span class="chip-st price${isPricey(c) ? " pricey" : ""}" title="The cheapest printing's price is what counts (expensive marking, totals). This artwork's own price is shown for interest."><b>${pr ? fmtMoney(pr.v, pr.sym) : "–"}</b> cheapest${ap && (!pr || Math.abs(ap.v - pr.v) >= .01) ? ` <span class="sub">· this art ${fmtMoney(ap.v, ap.sym)}</span>` : ""}</span>`);
   if (V.rec && V.rec.pairs && V.rec.pairs.length) chips.push(`<span class="chip-st" title="Also played with ${V.rec.pairs.map(esc).join(", ")}">Combo ×${V.rec.pairs.length}</span>`);
   $("#dvInfo").innerHTML = `<div class="type-line">${esc(c.type)}${centerIsCustom() && V.name.trim() ? ` · printed as “${esc(V.name.trim())}”` : ""}</div>
     <div class="oracle">${manaHTML(c.text)}</div>${c.pt ? `<div class="pt">${esc(c.pt)}</div>` : ""}
@@ -2832,8 +2850,8 @@ function flowSize(){
   // same width as the cards on the board (measured, so it also matches stretched cards on phones)
   const ct = document.querySelector("#board .ct"), w = ct && ct.getBoundingClientRect().width;
   const base = w || parseFloat($("#board").style.getPropertyValue("--tile")) || 180;
-  const want = Math.max(base * 1.3, isPhone() ? 210 : 240);
-  const maxH = (innerHeight * .6) / 1.397, maxW = Math.min(innerWidth * .8, 600);
+  const want = Math.max(base * 1.45, isPhone() ? 230 : 270);
+  const maxH = (innerHeight * .66) / 1.397, maxW = Math.min(innerWidth * .8, 600);
   return Math.round(Math.max(90, Math.min(want, maxH, maxW)));
 }
 const pngOf = u => String(u || "").replace("/large/", "/png/").replace(/\.jpg(\?|$)/, ".png$1");
@@ -2859,7 +2877,8 @@ function layoutFlow(){
     const what = e.t === "c" ? `<b>✦ Your version${V.custs.length > 1 ? " " + custNumber(e.cid) : ""}</b> · based on ${esc(p.set || "this printing")}`
       : `${V.rebase ? `<b class="rebase-cap">New base:</b> ` : ""}<b>${esc(p.set || "This version")}</b>${p.artist ? ` · art by ${esc(p.artist)}` : ""}`;
     const yr = e.t === "p" && p.year ? ` (${p.year})` : "";
-    cap.innerHTML = `${what}${yr} · ${V.fi + 1} of ${list.length}${V.artQ && V.artQ.trim() ? ` matching “${esc(V.artQ.trim())}”` : ""}${V.morePrints ? " (loading more artworks…)" : V.prints.length < 2 ? " (loading other artworks…)" : ""}`;
+    const ap = printPrice(p);
+    cap.innerHTML = `${what}${yr}${ap ? ` · <span class="art-price" title="Price of this exact artwork. The cheapest printing is what counts for the deck.">this art ${fmtMoney(ap.v, ap.sym)}</span>` : ""} · ${V.fi + 1} of ${list.length}${V.artQ && V.artQ.trim() ? ` matching “${esc(V.artQ.trim())}”` : ""}${V.morePrints ? " (loading more artworks…)" : V.prints.length < 2 ? " (loading other artworks…)" : ""}`;
   }
   updateOverlay();
 }
