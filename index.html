@@ -67,8 +67,9 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .deck-item:not(:hover):not(.active):not(.menu-open) .deck-acts{visibility:hidden}
 @media (hover:none){.deck-item .deck-acts{visibility:visible!important}}
 .deck-more{width:28px;height:28px}
-.menu.row-menu{position:fixed;right:auto;top:0;min-width:190px;z-index:600}
-.menu.row-menu .i{width:16px;height:16px;margin-top:1px;color:var(--muted)}
+.menu.row-menu{position:fixed;right:auto;top:0;min-width:160px;z-index:600}
+.menu.row-menu .i{color:var(--muted)}
+.menu.row-menu .danger .i{color:var(--danger)}
 .deck-acts button{color:var(--faint);background:none;border:0;padding:5px;border-radius:6px;display:grid;place-items:center}
 .deck-acts button:hover{color:var(--fg);background:var(--surface-3)}
 .deck-acts button.del:hover{color:var(--danger);background:var(--danger-soft)}
@@ -223,11 +224,13 @@ body.ro .name-wrap svg{display:none}
 .top-actions{display:flex;gap:6px;align-items:center}
 .more-wrap{position:relative}
 .more-btn{border:1px solid var(--line);background:var(--surface-2)}
-.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:400;min-width:260px;padding:6px;border-radius:12px;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 40px rgba(0,0,0,.55);display:grid;gap:2px}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:400;min-width:170px;width:max-content;padding:4px;border-radius:10px;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 40px rgba(0,0,0,.55);display:grid;gap:2px}
 .menu[hidden]{display:none}
-.menu button{display:flex;gap:10px;align-items:flex-start;text-align:left;padding:9px 10px;border-radius:8px;border:0;background:none;color:var(--fg)}
+.menu button{display:flex;gap:9px;align-items:center;text-align:left;padding:7px 10px;border-radius:7px;font-size:13.5px;border:0;background:none;color:var(--fg)}
 .menu button:hover{background:var(--surface-2)}
-.menu button.danger .i{color:var(--danger);margin-top:2px}
+.menu button .i{width:15px;height:15px;flex:none}
+.menu button b{font-weight:600}
+.menu button.danger .i{color:var(--danger)}
 .menu button.danger b{color:var(--danger)}
 .menu small{display:block;color:var(--muted);font-size:11.5px;margin-top:1px}
 .combo{grid-area:combo;display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;min-width:0}
@@ -897,8 +900,8 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
           
           <div class="more-wrap"><button class="icon-btn more-btn" id="moreDeck" title="More: delete cards or the deck" aria-haspopup="menu" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg></button>
             <div class="menu" id="deckMenu" role="menu" hidden>
-              <button role="menuitem" id="wipeBtn" class="danger"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span><b>Delete all cards</b><small>Empties the pool and the deck. Commander and limits stay.</small></span></button>
-              <button role="menuitem" id="delDeckBtn" class="danger"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span><b>Delete deck</b><small>Removes the whole deck from your list.</small></span></button>
+              <button role="menuitem" id="wipeBtn" class="danger" title="Empties the pool and the deck. Commander and limits stay."><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span><b>Delete all cards</b></span></button>
+              <button role="menuitem" id="delDeckBtn" class="danger" title="Removes the whole deck from your list."><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span><b>Delete deck</b></span></button>
             </div></div>
           <button class="icon-btn fold-btn panel-btn" id="foldTop" title="Collapse this panel to show more cards"></button>
         </div>
@@ -958,7 +961,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117012815";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117013009";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1539,7 +1542,7 @@ function openDeckMenu(btn){
     ? `<button role="menuitem" data-act="ren">${I.pencil}<span><b>Rename</b></span></button>
        <button role="menuitem" data-act="dup">${I.copy}<span><b>Duplicate</b></span></button>
        <button role="menuitem" data-act="del" class="danger">${I.trash}<span><b>Delete deck</b></span></button>`
-    : `<button role="menuitem" data-act="dup">${I.copy}<span><b>Copy to my decks</b><small>Make your own copy you can change</small></span></button>`;
+    : `<button role="menuitem" data-act="dup" title="Make your own copy you can change">${I.copy}<span><b>Copy to my decks</b></span></button>`;
   document.body.appendChild(m);
   const r = btn.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight;
   m.style.left = Math.max(8, Math.min(innerWidth - mw - 8, r.right - mw)) + "px";
