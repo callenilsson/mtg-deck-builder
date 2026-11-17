@@ -142,7 +142,7 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .ro-banner small{font-size:11.5px;color:var(--muted)}
 .ro-banner{flex-wrap:wrap}
 .ro-banner .btn{flex:1 1 100%;justify-content:center}
-body.ro .acts,body.ro .add-tile,body.ro #addAny,body.ro #wipeBtn,body.ro #tools .moves,body.ro .cmd-col .acts,body.ro #comboAdd,body.ro .mini .x,body.ro #useSugg,body.ro #addBasics,body.ro .cmd-slot.partner.empty{display:none!important}
+body.ro .acts,body.ro .add-tile,body.ro #addAny,body.ro .more-wrap,body.ro #tools .moves,body.ro .cmd-col .acts,body.ro #comboAdd,body.ro .mini .x,body.ro #useSugg,body.ro #addBasics,body.ro .cmd-slot.partner.empty{display:none!important}
 body.ro .box-grip{visibility:hidden}
 body.ro #stats input{pointer-events:none;opacity:.6}
 body.ro .name-wrap{border-style:solid;border-color:transparent;cursor:default}
@@ -217,6 +217,15 @@ body.ro .name-wrap svg{display:none}
 .name-wrap:hover svg,.name-wrap:focus-within svg{color:var(--gold)}
 #deckName{flex:1;min-width:0;background:transparent;border:0;outline:none;padding:6px 8px;font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:.02em}
 .top-actions{display:flex;gap:6px;align-items:center}
+.more-wrap{position:relative}
+.more-btn{border:1px solid var(--line);background:var(--surface-2)}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:400;min-width:260px;padding:6px;border-radius:12px;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 40px rgba(0,0,0,.55);display:grid;gap:2px}
+.menu[hidden]{display:none}
+.menu button{display:flex;gap:10px;align-items:flex-start;text-align:left;padding:9px 10px;border-radius:8px;border:0;background:none;color:var(--fg)}
+.menu button:hover{background:var(--surface-2)}
+.menu button.danger .i{color:var(--danger);margin-top:2px}
+.menu button.danger b{color:var(--danger)}
+.menu small{display:block;color:var(--muted);font-size:11.5px;margin-top:1px}
 .combo{grid-area:combo;display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;min-width:0}
 .combo-lbl{display:flex;flex-direction:column;gap:2px;max-width:190px}
 .eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
@@ -270,6 +279,11 @@ body.ro .name-wrap svg{display:none}
 .colors span{display:inline-flex;align-items:center;gap:3px;color:var(--fg)}
 .sumline.bad{color:var(--danger)}
 .sumline.good{color:var(--ok)}
+.stats-foot .mv b{color:var(--fg)}
+.gc{border:1px solid var(--line);background:none;border-radius:999px;padding:1px 9px;font-size:11.5px;color:var(--muted)}
+.gc b{color:var(--fg)}
+.gc.has{border-color:var(--pricey-line);background:var(--pricey-soft);color:#e2d3ff}
+.gc.has b{color:#fff}
 .basis-line{flex-basis:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help}
 .pill-btn{border:1px solid var(--gold-line);background:var(--gold-soft);color:var(--gold);border-radius:6px;padding:2px 9px;font-size:11.5px;font-weight:600}
 .pill-btn:hover{background:rgba(217,171,79,.24)}
@@ -851,9 +865,13 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
         <label class="name-wrap" title="Click to rename this deck"><input id="deckName" placeholder="Name your deck" aria-label="Deck name" autocomplete="off"><svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></label>
         <div class="top-actions">
           <button class="card-plus-btn" id="addAny" title="Add cards: EDHREC picks for your commander, or search any card"><span class="card-plus-ico">+</span><span class="label-wide">Add cards</span></button>
-          <button class="btn" id="pdfBtn" title="Preview and print proxies at real card size"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg><span class="label">PDF</span></button>
+          <button class="btn" id="pdfBtn" title="Preview and print proxies at real card size"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg><span class="label">Print</span></button>
           
-          <button class="btn danger" id="wipeBtn" title="Remove every card from this deck"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span class="label">Wipe</span></button>
+          <div class="more-wrap"><button class="icon-btn more-btn" id="moreDeck" title="More: delete cards or the deck" aria-haspopup="menu" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg></button>
+            <div class="menu" id="deckMenu" role="menu" hidden>
+              <button role="menuitem" id="wipeBtn" class="danger"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span><b>Delete all cards</b><small>Empties the pool and the deck. Commander and limits stay.</small></span></button>
+              <button role="menuitem" id="delDeckBtn" class="danger"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span><b>Delete deck</b><small>Removes the whole deck from your list.</small></span></button>
+            </div></div>
           <button class="icon-btn fold-btn panel-btn" id="foldTop" title="Collapse this panel to show more cards"></button>
         </div>
       </div>
@@ -912,7 +930,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117010405";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117010835";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1599,6 +1617,18 @@ function renderRail(d){
     <div class="r-types">${chips}</div>`;
   $("#foldTop").innerHTML = isPhone() ? I.foldU : I.panelL;
 }
+/* Game Changers: the official Commander list of the strongest cards (they push a deck into a higher bracket).
+   One small request per visit, kept in memory only. */
+let GC = null, gcBusy = false;
+async function loadGameChangers(){
+  if (GC || gcBusy) return; gcBusy = true;
+  try {
+    const names = new Set(); let url = `/cards/search?q=${encodeURIComponent("is:gamechanger")}&unique=oracle`;
+    while (url){ const j = await sf(url); (j && j.data || []).forEach(c => names.add(c.name)); url = j && j.has_more ? j.next_page.replace("https://api.scryfall.com", "") : null; }
+    GC = names; renderStats();
+  } catch {} gcBusy = false;
+}
+const isGC = c => !!(GC && c && (GC.has(c.name) || GC.has(String(c.name).split(" // ")[0])));
 function renderStats(){
   const d = cur(); if (!d || !d.commander){ $("#stats").innerHTML = ""; return; }
   const deck = d.cards.filter(c => c.zone === "deck");
@@ -1634,12 +1664,18 @@ function renderStats(){
   const basicsHave = sumQ(deck.filter(c => c.card.basic));
   const needBasics = sg && sg.basic ? Math.max(0, Math.min(sg.basic, (d.limits.Land ?? 0) - sumQ(deck.filter(c => c.bucket === "Land" && !c.card.basic))) - basicsHave) : 0;
   const nTok = sumQ((d.tokens || []).filter(k => tokZone(k) === "deck"));
+  if (!GC) loadGameChangers();
+  const gcs = [...cmdrs(d), ...deck.map(c => c.card)].filter(isGC).map(c => c.name);
+  const spellsQ = deck.filter(c => c.bucket !== "Land").reduce((a, c) => a + qOf(c), 0);
+  const avgMV = spellsQ ? deck.filter(c => c.bucket !== "Land").reduce((a, c) => a + (c.card.cmc || 0) * qOf(c), 0) / spellsQ : 0;
   const tokRow = `<tr class="tokrow" title="Tokens in the deck: not part of the 100"><td class="ic"><i class="ms ms-token"></i></td><td class="sname">Tokens</td><td class="num">${nTok}</td><td></td><td></td><td class="edh">–</td></tr>`;
-  $("#stats").innerHTML = `<table class="stbl"><thead><tr><th></th><th class="l sname">Type</th><th title="Cards in your deck">Deck</th><th title="Locked final picks">${I.lock.replace('class="i"', 'class="i" style="width:11px;height:11px"')}</th><th title="Your limit">Limit</th><th class="l" title="EDHREC's average for decks like yours">EDHREC</th></tr></thead><tbody>${rows}${tokRow}</tbody></table>
-    <div class="stats-foot"><div class="colors">${colors}</div>${sum === 100 ? "" : `<span class="sumline bad">${sumTxt}</span>`}
+  $("#stats").innerHTML = `<table class="stbl"><thead><tr><th></th><th class="l sname">Type</th><th title="Cards in your deck">Deck</th><th title="Locked final picks">${I.lock.replace('class="i"', 'class="i" style="width:11px;height:11px"')}</th><th title="Your limit">Limit</th><th class="l" title="EDHREC's average for decks like yours${sg ? `. ${esc(sg.short)}${sg.why ? `. ${esc(sg.why)}` : ""}` : ""}">EDHREC</th></tr></thead><tbody>${rows}${tokRow}</tbody></table>
+    <div class="stats-foot"><div class="colors">${colors}</div>
+      ${spellsQ ? `<span class="mv" title="Average mana value of the spells in the deck (lands not counted). Lower means a faster deck.">Avg. mana value <b>${avgMV.toFixed(1)}</b></span>` : ""}
+      ${GC ? `<button class="gc ${gcs.length ? "has" : ""}" id="gcBtn" title="${gcs.length ? `Game Changers in this deck: ${esc(gcs.join(", "))}` : "No Game Changers in this deck"}. Game Changers are the official list of the strongest Commander cards. Even one moves a deck up a power bracket.">◆ Game Changers <b>${gcs.length}</b></button>` : ""}${sum === 100 ? "" : `<span class="sumline bad">${sumTxt}</span>`}
       ${sg ? `<button class="pill-btn" id="useSugg" ${same ? "disabled" : ""}>${same ? "Limits match EDHREC" : "Use EDHREC numbers"}</button>` : ""}
       ${needBasics > 0 ? `<button class="pill-btn" id="addBasics" title="Add basic lands, split by the colors your spells need">+ ${needBasics} basic land${needBasics > 1 ? "s" : ""}</button>` : ""}
-      ${sg ? `<span class="basis-line" title="${esc(sg.why)}">${esc(sg.short)}</span>` : ""}</div>`;
+</div>`;
 }
 
 /* ---------------- EDHREC type suggestions ----------------
@@ -2356,6 +2392,7 @@ document.addEventListener("pointerdown", e => {
 }, true);
 document.addEventListener("click", e => { if (performance.now() < swallowClickUntil){ swallowClickUntil = 0; e.preventDefault(); e.stopPropagation(); } }, true);
 $("#stats").addEventListener("click", e => {
+  if (e.target.closest("#gcBtn")){ const d = cur(); const g = [...cmdrs(d), ...d.cards.filter(c => c.zone === "deck").map(c => c.card)].filter(isGC).map(c => c.name); toast(g.length ? `Game Changers: ${g.join(", ")}` : "No Game Changers in this deck"); return; }
   if (e.target.closest("#useSugg")){
     if (guard()) return;
     const d = cur(), sg = SUGG[suggestKey(d)]; if (!sg || !sg.counts) return;
@@ -3488,11 +3525,11 @@ $("#confirmModal").addEventListener("click", async e => {
 function wipeDeck(){
   const d = cur(); if (!d || guard(d)) return;
   const n = d.cards.length;
-  if (!n){ toast("This deck has no cards to wipe"); return; }
+  if (!n){ toast("This deck has no cards to delete"); return; }
   confirmTwice([
-    {title: "Wipe this deck?", text: `This removes all ${n} cards from <b>${esc(displayName(d))}</b>, in both the card pool and the deck. Your commander and type limits stay.`, yes: "Yes, wipe it"},
-    {title: "Are you really, really sure?", text: "Locked cards go too. This can’t be undone.", yes: `Wipe all ${n} cards`}
-  ], () => { d.cards = []; touch(d); render(); toast("Deck wiped"); });
+    {title: "Delete all cards?", text: `This deletes all ${n} cards from <b>${esc(displayName(d))}</b>, in both the card pool and the deck. Your commander and type limits stay.`, yes: "Yes, delete them"},
+    {title: "Are you really, really sure?", text: "Locked cards go too. This can’t be undone.", yes: `Delete all ${n} cards`}
+  ], () => { d.cards = []; touch(d); render(); toast("All cards deleted"); });
 }
 function deleteDeck(id){
   const d = S.decks[id]; if (!d || guard(d)) return;
@@ -4040,7 +4077,12 @@ $("#rail").addEventListener("click", e => {
   const th = e.target.closest("[data-cmd]"); if (th) openDetail({kind: "commander"}, th);
 });
 addEventListener("resize", () => { const d = cur(); if (d && d.commander) renderRail(d); });
-$("#wipeBtn").onclick = wipeDeck;
+$("#wipeBtn").onclick = () => { closeMenu(); wipeDeck(); };
+$("#delDeckBtn").onclick = () => { closeMenu(); const d = cur(); if (d) deleteDeck(d.id); };
+function closeMenu(){ $("#deckMenu").hidden = true; $("#moreDeck").setAttribute("aria-expanded", "false"); }
+$("#moreDeck").onclick = e => { e.stopPropagation(); const m = $("#deckMenu"); m.hidden = !m.hidden; $("#moreDeck").setAttribute("aria-expanded", String(!m.hidden)); };
+document.addEventListener("click", e => { if (!e.target.closest(".more-wrap")) closeMenu(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenu(); });
 $("#pdfBtn").onclick = openPdf;
 $("#saveFile").onclick = saveFile;
 $("#importBtn").onclick = () => $("#importFile").click();
