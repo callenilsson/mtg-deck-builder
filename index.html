@@ -921,7 +921,13 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .fl-over.rebasing canvas{outline:2px dashed var(--gold);outline-offset:4px}
 .rebase-cap{color:var(--gold)}
 .base-name{max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fl:not(.center){filter:brightness(.5) saturate(.85)}
+.fl::after{content:"";position:absolute;left:0;top:0;width:100%;height:100%;border-radius:4.6%/3.3%;background:rgba(6,7,12,.5);pointer-events:none;transition:opacity .3s ease}
+.fl.center::after{opacity:0}
+.flow.live .fl::after{transition:none}
+/* placeholders while the artworks load: quiet blue-grey cards */
+.fl.ph .ph-face{width:100%;height:100%;border-radius:4.6%/3.3%;background:linear-gradient(160deg,#2a3150,#1c2135 55%,#161a2a);box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 0 1px rgba(150,170,230,.14)}
+.fl.ph .ph-face::before{content:"";position:absolute;inset:7% 9% 50% 9%;border-radius:3px;background:rgba(150,170,230,.07)}
+.detail.packing,.detail.packing .dv-scroll,.detail.packing .flow{overflow:visible!important}
 .fl-over{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;transform:translateX(-50%);pointer-events:none;z-index:150}
 .fl-over canvas{width:100%;height:100%;border-radius:4.6%/3.3%;display:none;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6)}
 .fl-over.custom canvas{display:block}
@@ -1330,7 +1336,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117231803";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117232606";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -3631,31 +3637,31 @@ function makeFly(src, r, refl){
   Object.assign(fly.style, {left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", transformOrigin: "50% 50%"});
   document.body.appendChild(fly); return fly;
 }
-/* The other artworks follow the card: each flies from the card's original spot along the same arc, one after another,
-   nearest first, and hands over to its place in the cover flow when it lands. */
-function fanOut(els){
-  if (!V) return;
-  const st = $("#flowStage"); if (st) st.classList.remove("dealing");
-  const src = V.srcRect;
-  const list = els.filter(el => el.style.display !== "none" && !el.classList.contains("center"))
-    .sort((a, b) => Math.abs(+a.dataset.fi - V.fi) - Math.abs(+b.dataset.fi - V.fi)).slice(0, 10);
-  if (REDUCED.matches || !src || !src.width) return;
-  const tok = V.token;
-  list.forEach((el, i) => {
-    el.style.opacity = "0";
-    setTimeout(() => {
-      if (!V || V.token !== tok){ el.style.opacity = ""; return; }
-      const face = el.querySelector("img.face"), r1 = face && face.getBoundingClientRect();
-      if (!r1 || !r1.width){ el.style.opacity = ""; return; }
-      const fly = makeFly(face.currentSrc || face.src, src, false);
-      fly.style.zIndex = String(398 - i);
-      const a = sFlight(fly, src, r1, Math.round(flightMs(Math.hypot(src.left - r1.left, src.top - r1.top)) * 1.05));
-      a.onfinish = a.oncancel = () => { el.style.opacity = ""; el.animate([{opacity: 0}, {opacity: 1}], {duration: 150, easing: "linear"}); fadeAway(fly); };
-    }, 60 + i * 70);
+/* The rest of the cover flow flies in as one pack with the card: every card (or placeholder) starts at the card's spot on
+   the board and follows the same arc, turning into its own tilt and depth on the way, so it lands exactly in place. */
+function packFly(src, center, dur){
+  if (!V || REDUCED.matches || !src || !center || !center.width) return;
+  const st = $("#flowStage"), cw = (V.fm && V.fm.cw) || center.width;
+  const els = [...st.querySelectorAll(".fl")].filter(el => el.style.display !== "none" && !el.classList.contains("center") && el._t);
+  if (!els.length) return;
+  const modal = $("#detailModal"); modal.classList.add("packing");
+  const sx = (src.left + src.width / 2) - (center.left + center.width / 2), sy = (src.top + src.height / 2) - (center.top + center.height / 2);
+  const dist = Math.hypot(sx, sy) || 1, bend = Math.min(80, dist * .14), nx = -sy / dist * bend, ny = sx / dist * bend;
+  const P0 = [sx, sy], P1 = [sx * .66 + nx * .8, sy * .66 + ny * .8], P2 = [sx * .2 + nx * .5, sy * .2 + ny * .5];
+  const bez = (k, u) => { const m = 1 - u; return m * m * m * P0[k] + 3 * m * m * u * P1[k] + 3 * m * u * u * P2[k]; };
+  const s0 = src.width / cw;
+  let left = els.length;
+  els.forEach(el => {
+    const {X, Z, R} = el._t, a = Math.abs(el.dataset.off != null ? +el.dataset.off : +el.dataset.fi - V.fi), N = 30, frames = [];
+    for (let i = 0; i <= N; i++){
+      const u = i / N, e = FLY_EASE(u), q = e * e * (3 - 2 * e);      // the fan-out happens in the second half
+      frames.push({transform: `translate(${bez(0, e).toFixed(2)}px,${bez(1, e).toFixed(2)}px) translate3d(${(-cw / 2 + (X + cw / 2) * q).toFixed(2)}px,0,${(Z * q).toFixed(1)}px) rotateY(${(R * q).toFixed(2)}deg) scale(${(s0 + (1 - s0) * e).toFixed(4)})`, offset: u});
+    }
+    const an = el.animate(frames, {duration: dur + Math.min(a, 6) * 22, delay: Math.min(a, 6) * 18, easing: "linear", fill: "backwards"});
+    an.onfinish = an.oncancel = () => { if (--left === 0) modal.classList.remove("packing"); };
   });
-  // farther artworks just appear
-  els.filter(el => !list.includes(el)).forEach(el => { el.style.opacity = ""; });
 }
+function fanOut(){ }
 function setFlImg(el, src){ if (!el) return; el.querySelectorAll("img").forEach(im => { if (im.getAttribute("src") !== src){ im.src = src; } im.classList.add("ld"); }); }
 function animateOpen(srcEl){
   const img = srcEl && (srcEl.tagName === "IMG" ? srcEl : srcEl.querySelector("img"));
@@ -3665,7 +3671,7 @@ function animateOpen(srcEl){
   const src = img.currentSrc || img.src;
   const fly = makeFly(src, r0, true);
   V.flying = true;
-  $("#flowStage")?.classList.add("dealing");      // the other artworks wait behind the card until it lands
+
   // the cover flow's card starts with the very same picture, so the hand-over is invisible
   setFlImg($("#flowStage .fl.center"), src);
   const hideTarget = on => { const c = $("#flowStage .fl.center"), o = $("#flOver"); if (c) c.style.visibility = on ? "hidden" : ""; if (o) o.style.visibility = on ? "hidden" : ""; };
@@ -3673,7 +3679,7 @@ function animateOpen(srcEl){
   srcEl.style.visibility = "hidden";
   const handOver = () => {
     srcEl.style.visibility = "";
-    if (V && V.token === tok){ fly.querySelector(".refl")?.remove(); V.flying = false; hideTarget(false); fanOut([...document.querySelectorAll("#flowStage .fl")]); fadeAway(fly, () => { if (V && V.token === tok) upgradeCenter(); }); }
+    if (V && V.token === tok){ fly.querySelector(".refl")?.remove(); V.flying = false; hideTarget(false); fadeAway(fly, () => { if (V && V.token === tok) upgradeCenter(); }); if (V.pendingFlow){ const anims = [...document.querySelectorAll("#flowStage .fl")].flatMap(e => e.getAnimations()); Promise.all(anims.map(x => x.finished.catch(() => {}))).then(() => { if (V && V.token === tok && V.pendingFlow){ V.pendingFlow = false; renderFlow(); renderDetailParts(); } }); } }
     else fly.remove();
   };
   const done = () => {
@@ -3692,7 +3698,9 @@ function animateOpen(srcEl){
   };
   const target = $("#flowStage .fl.center");
   if (!target){ done(); return; }
-  const a = sFlight(fly, r0, target.getBoundingClientRect());
+  const tr = target.getBoundingClientRect(), dur = flightMs(Math.hypot((r0.left + r0.width / 2) - (tr.left + tr.width / 2), (r0.top + r0.height / 2) - (tr.top + tr.height / 2)));
+  const a = sFlight(fly, r0, tr, dur);
+  packFly(r0, tr, dur);
   a.onfinish = a.oncancel = done;
   V.flyAnim = a;
 }
@@ -3845,14 +3853,18 @@ function renderFlow(popCustom){
   const st = $("#flowStage"); if (!st || !V) return;
   syncSel();
   const list = entries();
-  st.innerHTML = list.map(flHTML).join("");
+  const oldPh = [...st.querySelectorAll(".fl.ph")].map(e => e.cloneNode(true));
+  st.innerHTML = list.map(flHTML).join("") + (!V.printsDone && !V.rebase && !V.back ? [-3, -2, -1, 1, 2, 3].map(o => `<div class="fl ph" data-off="${o}" aria-hidden="true"><div class="ph-face"></div></div>`).join("") : "");
   const sc = $("#flowScrub");
   if (sc){ sc.hidden = list.length < 2; sc.max = list.length - 1; sc.value = V.fi; }
   // place freshly built cards straight into position (no slide-in), so the center card never moves under a landing flight
   st.classList.add("instant"); layoutFlow(); void st.offsetWidth; st.classList.remove("instant");
-  if (V.flying){ const c = $("#flowStage .fl.center"); if (c) c.style.visibility = "hidden"; st.classList.add("dealing"); }
-  // artworks that just arrived fan out from behind the middle card (held back while a card is still flying in)
-  if (V.seen && !V.flying) fanOut([...st.querySelectorAll(".fl.fresh")]);
+  if (V.flying){ const c = $("#flowStage .fl.center"); if (c) c.style.visibility = "hidden"; }
+  // artworks that just arrived fade in where the placeholders were (the placeholders fade out)
+  if (oldPh.length && !REDUCED.matches){
+    oldPh.forEach(e => { st.appendChild(e); e.style.pointerEvents = "none"; const a = e.animate([{opacity: 1}, {opacity: 0}], {duration: 380, easing: "ease-out", fill: "forwards"}); a.onfinish = () => e.remove(); });
+    [...st.querySelectorAll(".fl.fresh")].forEach(el => el.animate([{opacity: 0}, {opacity: 1}], {duration: 380, easing: "ease-out", fill: "backwards"}));
+  } else if (V.seen && !REDUCED.matches) [...st.querySelectorAll(".fl.fresh")].forEach(el => el.animate([{opacity: 0}, {opacity: 1}], {duration: 300, easing: "ease-out", fill: "backwards"}));
   V.seen = new Set(V.prints.map(p => p.id));
   if (popCustom && !REDUCED.matches){
     const el = st.querySelector(`.custom-entry[data-cid="${V.cid}"]`);
@@ -3887,15 +3899,16 @@ function placeCards(measure){
   }
   const {cw, gap, first} = V.fm, pos = V.pos != null ? V.pos : V.fi, kids = st.children;
   for (let i = 0; i < kids.length; i++){
-    const el = kids[i], o = i - pos, a = Math.abs(o), sg = Math.sign(o);
+    const el = kids[i], o = el.dataset.off != null ? +el.dataset.off : i - pos, a = Math.abs(o), sg = Math.sign(o);
     if (a > 9.5){ if (el.style.display !== "none") el.style.display = "none"; continue; }   // far away: not rendered, images not downloaded
     if (el.style.display) el.style.display = "";
     if (el.style.visibility && !V.flying) el.style.visibility = "";
     const k = Math.min(1, a);                               // 0 in the middle, 1 from the first side place on
     const x = a <= 1 ? sg * first * a : sg * (first + (a - 1) * gap);
+    el._t = {X: x - cw / 2, Z: -140 * k, R: -sg * 62 * k};
     el.style.transform = `translate3d(${(x - cw / 2).toFixed(2)}px,0,${(-140 * k).toFixed(1)}px) rotateY(${(-sg * 62 * k).toFixed(2)}deg)`;
     const z = String(Math.round(1000 - a * 100)); if (el.style.zIndex !== z) el.style.zIndex = z;
-    const c = i === V.fi; if (el.classList.contains("center") !== c) el.classList.toggle("center", c);
+    const c = el.dataset.off == null && i === V.fi; if (el.classList.contains("center") !== c) el.classList.toggle("center", c);
   }
 }
 function layoutFlow(){
@@ -3966,6 +3979,7 @@ async function loadPrints(){
   } catch (e){ if (e !== "none" && V && V.token === tok) V.printsFailed = true; }
   if (!V || V.token !== tok) return;
   V.printsDone = true;
+  if (V.flying){ V.pendingFlow = true; return; }
   renderFlow(); renderDetailParts();
 }
 async function loadMorePrints(url, page, tok, isTok){
@@ -3977,10 +3991,10 @@ async function loadMorePrints(url, page, tok, isTok){
     const have = new Set(V.prints.map(p => p.id));
     const add = (j ? j.data : []).map(toCard).filter(p => p.img && !have.has(p.id) && (!isTok || sameToken(p, V.card)));
     savePrices();
-    if (add.length){ V.prints = V.prints.concat(add); if (!flowDrag) renderFlow(); }
+    if (add.length){ V.prints = V.prints.concat(add); if (V.flying) V.pendingFlow = true; else if (!flowDrag) renderFlow(); }
     if (j && j.has_more){ loadMorePrints(url, page + 1, tok, isTok); return; }
   } catch {}
-  if (V && V.token === tok){ V.morePrints = false; if (!flowDrag) renderFlow(); }
+  if (V && V.token === tok){ V.morePrints = false; if (V.flying) V.pendingFlow = true; else if (!flowDrag) renderFlow(); }
 }
 let flowT;
 /* Clicks and keys switch at once; drags and the wheel settle for a moment first. */
