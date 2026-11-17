@@ -488,14 +488,23 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .more{display:flex;justify-content:center;margin-top:16px}
 
 /* ---------- Card view: cover flow on top, details and edits below ---------- */
-.detail{width:min(960px,100%);max-height:100%}
+.detail{width:min(960px,100%);max-height:100%;background:none;border:0;box-shadow:none}
+.detail .dv-scroll{position:relative;scrollbar-width:thin}
+.dv-box{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.6);margin-top:8px}
+.dv-box .modal-head{flex-wrap:wrap}
+.dv-x{position:absolute;right:4px;top:4px;z-index:300;background:rgba(10,10,14,.6);color:var(--fg)}
+.detail .flow-foot{border:0;padding:6px 8px 4px;color:var(--muted)}
+#detailScrim{background:rgba(5,6,10,.88)}
 .dv-scroll{overflow-y:auto;min-height:0;flex:1}
-.flow{--flw:250px;position:relative;height:calc(var(--flw) * 1.397 * 1.2 + 34px);perspective:1100px;overflow:hidden;background:radial-gradient(ellipse at 50% 28%,#20243a,#0b0c12 72%);outline:none;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}
+.flow{--flw:250px;position:relative;height:calc(var(--flw) * 1.397 * 1.2 + 34px);perspective:1100px;overflow:hidden;background:none;--old-bg:radial-gradient(ellipse at 50% 28%,#20243a,#0b0c12 72%);outline:none;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}
 .flow:focus-visible{box-shadow:inset 0 0 0 2px var(--gold)}
 .flow-stage{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
 .flow-stage.instant .fl{transition:none!important}
 .fl{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;border:0;padding:0;background:none;transition:transform .3s cubic-bezier(.2,.8,.2,1),filter .3s;cursor:pointer}
-.fl .face{width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;display:block;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6)}
+.fl .face{width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;display:block;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6);opacity:0;transition:opacity .35s ease}
+.fl .face.ld{opacity:1}
+.fl .refl{transition:opacity .35s ease}
+.fl .refl:not(.ld){opacity:0!important}
 /* our own mirrored reflection: always there, in every browser */
 .fl .refl,.fly .refl{position:absolute;left:0;top:calc(100% + 4px);width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;transform:scaleY(-1);pointer-events:none;opacity:.22;
   -webkit-mask-image:linear-gradient(to bottom,transparent 76%,#000);mask-image:linear-gradient(to bottom,transparent 76%,#000)}
@@ -522,10 +531,13 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 @media (hover:none){.name-over{border-color:rgba(217,171,79,.55)}}
 .flow-empty{display:grid;place-items:center;height:100%;color:var(--muted)}
 .flow-foot{display:flex;align-items:center;gap:12px;padding:8px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.art-find{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:0 8px;flex:0 1 230px;min-width:150px}
+.art-find{margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:999px;padding:3px 6px 3px 12px;color:var(--gold);min-width:220px;flex:0 1 300px}
+.art-find .af-lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.art-find-old{padding:0 8px;flex:0 1 230px;min-width:150px}
 .art-find:focus-within{border-color:var(--gold-line)}
-.art-find svg.i{width:14px;height:14px;color:var(--muted)}
-.art-find input{flex:1;min-width:0;background:none;border:0;outline:none;padding:6px 0;font-size:13px}
+.art-find svg.i{width:15px;height:15px;color:var(--gold)}
+.art-find input{flex:1;min-width:0;background:rgba(0,0,0,.25);border:0;outline:none;padding:7px 10px;font-size:14px;border-radius:999px;color:var(--fg)}
+.art-find:focus-within{box-shadow:0 0 0 3px var(--gold-soft)}
 .flow-cap{font-size:12.5px;color:var(--muted);min-width:0;flex:1 1 260px}
 .flow-cap b{color:var(--fg);font-weight:600}
 .flow-cap .price{color:#e9d9a8;font-weight:600}
@@ -828,7 +840,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
       <label class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><span class="z-ico"></span><input type="range" id="zoom" min="30" max="400" step="5" value="100" aria-label="Card size"><span class="z-ico big"></span><output id="zoomVal">100%</output></label>
       <label class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click to reset."><span class="tl">Interface</span><span class="a-ico sm">A</span><input type="range" id="uiZoom" min="60" max="200" step="5" value="100" aria-label="Interface size"><span class="a-ico">A</span><output id="uiZoomVal">100%</output></label>
       <label class="tool"><span class="tl">Sort</span><select id="sortSel">
-        <option value="manual">Your order</option><option value="incl">Most played (EDHREC %)</option><option value="syn">Synergy</option>
+        <option value="manual">Your order</option><option value="incl">% of decks (EDHREC)</option><option value="syn">Synergy (EDHREC)</option>
         <option value="price">Price, high to low</option><option value="cheap">Price, low to high</option><option value="cmc">Mana value</option>
         <option value="ctype">Creature type</option><option value="name">Name</option></select></label>
       <div class="tool filter" id="filterBox"><svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="filterQ" type="search" placeholder="Filter cards" autocomplete="off" aria-label="Filter cards by name, type or rules text"><select id="ctypeSel" aria-label="Creature type"></select></div>
@@ -873,7 +885,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261115215738";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117002746";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -2293,7 +2305,7 @@ function renderAddBody(){
     $("#basis").innerHTML = A.q.trim()
       ? `Search results for <b>“${esc(A.q.trim())}”</b>${A.bucket !== "Any" ? ` among ${PLURAL[A.bucket].toLowerCase()}` : ""}. Clear the search to see EDHREC picks again.`
       : `EDHREC picks for <b>${esc(cmdKey(d))}</b>${foc.length ? ` combined with <b>${foc.join(", ")}</b>` : ""}.
-        <select id="addSort" aria-label="Sort picks"><option value="best">Best match first</option><option value="incl">Most played</option><option value="syn">Highest synergy</option><option value="cheap">Cheapest</option><option value="price">Most expensive</option></select>`;
+        <select id="addSort" aria-label="Sort picks"><option value="best">Best match first</option><option value="incl">% of decks</option><option value="syn">Highest synergy</option><option value="cheap">Cheapest</option><option value="price">Most expensive</option></select>`;
     if ($("#addSort")) $("#addSort").value = UI.addSort;
     document.querySelectorAll("#chips .chip").forEach(ch => ch.classList.toggle("on", ch.dataset.bucket === A.bucket));
   }
@@ -2556,7 +2568,8 @@ function sFlight(fly, r0, r1, dur){
   const dx = (r0.left + r0.width / 2) - (r1.left + r1.width / 2), dy = (r0.top + r0.height / 2) - (r1.top + r1.height / 2);
   const dist = Math.hypot(dx, dy) || 1, bend = Math.min(80, dist * .14);
   const nx = -dy / dist * bend, ny = dx / dist * bend;            // sideways, for the S
-  const P0 = [dx, dy], P1 = [dx * .62 + nx, dy * .62 + ny], P2 = [dx * .2 - nx * .7, dy * .2 - ny * .7], P3 = [0, 0];
+  // a single gentle arc: both control points bow to the same side, so direction changes smoothly the whole way
+  const P0 = [dx, dy], P1 = [dx * .66 + nx * .8, dy * .66 + ny * .8], P2 = [dx * .2 + nx * .5, dy * .2 + ny * .5], P3 = [0, 0];
   const bez = (k, u) => { const m = 1 - u; return m * m * m * P0[k] + 3 * m * m * u * P1[k] + 3 * m * u * u * P2[k] + u * u * u * P3[k]; };
   const s0 = r0.width / r1.width, N = 40, frames = [];
   for (let i = 0; i <= N; i++){
@@ -2577,7 +2590,7 @@ function makeFly(src, r, refl){
   Object.assign(fly.style, {left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", transformOrigin: "50% 50%"});
   document.body.appendChild(fly); return fly;
 }
-function setFlImg(el, src){ if (!el) return; el.querySelectorAll("img").forEach(im => { if (im.getAttribute("src") !== src) im.src = src; }); }
+function setFlImg(el, src){ if (!el) return; el.querySelectorAll("img").forEach(im => { if (im.getAttribute("src") !== src){ im.src = src; } im.classList.add("ld"); }); }
 function animateOpen(srcEl){
   const img = srcEl && (srcEl.tagName === "IMG" ? srcEl : srcEl.querySelector("img"));
   if (!img || REDUCED.matches || !V) return;
@@ -2592,7 +2605,7 @@ function animateOpen(srcEl){
   srcEl.style.visibility = "hidden";
   const done = () => {
     srcEl.style.visibility = "";
-    if (V && V.token === tok){ V.flying = false; hideTarget(false); fadeAway(fly, () => { if (V && V.token === tok) upgradeCenter(); }); }
+    if (V && V.token === tok){ fly.querySelector(".refl")?.remove(); V.flying = false; hideTarget(false); fadeAway(fly, () => { if (V && V.token === tok) upgradeCenter(); }); }
     else fly.remove();
   };
   const target = $("#flowStage .fl.center");
@@ -2631,15 +2644,19 @@ function landFly(f, v){
 /* ---------------- Card view ---------------- */
 function renderDetail(){
   const c = V.card;
-  $("#detailModal").innerHTML = `<div class="modal-head"><h2>${esc(c.name)} <span class="mana">${manaHTML(c.mana)}</span></h2><button class="icon-btn" data-close title="Close">${I.close}</button></div>
-    <div class="dv-scroll">
+  $("#detailModal").innerHTML = `<div class="dv-scroll">
       <div class="flow" id="flow" tabindex="0" aria-label="Every artwork of this card. Drag, swipe, scroll or use the arrow keys. Click a card to jump to it.">
         <div class="flow-stage" id="flowStage"></div>
         <div class="fl-over" id="flOver"><canvas id="artCanvas" width="1344" height="1872"></canvas>
           ${V.editable ? `<input class="name-over" id="artName" maxlength="40" autocomplete="off" spellcheck="false" placeholder="${esc(c.name.split(" // ")[0])}" value="${esc(V.name)}" title="Click to rename this card" aria-label="Name on the card"><button class="name-pen" id="namePen" title="Rename this card">${I.pencil}</button>` : ""}</div>
       </div>
-      <div class="flow-foot"><label class="art-find" title="Show only artworks whose set, set code, artist or year match">${I.search}<input id="artQ" type="search" placeholder="Find art: set, artist, year" autocomplete="off" value="${esc(V.artQ || "")}"></label><div class="flow-cap" id="flowCap"></div>${c.back ? `<button class="btn sm" id="dFlip">${I.flip}Flip</button>` : ""}<input type="range" class="flow-scrub" id="flowScrub" min="0" max="0" value="0" aria-label="Jump to artwork" hidden></div>
-      <div class="dv-body"><div class="dv-info" id="dvInfo"></div><div class="dv-side" id="dvSide"></div></div>
+      <div class="flow-foot"><div class="flow-cap" id="flowCap"></div>${c.back ? `<button class="btn sm" id="dFlip">${I.flip}Flip</button>` : ""}<input type="range" class="flow-scrub" id="flowScrub" min="0" max="0" value="0" aria-label="Jump to artwork" hidden></div>
+      <div class="dv-box">
+        <div class="modal-head"><h2>${esc(c.name)} <span class="mana">${manaHTML(c.mana)}</span></h2>
+          <label class="art-find" title="Show only artworks whose set name, set code, artist or year match">${I.search}<span class="af-lbl">Find art</span><input id="artQ" type="search" placeholder="set, artist or year" autocomplete="off" value="${esc(V.artQ || "")}"></label>
+          <button class="icon-btn" data-close title="Close">${I.close}</button></div>
+        <div class="dv-body"><div class="dv-info" id="dvInfo"></div><div class="dv-side" id="dvSide"></div></div>
+      </div>
     </div>`;
   renderFlow(); renderDetailParts(); drawArt();
 }
@@ -2669,16 +2686,11 @@ function renderDetailParts(){
     acts = `<button class="btn" data-d="changeCmd">Change commander</button>${d.partner ? "" : partnerQuery(d.commander) ? `<button class="btn" data-d="addPartner">+ Partner</button>` : ""}`;
   } else if (V.kind === "token"){
     const k = (d.tokens || []).find(x => x.uid === V.uid);
-    acts = k ? `<button class="btn ${tokZone(k) === "deck" ? "" : "primary"}" data-d="tokMove">${tokZone(k) === "deck" ? I.left + "To pool" : "To deck" + I.right}</button><span class="qty-big"><button data-d="dec" title="One fewer">−</button><b>${qOf(k)}</b><button data-d="inc" title="One more">+</button></span><button class="btn danger" data-d="tokRemove">${I.trash}Remove token</button>` : "";
+    acts = k ? `<span class="qty-big" title="How many of this token"><button data-d="dec" title="One fewer">−</button><b>${qOf(k)}</b><button data-d="inc" title="One more">+</button></span>` : "";
   } else if (V.kind === "partner"){
     acts = `<button class="btn" data-d="changePartner">Change partner</button><button class="btn danger" data-d="removePartner">${I.trash}Remove</button>`;
   } else if (item){
-    acts = item.zone === "deck"
-      ? `<button class="btn" data-d="toPool" ${item.locked ? "disabled" : ""} title="Move to card pool">${I.left}To pool</button><button class="btn ${item.locked ? "on" : ""}" data-d="lock" title="${item.locked ? "Unlock" : "Lock as a final pick"}">${item.locked ? I.lock + "Locked" : I.unlock + "Lock"}</button>`
-      : `<button class="btn primary" data-d="toDeck" title="Move to deck">To deck${I.right}</button>`;
-    acts += `<button class="btn ${item.focus ? "on" : ""}" data-d="focus" title="Blend this card's EDHREC picks with your commander's">${I.focus}${item.focus ? "Combined" : "Combine"}</button>`;
-    if (canMulti(c)) acts += `<span class="qty-big"><button data-d="dec" title="One fewer">−</button><b>${qOf(item)}</b><button data-d="inc" title="One more">+</button></span><button class="btn" data-d="copy" title="Add a separate card for a different artwork">${I.copy}Another artwork</button>`;
-    acts += `<button class="btn danger" data-d="remove" ${item.locked ? "disabled" : ""}>${I.trash}Remove</button>`;
+    acts = canMulti(c) ? `<span class="qty-big" title="How many of this card"><button data-d="dec" title="One fewer">−</button><b>${qOf(item)}</b><button data-d="inc" title="One more">+</button></span>` : "";
   } else if (V.kind === "add"){
     if (A.mode === "token") acts = `<button class="btn primary" data-d="addTok" title="Adds it with the artwork and edits shown above">+ Add to ${A.side === "options" ? "pool" : "deck"}</button>`;
     else if (A.mode === "commander" || A.mode === "partner") acts = `<button class="btn primary" data-d="pick">${A.mode === "partner" ? "Choose as partner" : "Choose as commander"}</button>`;
@@ -2696,7 +2708,7 @@ function renderDetailParts(){
       <div class="ed-row"><span class="ed-lbl">${I.pencil}Name</span><span class="ed-field"><input id="artName2" maxlength="40" autocomplete="off" spellcheck="false" placeholder="${esc(c.name.split(" // ")[0])}" value="${esc(V.name)}" aria-label="Name on the card">${V.name ? `<button class="x" id="nameClear" title="Use the real name">×</button>` : ""}</span></div>
       <div class="ed-row"><span class="ed-lbl">${I.brush}Art</span><div class="ed-btns">
         <button class="btn sm" id="artUpload" title="Use any picture: AI-made art, a photo, a drawing. You can also paste an image.">${I.upload}Upload</button>
-        <button class="btn sm" id="artPrompt" title="Copy a prompt for an AI image tool (ChatGPT, Gemini, Midjourney…)">AI art prompt</button>
+        <button class="btn sm" id="artPrompt" title="Copies a ready-made description of this card. Paste it into an AI image tool (ChatGPT, Gemini…) to get new art, then upload the result here.">${I.copy}Copy text for AI art</button>
         <button class="btn sm" id="artOrig" title="Download the current art, for example to attach in your AI image tool">Download</button></div></div>
       ${V.user ? `<div class="ed-row"><span class="ed-lbl">Fit</span><div class="ed-btns" title="${V.mode === "frame" ? "Drag the picture on the card to frame it; drag the gold corners to fit the art window" : "Drag the picture on the card to position it"}">
         <div class="seg"><button data-mode="frame" class="${V.mode === "frame" ? "on" : ""}">In frame</button><button data-mode="whole" class="${V.mode === "whole" ? "on" : ""}">Whole card</button></div>
@@ -2718,8 +2730,10 @@ function flHTML(e, i){
     return `<button class="fl custom-entry" data-fi="${i}" data-cid="${e.cid}" aria-label="Your version ${n}"><img class="face" src="${esc(src)}" alt="" draggable="false"><img class="refl" src="${esc(src)}" alt="" draggable="false"><span class="yours">✦ Yours${V.custs.length > 1 ? " " + n : ""}</span></button>`;
   }
   const src = V.back && e.p.back && i === V.fi ? e.p.back.large : e.p.img, lazy = Math.abs(i - V.fi) < 6 ? "eager" : "lazy";
-  return `<button class="fl" data-fi="${i}" aria-label="${esc(e.p.set)}"><img class="face" src="${esc(src)}" alt="" loading="${lazy}" draggable="false"><img class="refl" src="${esc(src)}" alt="" loading="${lazy}" draggable="false"></button>`;
+  const ld = V.loaded && V.loaded.has(src) ? " ld" : "";
+  return `<button class="fl${V.seen && !V.seen.has(e.p.id) ? " fresh" : ""}" data-fi="${i}" data-pid="${e.p.id}" aria-label="${esc(e.p.set)}"><img class="face${ld}" src="${esc(src)}" alt="" loading="${lazy}" draggable="false" onload="flLoaded(this)"><img class="refl${ld}" src="${esc(src)}" alt="" loading="${lazy}" draggable="false" onload="flLoaded(this)"></button>`;
 }
+function flLoaded(im){ im.classList.add("ld"); if (V){ (V.loaded = V.loaded || new Set()).add(im.getAttribute("src")); } }
 function renderFlow(popCustom){
   const st = $("#flowStage"); if (!st || !V) return;
   syncSel();
@@ -2730,6 +2744,14 @@ function renderFlow(popCustom){
   // place freshly built cards straight into position (no slide-in), so the center card never moves under a landing flight
   st.classList.add("instant"); layoutFlow(); void st.offsetWidth; st.classList.remove("instant");
   if (V.flying){ const c = $("#flowStage .fl.center"); if (c) c.style.visibility = "hidden"; }
+  // artworks that just arrived: dealt out from the middle card, nearest first
+  if (V.seen && !REDUCED.matches){
+    [...st.querySelectorAll(".fl.fresh")].filter(el => el.style.display !== "none").forEach(el => {
+      const o = Math.abs(+el.dataset.fi - V.fi);
+      el.animate([{opacity: 0, translate: `${(+el.dataset.fi < V.fi ? 1 : -1) * 60}px 0`, scale: .7}, {opacity: 1, translate: "0 0", scale: 1}], {duration: 420, delay: Math.min(o, 9) * 45, easing: EASE, fill: "backwards"});
+    });
+  }
+  V.seen = new Set(V.prints.map(p => p.id));
   if (popCustom && !REDUCED.matches){
     const el = st.querySelector(`.custom-entry[data-cid="${V.cid}"]`);
     if (el) el.animate([{opacity: 0, scale: .6}, {opacity: 1, scale: 1.06, offset: .7}, {opacity: 1, scale: 1}], {duration: 380, easing: "cubic-bezier(.2,.8,.2,1)"});
