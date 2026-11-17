@@ -306,6 +306,9 @@ body.ro .name-wrap svg{display:none}
 .info-q:hover,.info-q.on{border-color:var(--gold-line);color:var(--gold);background:var(--gold-soft)}
 .info-text{margin:2px 0 6px;padding:8px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line-soft);font-size:11.5px;line-height:1.45;color:var(--muted);text-transform:none;letter-spacing:0}
 .info-text b{color:var(--fg);font-weight:600}
+#total .info-text b{font:600 11.5px/1.45 var(--body,system-ui),sans-serif;letter-spacing:0;color:var(--fg)}
+.pr-lbl .info-q{margin-left:3px;vertical-align:1px;border-color:var(--pricey-line);color:#e2d3ff}
+.combo-lbl .info-text{margin-top:6px}
 .viz-h small{font-size:10.5px;color:var(--faint)}
 .vrow{display:grid;grid-template-columns:78px 1fr auto;align-items:center;gap:8px;padding:2px 4px;margin:0 -4px;border:0;border-radius:6px;background:none;color:var(--fg);font-size:12px;text-align:left}
 button.vrow:hover{background:var(--surface-2)}
@@ -885,12 +888,14 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
   .cmds .cmd-col{width:min(var(--tile,180px),284px)}
   .cmds .cmd-slot{width:100%}
   .cmds .cmd-slot.partner.empty{width:92px;flex:none}
-  #total{order:4;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"num sub" "lbl sub" "pr pr";align-items:center;column-gap:12px;min-width:0;padding:10px 14px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px}
+  #total{order:4;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"num sub" "lbl sub" "pr pr" "inf inf";align-items:center;column-gap:12px;min-width:0;padding:10px 14px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px}
   #total b{grid-area:num}
   #total small{grid-area:lbl}
   #total .tot-sub{grid-area:sub;justify-self:end;margin:0}
   #total .pricey-row{grid-area:pr;justify-self:stretch;margin-top:8px}
   #total .pricey-row{flex-wrap:nowrap;min-width:0}
+  #total .info-text{grid-area:inf;margin:8px 0 0}
+  #total .info-text b{grid-area:auto;font:600 11.5px/1.45 system-ui,sans-serif;letter-spacing:0;color:var(--fg)}
   #total .pricey-row input{width:44px;flex:none}
   #total .pricey-row select{flex:none}
   .combo{order:3;flex-wrap:nowrap;align-items:center;margin-top:-2px}
@@ -1027,7 +1032,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117020744";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117021002";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1703,7 +1708,7 @@ function renderHeader(){
   const tot = $("#total");
   tot.innerHTML = `<b>${n}<span>/100</span></b><small>${n > 100 ? `${n - 100} too many` : n === 100 ? "Complete" : "in deck"}</small>
     ${d.commander ? `<div class="tot-sub"><span title="Locked final picks in the deck">${I.lock}<b>${locked}</b> locked</span><span title="Deck value, commander included (${value.n} of ${n} cards have a price)"><b>${fmtMoney(value.tot, value.sym)}</b> value</span></div>
-    <label class="pricey-row" title="Cards whose cheapest printing costs this much or more get a purple outline. A quick hint for cards that may be too strong for a casual table."><span class="pr-lbl">💎 Expensive above</span><input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold"><select id="curSel" class="cur-sel" title="Price currency: € from Cardmarket, $ from TCGplayer" aria-label="Currency"><option value="eur" ${UI.cur === "usd" ? "" : "selected"}>€</option><option value="usd" ${UI.cur === "usd" ? "selected" : ""}>$</option></select>${(() => { const k = [...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length; return `<span class="pr-count" title="${k} expensive card${k === 1 ? "" : "s"} in this deck and pool">${k}</span>`; })()}</label>` : ""}`;
+    <label class="pricey-row" title="Cards whose cheapest printing costs this much or more get a purple outline. A quick hint for cards that may be too strong for a casual table."><span class="pr-lbl">💎 Expensive above ${infoBtn("pricey")}</span><input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold"><select id="curSel" class="cur-sel" title="Price currency: € from Cardmarket, $ from TCGplayer" aria-label="Currency"><option value="eur" ${UI.cur === "usd" ? "" : "selected"}>€</option><option value="usd" ${UI.cur === "usd" ? "selected" : ""}>$</option></select>${(() => { const k = [...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length; return `<span class="pr-count" title="${k} expensive card${k === 1 ? "" : "s"} in this deck and pool">${k}</span>`; })()}</label>${infoText("pricey")}` : ""}`;
   tot.classList.toggle("full", n === 100); tot.classList.toggle("over", n > 100);
   if (!d.commander) return;
   // commanders
@@ -1715,7 +1720,7 @@ function renderHeader(){
   $("#cmds").innerHTML = cm;
   // combine row: always shows the empty slot, so it's clear there's room for more
   const foc = d.cards.filter(c => c.focus);
-  $("#combo").innerHTML = `<div class="combo-lbl" title="Add cards suggests cards that work with your commander${foc.length ? " and with these cards" : ". Press the two circles under any card to build around it too"}"><span class="eyebrow">${I.focus} Build around</span><small>${foc.length ? "Add cards also suggests cards for these" : `Press ${I.focus} under a card`}</small></div>
+  $("#combo").innerHTML = `<div class="combo-lbl" title="Add cards suggests cards that work with your commander${foc.length ? " and with these cards" : ". Press the two circles under any card to build around it too"}"><span class="eyebrow">${I.focus} Build around ${infoBtn("build")}</span><small>${foc.length ? "Add cards also suggests cards for these" : `Press ${I.focus} under a card`}</small>${infoText("build")}</div>
     ${foc.map(c => `<button class="mini" data-open="${c.uid}" data-img="${esc(largeOf(c.card))}" title="${esc(c.card.name)}"><img src="${esc(imgOf(c.card))}" alt="${esc(c.card.name)}"><span class="x" data-unfocus="${c.uid}" title="Stop building around this card">×</span></button>`).join("")}
     <button class="mini empty" id="comboAdd" title="Build around another card">+</button>`;
   renderStats();
@@ -1760,6 +1765,8 @@ const INFO = {
   roles: () => `Read from each card's rules text, so it's an estimate. <b>Ramp</b>: makes mana or gets lands out (mana rocks, mana creatures, land search, Treasure, extra land drops). <b>Card draw</b>: draws you cards. <b>Removal</b>: destroys, exiles, damages, shrinks, fights, bounces or counters one thing. <b>Board wipes</b>: hit everything at once. A card can count for more than one.
     The goals (about 10 ramp, 10 draw, 8 removal, 2 wipes) are the common Commander guideline; the bar turns green when you reach one. Click a row to see those cards.`,
   balance: () => `<b>Spells need</b>: the share of each color among the colored mana symbols in your spells' costs ({B}{B}{G} is 2 black and 1 green). <b>Lands make</b>: the share of each color among the mana your lands can make (a dual land counts for both colors, basics by their type). When a color's land share is clearly lower than what your spells need, you get a hint which basic to swap.`,
+  pricey: () => `Cards whose <b>cheapest printing</b> costs this much or more get a purple outline and price tag, here and in Add cards. The price is the cheapest version of the card (not the artwork you picked), from Cardmarket in € or TCGplayer in $, so a fancy printing doesn't change it. It's a quick hint for cards that may be too strong or too sought-after for a casual table. The number on the right counts them in this deck and pool. Each deck has its own limit.`,
+  build: () => `Pick cards you want to <b>build around</b> with the two-circles button under them. <b>Add cards</b> then also suggests cards that EDHREC players run together with those cards, mixed in with your commander's suggestions. Remove one with its × here, or in Add cards.`,
   ctypes: () => `Shown when 8 or more creatures share a type, so typal decks can see their count at a glance. Changelings are every creature type, so they count for each. Click a type to see those cards.`
 };
 function infoBtn(k){ return `<button class="info-q ${INFO_OPEN.has(k) ? "on" : ""}" data-info="${k}" title="How is this worked out?" aria-expanded="${INFO_OPEN.has(k)}">?</button>`; }
@@ -4521,6 +4528,7 @@ $("#cmds").addEventListener("click", e => {
   if (k === "addPartner") openPartnerPicker(); else openDetail({kind: k}, b);
 });
 $("#combo").addEventListener("click", e => {
+  const iq = e.target.closest("[data-info]"); if (iq){ e.preventDefault(); const k = iq.dataset.info; INFO_OPEN.has(k) ? INFO_OPEN.delete(k) : INFO_OPEN.add(k); renderHeader(); return; }
   const x = e.target.closest("[data-unfocus]"); if (x){ e.stopPropagation(); toggleFocus(x.dataset.unfocus); return; }
   if (e.target.closest("#comboAdd")){
     toast("Press the two circles under any card to build around it");
@@ -4556,6 +4564,9 @@ $("#saveFile").onclick = saveFile;
 $("#importBtn").onclick = () => $("#importFile").click();
 $("#importFile").onchange = e => { const f = e.target.files[0]; if (f) importFile(f); e.target.value = ""; };
 
+$("#total").addEventListener("click", e => {
+  const iq = e.target.closest("[data-info]"); if (iq){ e.preventDefault(); const k = iq.dataset.info; INFO_OPEN.has(k) ? INFO_OPEN.delete(k) : INFO_OPEN.add(k); renderHeader(); }
+});
 $("#total").addEventListener("change", e => {
   if (e.target.id === "curSel"){ UI.cur = e.target.value; saveUI(); renderAll(); return; }
   if (e.target.id !== "priceyIn") return;
