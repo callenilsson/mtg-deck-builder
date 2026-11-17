@@ -64,7 +64,11 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .deck-meta small{color:var(--muted);font-size:12px;display:flex;gap:6px;align-items:center;white-space:nowrap}
 .deck-meta .pips{display:inline-flex;gap:1px;font-size:10px}
 .deck-acts{display:flex;gap:0}
-.deck-item:not(:hover):not(.active) .deck-acts{display:none}
+.deck-item:not(:hover):not(.active):not(.menu-open) .deck-acts{visibility:hidden}
+@media (hover:none){.deck-item .deck-acts{visibility:visible!important}}
+.deck-more{width:28px;height:28px}
+.menu.row-menu{position:fixed;right:auto;top:0;min-width:190px;z-index:600}
+.menu.row-menu .i{width:16px;height:16px;margin-top:1px;color:var(--muted)}
 .deck-acts button{color:var(--faint);background:none;border:0;padding:5px;border-radius:6px;display:grid;place-items:center}
 .deck-acts button:hover{color:var(--fg);background:var(--surface-3)}
 .deck-acts button.del:hover{color:var(--danger);background:var(--danger-soft)}
@@ -805,9 +809,11 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
   .top-actions{width:100%;flex-wrap:nowrap;gap:6px}
   .name-row{flex-wrap:wrap}
   .name-wrap{flex:1 1 120px}
-  .top-actions .btn{flex:none;padding:6px 9px;gap:5px;font-size:13.5px}
-  .top-actions .btn svg.i{width:16px;height:16px}
-  .top-actions .card-plus-btn{flex:1 1 auto;min-width:max-content;justify-content:center;padding:6px 10px 6px 8px;font-size:13.5px;gap:6px}
+  .top-actions .btn{flex:1 1 0;justify-content:center;height:40px;padding:0 10px;gap:6px;font-size:14px}
+  .top-actions .btn svg.i{width:17px;height:17px}
+  .top-actions .card-plus-btn{flex:1.6 1 0;min-width:max-content;justify-content:center;height:40px;padding:0 12px 0 10px;font-size:14px;gap:7px}
+  .top-actions .more-wrap{flex:none}
+  .top-actions .more-btn{width:40px;height:40px}
   .top-actions .card-plus-ico{width:17px;height:23px;font-size:14px}
   .top-actions .fold-btn{position:absolute;top:14px;right:10px}
   .cmds{order:2;justify-content:center}
@@ -952,7 +958,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117012542";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117012815";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1522,12 +1528,34 @@ function personAvatar(p, cls = ""){
   return p && p.photo ? `<img class="avatar ${cls}" src="${esc(p.photo)}" alt="" referrerpolicy="no-referrer">`
     : `<span class="avatar ${cls}" style="background:hsl(${[...n].reduce((a, c) => a + c.charCodeAt(0), 0) % 360} 35% 32%)">${esc(n.trim()[0] || "?").toUpperCase()}</span>`;
 }
+/* One ⋯ per deck in the list (like databases in a data browser): Rename, Duplicate, Delete, or Copy for others' decks. */
+function closeDeckMenu(){ const m = document.getElementById("deckRowMenu"); if (m) m.remove(); document.querySelectorAll(".deck-item.menu-open").forEach(e => e.classList.remove("menu-open")); }
+function openDeckMenu(btn){
+  const id = btn.dataset.deckmenu, mine = !!btn.dataset.mine, open = document.getElementById("deckRowMenu");
+  closeDeckMenu(); if (open && open.dataset.id === id) return;
+  const ic = (p, cls = "") => `<svg class="i ${cls}" viewBox="0 0 24 24">${p}</svg>`;
+  const m = document.createElement("div"); m.className = "menu row-menu"; m.id = "deckRowMenu"; m.dataset.id = id; m.setAttribute("role", "menu");
+  m.innerHTML = mine
+    ? `<button role="menuitem" data-act="ren">${I.pencil}<span><b>Rename</b></span></button>
+       <button role="menuitem" data-act="dup">${I.copy}<span><b>Duplicate</b></span></button>
+       <button role="menuitem" data-act="del" class="danger">${I.trash}<span><b>Delete deck</b></span></button>`
+    : `<button role="menuitem" data-act="dup">${I.copy}<span><b>Copy to my decks</b><small>Make your own copy you can change</small></span></button>`;
+  document.body.appendChild(m);
+  const r = btn.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight;
+  m.style.left = Math.max(8, Math.min(innerWidth - mw - 8, r.right - mw)) + "px";
+  m.style.top = (r.bottom + 4 + mh > innerHeight - 8 ? r.top - mh - 4 : r.bottom + 4) + "px";
+  btn.closest(".deck-item").classList.add("menu-open");
+  m.onclick = e => { const b = e.target.closest("[data-act]"); if (!b) return; closeDeckMenu();
+    if (b.dataset.act === "ren") renameInList(id); else if (b.dataset.act === "dup") duplicateDeck(id); else deleteDeck(id); };
+}
+document.addEventListener("click", e => { if (!e.target.closest("#deckRowMenu,[data-deckmenu]")) closeDeckMenu(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDeckMenu(); });
+addEventListener("resize", closeDeckMenu);
+document.addEventListener("scroll", e => { if (e.target && e.target.id === "deckList") closeDeckMenu(); }, true);
 function deckItemHTML(d, mine){
   const n = inDeckCount(d);
   const thumb = d.commander && d.commander.art ? `style="background-image:url('${esc(d.commander.art)}')"` : "";
-  const acts = mine
-    ? `<button data-renamedeck="${d.id}" title="Rename">${I.pencil}</button><button data-dupdeck="${d.id}" title="Duplicate">${I.copy}</button><button class="del" data-deldeck="${d.id}" title="Delete">${I.trash}</button>`
-    : `<button data-dupdeck="${d.id}" title="Copy to my decks">${I.copy}</button>`;
+  const acts = `<button class="deck-more" data-deckmenu="${d.id}" data-mine="${mine ? 1 : ""}" title="Deck actions" aria-haspopup="menu"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg></button>`;
   return `<div class="deck-item ${d.id === S.active ? "active" : ""}" data-deck="${d.id}" role="button" tabindex="0">
       <span class="deck-thumb" ${thumb}>${thumb ? "" : '<i class="ms ms-commander"></i>'}</span>
       <span class="deck-meta"><b>${esc(displayName(d))}</b>
@@ -4076,9 +4104,7 @@ $("#closeSide").onclick = () => { S.sidebarOpen = false; save(false); render(); 
 $("#openSide").onclick = () => { S.sidebarOpen = !S.sidebarOpen; save(false); render(); };
 $("#sideScrim").onclick = () => { S.sidebarOpen = false; render(); };
 $("#deckList").addEventListener("click", e => {
-  const del = e.target.closest("[data-deldeck]"); if (del){ deleteDeck(del.dataset.deldeck); return; }
-  const ren = e.target.closest("[data-renamedeck]"); if (ren){ renameInList(ren.dataset.renamedeck); return; }
-  const dup = e.target.closest("[data-dupdeck]"); if (dup){ duplicateDeck(dup.dataset.dupdeck); return; }
+  const dm = e.target.closest("[data-deckmenu]"); if (dm){ e.stopPropagation(); openDeckMenu(dm); return; }
   if (e.target.closest("[data-newdeck]")){ newDeck(); return; }
   const fh = e.target.closest("[data-folder]");
   if (fh){ UI.openPeople = UI.openPeople || {}; const k = fh.dataset.folder, mineF = !!fh.dataset.mine; UI.openPeople[k] = !folderOpen(k, mineF); saveUI(); renderSidebar(); return; }
