@@ -887,7 +887,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117003354";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117003631";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -2877,13 +2877,21 @@ function setFlow(i, settle){
   if (i === V.fi) return;
   V.selKey = entryKey(list[i]); V.back = false;
   syncSel(); layoutFlow();
-  if (!V.rebase && V.editable && V.selKey !== V.startKey) markDirty();
+  if (!V.rebase && V.editable){ const was = V.dirty; V.dirty = isDirty(); if (was !== V.dirty) renderDetailParts(); }
   clearTimeout(flowT);
   const apply = () => { if (!V) return; renderDetailParts(); upgradeCenter(); if (V.rebase){ V.box = [...frameOf(V.card).box]; loadBase(); } else if (centerIsCustom()){ loadBase(); loadUserArt(); } };
   if (settle) flowT = setTimeout(apply, 120); else apply();
 }
 function markDirty(){ if (V && !V.dirty){ V.dirty = true; const a = document.activeElement, id = a && a.id, pos = a && a.selectionStart; renderDetailParts(); if (id === "artName2"){ const n = $("#artName2"); n.focus(); try { n.setSelectionRange(pos, pos); } catch {} } } }
 function markCust(){ V.custChanged = true; markDirty(); }
+/* Really changed? A different card in the middle than when it opened, or a new, edited or removed version.
+   Swiping around and landing back on the same card is not a change. */
+function isDirty(){
+  if (!V) return false;
+  if (V.selKey !== V.startKey || V.custsRemoved) return true;
+  if (V.cid && V.custChanged) return true;
+  return V.custs.some(s => s.changed);
+}
 /* Editing an official printing starts a new version of it, shown as its own card next to it. */
 function newCustFrom(base, copy){
   const s = copy ? {...copy, cid: uid(), pan: {...copy.pan}, box: [...copy.box], custKey: null, changed: true}
@@ -3102,7 +3110,7 @@ function removeCust(){
     if (!V || !V.cid) return;
     const cid = V.cid, base = V.custBase;
     V.rebase = false; unloadCust();
-    V.custs = V.custs.filter(s => s.cid !== cid);
+    V.custs = V.custs.filter(s => s.cid !== cid); V.custsRemoved = true;
     V.selKey = base ? base.id : V.selKey;
     renderFlow(); renderDetailParts(); markCust();
   });
@@ -3200,6 +3208,7 @@ function requestClose(after, opts = {}){
       <div class="row"><button class="btn" data-c="no">Keep editing</button><button class="btn danger" data-c="discard">Discard</button></div></div>`;
     showScrim("#confirmScrim"); setTimeout(() => $('#confirmModal [data-c="no"]')?.focus(), 30); return;
   }
+  if (V.editable) V.dirty = isDirty();
   if (!(V.editable && V.dirty)){ closeDetail(true, opts).then(() => after && after()); return; }
   C = {save: true, after, opts};
   $("#confirmModal").innerHTML = `<div class="modal-body"><h2>Save your changes?</h2><p>You changed the art or name of <b>${esc(V.card.name)}</b>.</p>
@@ -3226,7 +3235,7 @@ async function saveInPlace(){
   await commitView(v);
   v.saving = false;
   if (V !== v) return;
-  v.dirty = false; v.custChanged = false; v.removed = false; v.startKey = v.selKey;
+  v.dirty = false; v.custChanged = false; v.removed = false; v.custsRemoved = false; v.startKey = v.selKey;
   renderDetailParts();
 }
 /* Save: the card in the middle becomes the one the deck uses; every version is stored with it. */
