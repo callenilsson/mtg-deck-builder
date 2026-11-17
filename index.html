@@ -908,7 +908,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .flow.live .fl-over{opacity:0;transition:none}
 .fl-over{transition:opacity .15s}
 .flow{touch-action:pan-y}
-.fl{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;border:0;padding:0;background:none;transition:transform .3s cubic-bezier(.2,.8,.2,1);cursor:pointer;will-change:transform;backface-visibility:hidden;contain:layout style}
+.fl{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;border:0;padding:0;background:none;transition:transform .3s cubic-bezier(.2,.8,.2,1);cursor:pointer;will-change:transform}
 .fl .face{width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;display:block;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6);opacity:0;transition:opacity .35s ease}
 .fl .face.ld{opacity:1}
 .flow-scrub[hidden]{display:block!important;visibility:hidden}
@@ -1330,7 +1330,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117231440";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117231803";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -3631,26 +3631,37 @@ function makeFly(src, r, refl){
   Object.assign(fly.style, {left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", transformOrigin: "50% 50%"});
   document.body.appendChild(fly); return fly;
 }
-/* The other artworks come out from behind the card in the middle: small, dim and tucked behind it, then each glides
-   to its place and turns into its tilt, nearest first, with a little overshoot as it settles. */
+/* The other artworks follow the card: each flies from the card's original spot along the same arc, one after another,
+   nearest first, and hands over to its place in the cover flow when it lands. */
 function fanOut(els){
-  if (!V || REDUCED.matches) return;
+  if (!V) return;
   const st = $("#flowStage"); if (st) st.classList.remove("dealing");
-  const cw = (V.fm && V.fm.cw) || 240;
-  els.filter(el => el.style.display !== "none" && !el.classList.contains("center")).forEach(el => {
-    const fin = el.style.transform, a = Math.abs(+el.dataset.fi - V.fi), side = +el.dataset.fi < V.fi ? -1 : 1;
-    el.animate([
-      {transform: `translate3d(${(-cw / 2 + side * 6).toFixed(1)}px,0,-90px) rotateY(${-side * 8}deg) scale(.84)`, opacity: 0, filter: "brightness(.45)"},
-      {opacity: 1, offset: .22},
-      {transform: fin, opacity: 1, filter: "brightness(1)"}
-    ], {duration: 640 + Math.min(a, 6) * 30, delay: 30 + (Math.min(a, 10) - 1) * 62, easing: "cubic-bezier(.16,1.16,.3,1)", fill: "backwards"});
+  const src = V.srcRect;
+  const list = els.filter(el => el.style.display !== "none" && !el.classList.contains("center"))
+    .sort((a, b) => Math.abs(+a.dataset.fi - V.fi) - Math.abs(+b.dataset.fi - V.fi)).slice(0, 10);
+  if (REDUCED.matches || !src || !src.width) return;
+  const tok = V.token;
+  list.forEach((el, i) => {
+    el.style.opacity = "0";
+    setTimeout(() => {
+      if (!V || V.token !== tok){ el.style.opacity = ""; return; }
+      const face = el.querySelector("img.face"), r1 = face && face.getBoundingClientRect();
+      if (!r1 || !r1.width){ el.style.opacity = ""; return; }
+      const fly = makeFly(face.currentSrc || face.src, src, false);
+      fly.style.zIndex = String(398 - i);
+      const a = sFlight(fly, src, r1, Math.round(flightMs(Math.hypot(src.left - r1.left, src.top - r1.top)) * 1.05));
+      a.onfinish = a.oncancel = () => { el.style.opacity = ""; el.animate([{opacity: 0}, {opacity: 1}], {duration: 150, easing: "linear"}); fadeAway(fly); };
+    }, 60 + i * 70);
   });
+  // farther artworks just appear
+  els.filter(el => !list.includes(el)).forEach(el => { el.style.opacity = ""; });
 }
 function setFlImg(el, src){ if (!el) return; el.querySelectorAll("img").forEach(im => { if (im.getAttribute("src") !== src){ im.src = src; } im.classList.add("ld"); }); }
 function animateOpen(srcEl){
   const img = srcEl && (srcEl.tagName === "IMG" ? srcEl : srcEl.querySelector("img"));
   if (!img || REDUCED.matches || !V) return;
   const tok = V.token, r0 = srcEl.getBoundingClientRect();
+  V.srcRect = {left: r0.left, top: r0.top, width: r0.width, height: r0.height};
   const src = img.currentSrc || img.src;
   const fly = makeFly(src, r0, true);
   V.flying = true;
