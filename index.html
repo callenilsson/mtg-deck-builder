@@ -556,11 +556,11 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .flow-stage{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
 .flow-stage.instant .fl{transition:none!important}
 /* while a finger or a glide moves the cards, they follow it directly */
-.flow.live .fl{transition:filter .3s!important}
+.flow.live .fl{transition:none!important}
 .flow.live .fl-over{opacity:0;transition:none}
 .fl-over{transition:opacity .15s}
 .flow{touch-action:pan-y}
-.fl{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;border:0;padding:0;background:none;transition:transform .3s cubic-bezier(.2,.8,.2,1),filter .3s;cursor:pointer}
+.fl{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;border:0;padding:0;background:none;transition:transform .3s cubic-bezier(.2,.8,.2,1);cursor:pointer;will-change:transform;backface-visibility:hidden;contain:layout style}
 .fl .face{width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;display:block;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6);opacity:0;transition:opacity .35s ease}
 .fl .face.ld{opacity:1}
 .flow-scrub[hidden]{display:block!important;visibility:hidden}
@@ -580,7 +580,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .fl-over.user canvas{pointer-events:auto;cursor:move;touch-action:none}
 .fl-over.stale canvas,.fl-over.stale .name-over,.fl-over.stale .name-pen{display:none}
 .name-over{position:absolute;left:7.2%;top:5.1%;width:63%;height:5%;pointer-events:auto;font:700 calc(var(--flw) * .047) Georgia,"Times New Roman",serif;padding:0 5px;border-radius:4px;border:1px dashed transparent;background:transparent;color:transparent;caret-color:var(--gold);cursor:text}
-.name-over{border:2px dashed rgba(255,255,255,.95)!important;background:rgba(255,255,255,.06);box-shadow:0 0 0 1px rgba(0,0,0,.55),inset 0 0 0 1px rgba(0,0,0,.45)}
+.name-over{border:1.25px dashed rgba(226,180,86,.95)!important;background:none;box-shadow:0 0 0 .75px rgba(0,0,0,.45),inset 0 0 0 .75px rgba(0,0,0,.35)}
 .name-over:focus{border-color:var(--gold)!important}
 .name-over::placeholder{color:transparent}
 .name-pen{position:absolute;left:-14px;top:4.4%;width:28px;height:28px;border-radius:50%;background:var(--gold);color:#1b1407;border:2px solid var(--bg);display:grid;place-items:center;pointer-events:auto;padding:0;box-shadow:0 4px 12px rgba(0,0,0,.5);transition:transform .15s}
@@ -966,7 +966,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117013847";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117014302";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -3100,22 +3100,32 @@ function flowSize(){
   return Math.round(Math.max(90, Math.min(want, maxH, maxW)));
 }
 const pngOf = u => String(u || "").replace("/large/", "/png/").replace(/\.jpg(\?|$)/, ".png$1");
-function layoutFlow(){
-  const fw = $("#flow"); if (fw) fw.style.setProperty("--flw", flowSize() + "px");
+/* Only moves the cards (cheap: each card is its own ready-made layer the graphics chip slides around).
+   Sizes are measured once per layout, not on every finger move. */
+function placeCards(measure){
   const st = $("#flowStage"); if (!st || !V) return;
-  const w = $("#flow").clientWidth, cw = parseFloat(getComputedStyle($("#flow")).getPropertyValue("--flw")) || 236;
-  const gap = Math.min(52, w / 14), first = Math.min(cw * .62, w / 4.6);
-  const pos = V.pos != null ? V.pos : V.fi;
-  [...st.children].forEach((el, i) => {
-    const o = i - pos, a = Math.abs(o), sg = Math.sign(o);
-    if (a > 9.5){ el.style.display = "none"; return; }     // far away: not rendered, and its images aren't downloaded
-    el.style.display = ""; el.style.visibility = "";
+  if (measure || !V.fm){
+    const w = $("#flow").clientWidth, cw = parseFloat(getComputedStyle($("#flow")).getPropertyValue("--flw")) || 236;
+    V.fm = {cw, gap: Math.min(52, w / 14), first: Math.min(cw * .62, w / 4.6)};
+  }
+  const {cw, gap, first} = V.fm, pos = V.pos != null ? V.pos : V.fi, kids = st.children;
+  for (let i = 0; i < kids.length; i++){
+    const el = kids[i], o = i - pos, a = Math.abs(o), sg = Math.sign(o);
+    if (a > 9.5){ if (el.style.display !== "none") el.style.display = "none"; continue; }   // far away: not rendered, images not downloaded
+    if (el.style.display) el.style.display = "";
+    if (el.style.visibility && !V.flying) el.style.visibility = "";
     const k = Math.min(1, a);                               // 0 in the middle, 1 from the first side place on
     const x = a <= 1 ? sg * first * a : sg * (first + (a - 1) * gap);
-    el.style.transform = a < .001 ? "translateX(-50%)" : `translateX(calc(-50% + ${x.toFixed(2)}px)) translateZ(${(-140 * k).toFixed(1)}px) rotateY(${(-sg * 62 * k).toFixed(2)}deg)`;
-    el.style.zIndex = Math.round(1000 - a * 100);
-    el.classList.toggle("center", i === V.fi);
-  });
+    el.style.transform = `translate3d(${(x - cw / 2).toFixed(2)}px,0,${(-140 * k).toFixed(1)}px) rotateY(${(-sg * 62 * k).toFixed(2)}deg)`;
+    const z = String(Math.round(1000 - a * 100)); if (el.style.zIndex !== z) el.style.zIndex = z;
+    const c = i === V.fi; if (el.classList.contains("center") !== c) el.classList.toggle("center", c);
+  }
+}
+function layoutFlow(){
+  const fw = $("#flow"), sz = flowSize() + "px";
+  if (fw && fw.style.getPropertyValue("--flw") !== sz) fw.style.setProperty("--flw", sz);
+  const st = $("#flowStage"); if (!st || !V) return;
+  placeCards(true);
   const list = entries(), sc = $("#flowScrub"); if (sc && +sc.value !== V.fi) sc.value = V.fi;
   const e = list[V.fi], cap = $("#flowCap");
   if (cap && !e) cap.innerHTML = `No artworks match “${esc(V.artQ || "")}”`;
@@ -3247,13 +3257,13 @@ function stopGlide(){ if (flowGlide){ cancelAnimationFrame(flowGlide); flowGlide
 function setPos(p){
   if (!V) return;
   V.pos = p;
-  const n = entries().length, i = Math.max(0, Math.min(n - 1, Math.round(p)));
-  if (i !== V.fi) setFlow(i, true); else layoutFlow();
+  const n = V.n || entries().length, i = Math.max(0, Math.min(n - 1, Math.round(p)));
+  if (i !== V.fi) setFlow(i, true); else placeCards(false);
 }
 /* glide to a whole card, easing out (a little longer for longer trips) */
 function glideTo(target, v0 = 0){
   stopGlide(); if (!V) return;
-  const from = V.pos != null ? V.pos : V.fi, dist = target - from;
+  const from = V.pos != null ? V.pos : V.fi, dist = target - from; V.n = entries().length;
   if (Math.abs(dist) < .002){ endGlide(target); return; }
   const dur = Math.min(650, 260 + Math.abs(dist) * 70), t0 = performance.now();
   $("#flow").classList.add("live");
@@ -3272,7 +3282,7 @@ function endGlide(target){
 }
 $("#detailModal").addEventListener("pointerdown", e => {
   const f = e.target.closest("#flow"); if (!f || !V || e.target.closest(".name-over,.name-pen") || (e.target.id === "artCanvas" && V.user && !V.rebase)) return;
-  const start = V.pos != null ? V.pos : V.fi; stopGlide();
+  const start = V.pos != null ? V.pos : V.fi; stopGlide(); V.n = entries().length;
   flowDrag = {x: e.clientX, y: e.clientY, start, step: flowStep(), pts: [[performance.now(), e.clientX]]}; flowMoved = false;
   if (V.pos != null) flowMoved = true;                   // caught a gliding flow: hold it right there
 });
@@ -3282,15 +3292,21 @@ window.addEventListener("pointermove", e => {
   if (!flowMoved && Math.abs(dx) > 8){ flowMoved = true; flowDrag.x += Math.sign(dx) * 8; $("#flow").classList.add("live"); }
   flowDrag.pts.push([performance.now(), e.clientX]); if (flowDrag.pts.length > 6) flowDrag.pts.shift();
   if (!flowMoved) return;
-  const n = entries().length;
-  let p = flowDrag.start - (e.clientX - flowDrag.x) / flowDrag.step;
+  flowDrag.cx = e.clientX;
+  if (flowDrag.raf) return;                               // at most one update per screen frame
+  flowDrag.raf = requestAnimationFrame(() => { const fd = flowDrag; if (!fd || !V) return; fd.raf = 0; dragTo(fd); });
+});
+function dragTo(fd){
+  const n = V.n || entries().length;
+  let p = fd.start - (fd.cx - fd.x) / fd.step;
   // past the first or last artwork it stretches like a rubber band
   if (p < 0) p = -(1 - 1 / (1 - p * .9)) * .55; else if (p > n - 1){ const over = p - (n - 1); p = n - 1 + (1 - 1 / (1 + over * .9)) * .55; }
   setPos(p);
-});
+}
 window.addEventListener("pointerup", () => {
   const fd = flowDrag; flowDrag = null;
   if (!fd || !V) return;
+  if (fd.raf){ cancelAnimationFrame(fd.raf); fd.raf = 0; if (flowMoved && fd.cx != null) dragTo(fd); }
   if (!flowMoved){ if (V.pos != null) glideTo(Math.round(V.pos)); return; }
   const now = performance.now(), recent = fd.pts.filter(([t]) => now - t < 120);
   const pts = recent.length >= 2 ? recent : fd.pts.slice(-2);
