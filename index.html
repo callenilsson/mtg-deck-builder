@@ -533,7 +533,8 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 @media (hover:none){.name-over{border-color:rgba(217,171,79,.55)}}
 .flow-empty{display:grid;place-items:center;height:100%;color:var(--muted)}
 .flow-foot{display:flex;align-items:center;gap:12px;padding:8px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.art-find{margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:999px;padding:3px 6px 3px 12px;color:var(--gold);min-width:220px;flex:0 1 300px}
+.flow-top{display:flex;justify-content:center;padding:2px 8px 0}
+.art-find{display:inline-flex;align-items:center;gap:7px;background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:999px;padding:3px 6px 3px 12px;color:var(--gold);min-width:0;width:min(380px,100%)}
 .art-find .af-lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .art-find-old{padding:0 8px;flex:0 1 230px;min-width:150px}
 .art-find:focus-within{border-color:var(--gold-line)}
@@ -887,7 +888,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117003631";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117003926";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -2648,6 +2649,7 @@ function landFly(f, v){
 function renderDetail(){
   const c = V.card;
   $("#detailModal").innerHTML = `<div class="dv-scroll">
+      <div class="flow-top"><label class="art-find" title="Show only artworks whose set name, set code, artist or year match">${I.search}<span class="af-lbl">Find art</span><input id="artQ" type="search" placeholder="set, artist or year" autocomplete="off" value="${esc(V.artQ || "")}"></label></div>
       <div class="flow" id="flow" tabindex="0" aria-label="Every artwork of this card. Drag, swipe, scroll or use the arrow keys. Click a card to jump to it.">
         <div class="flow-stage" id="flowStage"></div>
         <div class="fl-over" id="flOver"><canvas id="artCanvas" width="1344" height="1872"></canvas>
@@ -2656,7 +2658,6 @@ function renderDetail(){
       <div class="flow-foot"><div class="flow-cap" id="flowCap"></div>${c.back ? `<button class="btn sm" id="dFlip">${I.flip}Flip</button>` : ""}<input type="range" class="flow-scrub" id="flowScrub" min="0" max="0" value="0" aria-label="Jump to artwork" hidden></div>
       <div class="dv-box">
         <div class="modal-head"><h2>${esc(c.name)} <span class="mana">${manaHTML(c.mana)}</span></h2>
-          <label class="art-find" title="Show only artworks whose set name, set code, artist or year match">${I.search}<span class="af-lbl">Find art</span><input id="artQ" type="search" placeholder="set, artist or year" autocomplete="off" value="${esc(V.artQ || "")}"></label>
           <button class="icon-btn" data-close title="Close">${I.close}</button></div>
         <div class="dv-body"><div class="dv-info" id="dvInfo"></div><div class="dv-side" id="dvSide"></div></div>
       </div>
