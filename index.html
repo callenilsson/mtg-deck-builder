@@ -263,9 +263,7 @@ body.compact #app.side-closed #sideScrim{display:none}
 body.compact .pane-grip{display:none!important}
 body.compact #openSide,body.compact #railMenu{display:inline-grid!important}
 body.compact #top.mini #railMenu{width:44px;height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
-body.compact #tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:8px;padding:5px 10px}
-body.compact #tools .tl:not(.fs-btn .tl){display:none}
-body.compact #tools .tool.size input{width:90px}
+body.compact #tools{flex-wrap:wrap;overflow:visible;gap:6px;padding:5px 10px}
 /* phones held sideways: the card view puts the artworks left and the details right, etc. */
 @media (orientation:landscape) and (max-height:500px){
   #detailScrim{place-items:stretch}
@@ -567,6 +565,38 @@ button.vrow:hover{background:var(--surface-2)}
 .pm:hover{background:rgba(217,171,79,.22)}
 .pm:disabled{opacity:.35;cursor:default}
 .tool.size.ui output{min-width:42px;text-align:center}
+.tl-ico{display:none}
+/* narrow screens: the toolbar wraps into rows that fill the width (no sideways scrolling) */
+@media (max-width:820px) and (min-height:501px), (max-width:820px) and (orientation:portrait){ #tools{--tools-narrow:1} }
+@media (max-width:820px) and (min-height:501px), (max-width:820px) and (orientation:portrait), (orientation:landscape) and (max-height:500px){
+  #tools>*{flex:1 1 auto;min-width:0}
+  #tools .tools-gap{display:none}
+  #tools .tl{display:none}
+  #tools .tl-ico{display:inline-grid;place-items:center;flex:none;color:var(--gold)}
+  #tools .tl-ico.a-ico{font-size:12px}
+  #tools .tool.fs-btn{flex:0 0 auto;padding:5px 9px}
+  #tools .tool.size{flex:3 1 200px;justify-content:space-between;padding:3px 8px;gap:6px}
+  #tools .tool.size input{flex:1;width:auto;min-width:50px}
+  #tools .tool.size.ui{flex:1 1 auto;justify-content:center}
+  #tools label.tool{flex:1 1 130px}
+  #tools label.tool select{flex:1;min-width:0;width:100%}
+  #tools .tool.filter{flex:1 1 140px}
+  #tools .tool.filter{overflow:hidden}
+  #tools .tool.filter input{min-width:0;flex:1 1 40px;width:auto}
+  #tools .tool.filter select{flex:0 1 auto;min-width:0;max-width:52%;text-overflow:ellipsis}
+  #tools .tool.moves{flex:0 1 auto;display:flex;gap:4px}
+  #tools .tool.moves .btn{flex:1;justify-content:center;padding:6px 8px;font-size:12.5px}
+}
+body.compact #tools>*{flex:1 1 auto;min-width:0}
+body.compact #tools .tools-gap{display:none}
+body.compact #tools .tl{display:none}
+body.compact #tools .tl-ico{display:inline-grid;place-items:center;flex:none;color:var(--gold)}
+body.compact #tools .tool.fs-btn{flex:0 0 auto}
+body.compact #tools .tool.size{flex:3 1 200px;justify-content:space-between}
+body.compact #tools .tool.size input{flex:1;width:auto;min-width:60px}
+body.compact #tools .tool.filter{flex:2 1 170px}
+body.compact #tools .tool.moves{flex:1 1 220px;display:flex;gap:6px}
+body.compact #tools .tool.moves .btn{flex:1;justify-content:center}
 .tool.size output{min-width:38px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .tool.filter{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:0 4px 0 9px}
 .tool.filter:focus-within{border-color:var(--gold-line)}
@@ -1019,7 +1049,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
   .stbl td,.stbl th{padding:0 3px}
   .stbl input{width:34px}
   .stats-foot{max-width:none}
-  #tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:10px;padding:6px 10px}
+  #tools{flex-wrap:wrap;overflow:visible;gap:6px;padding:6px 10px}
   #tools::-webkit-scrollbar{display:none}
   .tool .tl.opt{display:none}
   .tool.size input{width:96px}
@@ -1195,8 +1225,8 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 
     <div id="tools" hidden>
       <button class="tool fs-btn" id="fsBtn" hidden></button>
-      <div class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><button class="pm" data-zstep="-10" aria-label="Smaller cards">−</button><input type="range" id="zoom" min="20" max="400" step="5" value="100" aria-label="Card size"><button class="pm" data-zstep="10" aria-label="Bigger cards">+</button><output id="zoomVal">100%</output></div>
-      <div class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click the number to reset."><span class="tl">Interface</span><button class="pm" data-ustep="-10" aria-label="Smaller interface">−</button><output id="uiZoomVal">100%</output><button class="pm" data-ustep="10" aria-label="Bigger interface">+</button></div>
+      <div class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><span class="tl-ico z-ico" aria-hidden="true"></span><button class="pm" data-zstep="-10" aria-label="Smaller cards">−</button><input type="range" id="zoom" min="20" max="400" step="5" value="100" aria-label="Card size"><button class="pm" data-zstep="10" aria-label="Bigger cards">+</button><output id="zoomVal">100%</output></div>
+      <div class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click the number to reset."><span class="tl">Interface</span><span class="tl-ico a-ico" aria-hidden="true">Aa</span><button class="pm" data-ustep="-10" aria-label="Smaller interface">−</button><output id="uiZoomVal">100%</output><button class="pm" data-ustep="10" aria-label="Bigger interface">+</button></div>
       <label class="tool"><span class="tl">Sort</span><select id="sortSel">
         <option value="manual">Your order</option><option value="incl">% of decks (EDHREC)</option><option value="syn">Synergy (EDHREC)</option>
         <option value="price">Price, high to low</option><option value="cheap">Price, low to high</option><option value="cmc">Mana value</option>
@@ -1245,7 +1275,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117182233";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117184145";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
