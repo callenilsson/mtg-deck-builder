@@ -151,7 +151,7 @@ body.ro .name-wrap svg{display:none}
 .art-price{color:#e9d9a8}
 .chip-st .sub{color:var(--muted);font-weight:400}
 .cur-sel{background:rgba(0,0,0,.25);border:1px solid var(--pricey-line);border-radius:6px;color:#fff;font-weight:700;font-size:13px;padding:1px 3px}
-.pricey-row .pr-count{color:var(--muted);font-weight:500}
+.pricey-row .pr-count{margin-left:auto;min-width:22px;text-align:center;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.25);color:#e2d3ff;font-weight:700;font-size:12px}
 .pricey-row input{width:56px;background:rgba(0,0,0,.25);border:1px solid var(--pricey-line);border-radius:6px;padding:2px 5px;text-align:right;font-size:13px;font-weight:700;color:#fff;-moz-appearance:textfield}
 .pricey-row input:focus{outline:none;border-color:#d7c2ff}
 .pricey-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
@@ -220,7 +220,10 @@ body.ro .name-wrap svg{display:none}
 .combo{grid-area:combo;display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;min-width:0}
 .combo-lbl{display:flex;flex-direction:column;gap:2px;max-width:190px}
 .eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.combo-lbl .eyebrow .i{width:13px;height:13px;vertical-align:-2px;margin-right:2px}
+.combo-lbl small .i{width:12px;height:12px;vertical-align:-2px}
 .combo-lbl small{font-size:11.5px;color:var(--muted);line-height:1.35}
+.combo .mini{width:44px}
 .mini{width:58px;aspect-ratio:63/88;border-radius:4px;overflow:hidden;position:relative;border:1px solid var(--gold-line);background:var(--surface-2);padding:0;flex:none}
 .mini img{width:100%;height:100%;object-fit:cover;display:block}
 .mini .x{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.78);display:grid;place-items:center;font-size:12px;line-height:1;color:#fff}
@@ -342,7 +345,11 @@ body.ro .name-wrap svg{display:none}
 .cw{display:flex;flex-direction:column;gap:5px;min-width:0;position:relative;container-type:inline-size}
 .cw.ins-before::before,.cw.ins-after::before{content:"";position:absolute;top:2%;height:calc(var(--tile)*1.3);max-height:80%;width:4px;border-radius:3px;background:var(--gold);z-index:3}
 .cw.ins-before::before{left:-8px}.cw.ins-after::before{right:-8px}
-.cw.dragging{opacity:.28;outline:2px dashed var(--gold-line);outline-offset:3px;border-radius:6px}
+.cw.dragging{opacity:1}
+.cw.dragging>*{visibility:hidden}
+.cw.dragging .ct{visibility:visible;background:rgba(217,171,79,.06);box-shadow:inset 0 0 0 2px rgba(217,171,79,.28);border-radius:8px}
+.cw.dragging .ct>*{visibility:hidden}
+.cw.landing>*{visibility:hidden}
 .ct{position:relative;aspect-ratio:63/88;border-radius:var(--radius-card);background:var(--surface-3);overflow:hidden;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;box-shadow:0 3px 10px rgba(0,0,0,.45);transition:transform .14s ease,box-shadow .14s ease}
 @media (hover:hover){.ct:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(0,0,0,.55),0 0 0 1px rgba(217,171,79,.25)}}
 .ct img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
@@ -416,8 +423,10 @@ body.pulse-focus .acts [data-act="focus"]{animation:pulse 1.1s ease 2}
 .bar.syn i{background:linear-gradient(90deg,#3f9a70,var(--ok))}
 .empty-note{padding:16px 12px;color:var(--faint);font-size:13px}
 
-.ghost{position:fixed;top:0;left:0;z-index:1000;pointer-events:none;box-shadow:0 18px 40px rgba(0,0,0,.6);opacity:.95}
-.ghost,.ghost *{transition:none!important;animation:none!important}
+.ghost{position:fixed;top:0;left:0;z-index:1000;pointer-events:none;will-change:transform}
+.ghost-in{width:100%;height:100%;border-radius:inherit;transform-origin:var(--gx,50%) var(--gy,50%);box-shadow:0 22px 44px rgba(0,0,0,.6),0 0 0 2px rgba(217,171,79,.55);transition:transform .18s cubic-bezier(.2,.9,.3,1.2),box-shadow .18s!important}
+.ghost-in>.ct{width:100%;height:100%}
+.ghost .ghost-in *{transition:none!important;animation:none!important}
 .fly{position:fixed;z-index:400;transform-origin:0 0;pointer-events:none}
 img.fly{object-fit:cover;border-radius:4.6%/3.3%;box-shadow:0 18px 44px rgba(0,0,0,.6)}
 .fly .face{display:block;width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;box-shadow:0 18px 44px rgba(0,0,0,.6)}
@@ -767,12 +776,15 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
   .cmds .cmd-col{width:min(var(--tile,180px),284px)}
   .cmds .cmd-slot{width:100%}
   .cmds .cmd-slot.partner.empty{width:92px;flex:none}
-  #total{order:3;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"num sub" "lbl sub" "pr pr";align-items:center;column-gap:12px;min-width:0;padding:10px 14px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px}
+  #total{order:4;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"num sub" "lbl sub" "pr pr";align-items:center;column-gap:12px;min-width:0;padding:10px 14px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px}
   #total b{grid-area:num}
   #total small{grid-area:lbl}
   #total .tot-sub{grid-area:sub;justify-self:end;margin:0}
   #total .pricey-row{grid-area:pr;justify-self:stretch;margin-top:8px}
-  .combo{order:4}
+  .combo{order:3;flex-wrap:nowrap;align-items:center;margin-top:-2px}
+  .combo .combo-lbl{flex:1;max-width:none}
+  .combo .mini{width:34px}
+  .combo .mini.empty{font-size:16px}
   .combo-lbl{max-width:none;flex-basis:100%}
   #stats{order:5;border-left:0;padding-left:0;border-top:1px solid var(--line-soft);padding-top:12px}
   .stbl{width:100%;font-size:12px}
@@ -897,7 +909,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117005419";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117005939";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1550,7 +1562,7 @@ function renderHeader(){
   const tot = $("#total");
   tot.innerHTML = `<b>${n}<span>/100</span></b><small>${n > 100 ? `${n - 100} too many` : n === 100 ? "Complete" : "in deck"}</small>
     ${d.commander ? `<div class="tot-sub"><span title="Locked final picks in the deck">${I.lock}<b>${locked}</b> locked</span><span title="Deck value, commander included (${value.n} of ${n} cards have a price)"><b>${fmtMoney(value.tot, value.sym)}</b> value</span></div>
-    <label class="pricey-row" title="Cards at or above this price get a purple outline and price tag">💎 Expensive from <input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold"><select id="curSel" class="cur-sel" title="Price currency: € from Cardmarket, $ from TCGplayer" aria-label="Currency"><option value="eur" ${UI.cur === "usd" ? "" : "selected"}>€</option><option value="usd" ${UI.cur === "usd" ? "selected" : ""}>$</option></select><span class="pr-count">· ${[...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length} cards</span></label>` : ""}`;
+    <label class="pricey-row" title="Cards whose cheapest printing costs this much or more get a purple outline. A quick hint for cards that may be too strong for a casual table.">💎 Pricey above <input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Pricey card threshold"><select id="curSel" class="cur-sel" title="Price currency: € from Cardmarket, $ from TCGplayer" aria-label="Currency"><option value="eur" ${UI.cur === "usd" ? "" : "selected"}>€</option><option value="usd" ${UI.cur === "usd" ? "selected" : ""}>$</option></select>${(() => { const k = [...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length; return `<span class="pr-count" title="${k} pricey card${k === 1 ? "" : "s"} in this deck and pool">${k}</span>`; })()}</label>` : ""}`;
   tot.classList.toggle("full", n === 100); tot.classList.toggle("over", n > 100);
   if (!d.commander) return;
   // commanders
@@ -1562,7 +1574,7 @@ function renderHeader(){
   $("#cmds").innerHTML = cm;
   // combine row: always shows the empty slot, so it's clear there's room for more
   const foc = d.cards.filter(c => c.focus);
-  $("#combo").innerHTML = `<div class="combo-lbl"><span class="eyebrow">Suggestions also use</span><small>${foc.length ? "Add cards suggests cards that work with these and your commander" : "Press the two circles under a card to find cards that work with it"}</small></div>
+  $("#combo").innerHTML = `<div class="combo-lbl" title="Add cards suggests cards that work with your commander${foc.length ? " and these cards" : ". Press the two circles under any card to add it here"}"><span class="eyebrow">${I.focus} Suggestions also use</span>${foc.length ? "" : `<small>Press ${I.focus} under a card</small>`}</div>
     ${foc.map(c => `<button class="mini" data-open="${c.uid}" data-img="${esc(largeOf(c.card))}" title="${esc(c.card.name)}"><img src="${esc(imgOf(c.card))}" alt="${esc(c.card.name)}"><span class="x" data-unfocus="${c.uid}" title="Stop combining">×</span></button>`).join("")}
     <button class="mini empty" id="comboAdd" title="Use another card for suggestions">+</button>`;
   renderStats();
@@ -1594,7 +1606,7 @@ function renderStats(){
     if (want == null && sg) return `<td class="edh">–</td>`;
     if (want == null) return `<td class="edh" title="${err ? esc(err) : "Loading EDHREC…"}">${err ? "–" : "…"}</td>`;
     const delta = lim == null ? null : want - lim;
-    return `<td class="edh"><b>${want}</b>${delta == null ? "" : `<i class="delta ${delta > 0 ? "up" : delta < 0 ? "down" : ""}">${delta ? (delta > 0 ? "+" : "−") + Math.abs(delta) : "✓"}</i>`}</td>`;
+    return `<td class="edh"><b>${want}</b>${delta == null ? "" : `<i class="delta ${delta > 0 ? "up" : delta < 0 ? "down" : ""}">${delta ? (delta > 0 ? "+" : "−") + Math.abs(delta) : ""}</i>`}</td>`;
   };
   const rows = d.typeOrder.map(t => {
     const items = deck.filter(c => c.bucket === t), k = sumQ(items), lk = sumQ(items.filter(c => c.locked)), lim = d.limits[t] ?? 0;
@@ -1621,7 +1633,7 @@ function renderStats(){
   const nTok = sumQ((d.tokens || []).filter(k => tokZone(k) === "deck"));
   const tokRow = `<tr class="tokrow" title="Tokens in the deck: not part of the 100"><td class="ic"><i class="ms ms-token"></i></td><td class="sname">Tokens</td><td class="num">${nTok}</td><td></td><td></td><td class="edh">–</td></tr>`;
   $("#stats").innerHTML = `<table class="stbl"><thead><tr><th></th><th class="l sname">Type</th><th title="Cards in your deck">Deck</th><th title="Locked final picks">${I.lock.replace('class="i"', 'class="i" style="width:11px;height:11px"')}</th><th title="Your limit">Limit</th><th class="l" title="EDHREC's average for decks like yours">EDHREC</th></tr></thead><tbody>${rows}${tokRow}</tbody></table>
-    <div class="stats-foot"><div class="colors">${colors}</div><span class="sumline ${sum === 100 ? "good" : "bad"}">${sumTxt}</span>
+    <div class="stats-foot"><div class="colors">${colors}</div>${sum === 100 ? "" : `<span class="sumline bad">${sumTxt}</span>`}
       ${sg ? `<button class="pill-btn" id="useSugg" ${same ? "disabled" : ""}>${same ? "Limits match EDHREC" : "Use EDHREC numbers"}</button>` : ""}
       ${needBasics > 0 ? `<button class="pill-btn" id="addBasics" title="Add basic lands, split by the colors your spells need">+ ${needBasics} basic land${needBasics > 1 ? "s" : ""}</button>` : ""}
       ${sg ? `<span class="basis-line" title="${esc(sg.why)}">${esc(sg.short)}</span>` : ""}</div>`;
@@ -1824,7 +1836,7 @@ function tileHTML(c, over, d){
       ${c.card.custom ? `<span class="custom-tag" title="Custom art or name">${I.brush}</span>` : ""}
       <img src="${esc(imgOf(c.card))}" ${srcsetAttr(c.card)} alt="${esc(c.card.name)}" loading="lazy" draggable="false" onerror="this.remove()">
       ${canMulti(c.card) ? qtyHTML(c) : ""}
-      ${isPricey(c.card) ? `<span class="pricey-tag" title="Expensive: ${esc(priceText(c.card))}">💎 ${esc(priceText(c.card))}</span>` : ""}
+      ${isPricey(c.card) ? `<span class="pricey-tag" title="Pricey: ${esc(priceText(c.card))}">💎 ${esc(priceText(c.card))}</span>` : ""}
       <div class="ct-badges">${c.locked ? `<i title="Locked">${I.lock}</i>` : ""}${c.focus ? `<i title="Used for suggestions">${I.focus}</i>` : ""}</div>
     </div>
     ${tileStatsHTML(c, d)}
@@ -2083,13 +2095,23 @@ document.addEventListener("contextmenu", e => { if (e.target.closest("#board .ct
 function startDrag(kind, el, x, y){
   press = null; if (!el) return;
   if (roDeck(cur())){ guard(); return; }
+  if (kind === "card" && UI.sort !== "manual") adoptShownOrder();
   const src = kind === "box" ? el.querySelector(".box-head") : el.querySelector(".ct");
   const r = src.getBoundingClientRect();
-  const ghost = src.cloneNode(true);
-  ghost.classList.add("ghost");
+  let ghost;
+  if (kind === "box"){
+    ghost = src.cloneNode(true); ghost.classList.add("ghost");
+    ghost.style.background = "var(--surface-2)"; ghost.style.borderRadius = "10px"; ghost.style.border = "1px solid var(--gold-line)";
+    ghost.style.boxShadow = "0 18px 40px rgba(0,0,0,.6)";
+  } else {
+    // like moving apps on a phone: the card lifts a little under your finger, its spot stays open
+    ghost = document.createElement("div"); ghost.className = "ghost"; ghost.style.borderRadius = "8px";
+    const inner = document.createElement("div"); inner.className = "ghost-in";
+    inner.style.setProperty("--gx", (x - r.left) + "px"); inner.style.setProperty("--gy", (y - r.top) + "px");
+    inner.appendChild(src.cloneNode(true)); ghost.appendChild(inner);
+    requestAnimationFrame(() => requestAnimationFrame(() => { inner.style.transform = "scale(1.08)"; }));
+  }
   ghost.style.width = r.width + "px"; ghost.style.height = r.height + "px";
-  if (kind === "box"){ ghost.style.background = "var(--surface-2)"; ghost.style.borderRadius = "10px"; ghost.style.border = "1px solid var(--gold-line)"; }
-  else ghost.style.borderRadius = "6px";
   document.body.appendChild(ghost);
   prev.hidden = true;
   drag = {kind, el, ghost, ox: x - r.left, oy: y - r.top, x, y, target: null, uid: el.dataset.uid, type: el.dataset.type};
@@ -2097,12 +2119,23 @@ function startDrag(kind, el, x, y){
   document.body.classList.add("is-dragging");
   moveDrag(); autoScroll();
 }
+/* Dragging a card while sorted by % or synergy: "Your order" takes over the order you are looking at, so nothing jumps. */
+function adoptShownOrder(){
+  const d = cur(); if (!d) return;
+  const shown = [...document.querySelectorAll("#board .cw[data-uid]")].map(e => e.dataset.uid);
+  const pos = new Map(shown.map((u, i) => [u, i]));
+  const rest = d.cards.filter(c => !pos.has(c.uid));
+  d.cards = [...d.cards.filter(c => pos.has(c.uid)).sort((a, b) => pos.get(a.uid) - pos.get(b.uid)), ...rest];
+  UI.sort = "manual"; saveUI();
+  const sel = $("#sortSel"); if (sel) sel.value = "manual";
+  toast("Sorted by “Your order” now, so you can arrange the cards");
+}
 function clearMarks(){
   document.querySelectorAll(".ins-before,.ins-after,.ins-top,.ins-bottom,.target,.drop-target").forEach(el => el.classList.remove("ins-before","ins-after","ins-top","ins-bottom","target","drop-target"));
 }
 function moveDrag(){
   const {ghost, x, y} = drag;
-  ghost.style.transform = `translate3d(${x - drag.ox}px, ${y - drag.oy}px, 0)${drag.kind === "card" ? " rotate(2.5deg)" : ""}`;
+  ghost.style.transform = `translate3d(${x - drag.ox}px, ${y - drag.oy}px, 0)`;
   if (!drag.raf) drag.raf = requestAnimationFrame(() => { if (drag){ drag.raf = 0; hitTest(); } });
 }
 function setMarks(list){
@@ -2129,9 +2162,12 @@ function hitTest(){
       let tEl = under.closest(".cw[data-uid]"); if (tEl && (tEl === el || !grid.contains(tEl))) tEl = null;
       const tc = tEl && findCard(tEl.dataset.uid);
       // reorder only in "Your order", and only among cards in the same group (locked or not)
-      if (UI.sort === "manual" && tEl && tc && tc.locked === c.locked){
+      if (UI.sort === "manual" && tEl && tc && tc.locked === c.locked && !(drag.settle > performance.now() && drag.lastOver === tEl)){
         const sib = [...grid.children], before = el.parentElement === grid && sib.indexOf(el) < sib.indexOf(tEl);
-        if (before ? tEl.nextElementSibling !== el : tEl.previousElementSibling !== el) liveMove(grid, () => grid.insertBefore(el, before ? tEl.nextElementSibling : tEl));
+        if (before ? tEl.nextElementSibling !== el : tEl.previousElementSibling !== el){
+          liveMove(grid, () => grid.insertBefore(el, before ? tEl.nextElementSibling : tEl));
+          drag.lastOver = tEl; drag.settle = performance.now() + 260;
+        }
       } else if (el.parentElement !== grid){
         // another side or section: join the end of the matching group
         const firstUnlocked = [...grid.querySelectorAll(".cw[data-uid]")].find(k => { const kc = findCard(k.dataset.uid); return kc && !kc.locked; });
@@ -2157,8 +2193,24 @@ function liveMove(grid, mutate){
   if (REDUCED.matches) return;
   for (const [e, r] of rects){
     const n = e.getBoundingClientRect(), dx = r.left - n.left, dy = r.top - n.top;
-    if (Math.abs(dx) > .5 || Math.abs(dy) > .5) e.animate([{transform: `translate(${dx}px,${dy}px)`}, {transform: "none"}], {duration: 200, easing: EASE});
+    if (Math.abs(dx) > .5 || Math.abs(dy) > .5) e.animate([{transform: `translate(${dx}px,${dy}px)`}, {transform: "none"}], {duration: 300, easing: "cubic-bezier(.22,1.12,.36,1)"});
   }
+}
+/* After a drop the lifted card glides into its new spot and settles (the board has re-rendered by then). */
+function landGhost(dr){
+  const g = dr.ghost, inner = g.querySelector(".ghost-in");
+  const el = document.querySelector(`#board .cw[data-uid="${dr.uid}"]`), ct = el && el.querySelector(".ct");
+  if (!ct || REDUCED.matches){ g.remove(); return; }
+  const to = ct.getBoundingClientRect(), from = g.getBoundingClientRect();
+  if (!to.width || to.bottom < 0 || to.top > innerHeight){ g.remove(); return; }
+  el.classList.add("landing");
+  const sx = to.width / from.width, sy = to.height / from.height;
+  g.style.transformOrigin = "0 0";
+  const anim = g.animate([{transform: g.style.transform}, {transform: `translate3d(${to.left}px, ${to.top}px, 0) scale(${sx}, ${sy})`}],
+    {duration: 240, easing: "cubic-bezier(.2,.8,.2,1)", fill: "forwards"});
+  if (inner){ inner.style.transform = "scale(1)"; inner.style.boxShadow = "0 0 0 0 rgba(0,0,0,0)"; }
+  const done = () => { g.remove(); const e2 = document.querySelector(`#board .cw[data-uid="${dr.uid}"]`); if (e2) e2.classList.remove("landing"); };
+  anim.onfinish = done; setTimeout(done, 400);
 }
 function autoScroll(){
   if (!drag) return;
@@ -2175,7 +2227,8 @@ function autoScroll(){
 function endDrag(commit){
   if (drag && commit) hitTest();
   const dr = drag; drag = null; if (dr.raf) cancelAnimationFrame(dr.raf);
-  dr.ghost.remove(); dr.el.classList.remove("dragging", "lifted");
+  if (dr.kind === "card") setTimeout(() => landGhost(dr), 0); else dr.ghost.remove();
+  dr.el.classList.remove("dragging", "lifted");
   if (!commit && dr.kind === "card") renderBoard();
   document.body.classList.remove("is-dragging");
   clearMarks();
@@ -2318,7 +2371,7 @@ function applyUiZoom(){
 }
 $("#uiZoom").addEventListener("input", e => { UI.uiz = +e.target.value; applyUiZoom(); saveUI(); });
 $("#uiZoom").closest("label").addEventListener("dblclick", () => { UI.uiz = 100; applyUiZoom(); saveUI(); });
-$("#sortSel").addEventListener("change", e => { UI.sort = e.target.value; saveUI(); animateBoard(() => renderBoard()); if (UI.sort !== "manual") toast("Drag to reorder works in “Your order”. Locked cards always come first."); });
+$("#sortSel").addEventListener("change", e => { UI.sort = e.target.value; saveUI(); animateBoard(() => renderBoard()); if (UI.sort !== "manual") toast("Dragging a card switches back to “Your order”. Locked cards always come first."); });
 let filtT;
 $("#filterQ").addEventListener("input", e => { UI.filter = e.target.value; clearTimeout(filtT); filtT = setTimeout(renderBoard, 150); });
 $("#ctypeSel").addEventListener("change", e => { UI.ctype = e.target.value; renderBoard(); });
