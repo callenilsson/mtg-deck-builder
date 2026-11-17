@@ -578,11 +578,14 @@ button.vrow:hover{background:var(--surface-2)}
   #top .top-actions .label,#top .top-actions .label-wide{display:inline!important}
   #top .top-actions .label-wide,#top .top-actions #drawHandTop .label{display:none!important}
   #top .top-actions .label-s{display:inline!important}
-  #top .top-actions .fold-btn{flex:0 0 auto;position:static}
+  /* the open / close button sits in the same spot, top right, folded or not */
+  #top .top-actions .fold-btn{position:absolute;top:8px;right:8px;width:36px;height:36px}
+  #top:not(.mini) .name-row{padding-right:44px}
   #top.mini .top-actions{display:none}
   /* folded strip: commander, count and the actions as icons */
   #top.mini .r-meta,#top.mini .r-types{display:none}
   #top.mini .r-acts{display:flex;flex-direction:row;gap:5px;margin:0 0 0 auto;padding:0;border:0;width:auto}
+  #top.mini #railOpen{order:99;width:36px;height:36px;flex:none}
   #top.mini .r-act{width:44px;height:46px;border-radius:9px}
   #top.mini .r-act .i{width:16px;height:16px}
   #top.mini #rail{gap:6px;flex-wrap:nowrap;min-width:0}
@@ -1298,7 +1301,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117192644";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117192908";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
