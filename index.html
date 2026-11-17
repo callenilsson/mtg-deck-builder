@@ -239,7 +239,9 @@ body.ro .name-wrap svg{display:none}
 .more-wrap{position:relative}
 /* rail actions */
 .r-acts{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft);width:100%}
-.r-act{width:44px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);display:grid;place-items:center;padding:0}
+.r-act{width:48px;height:46px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0}
+.r-act small{font-size:9.5px;line-height:1;font-weight:600;color:var(--muted)}
+.r-act.gold small{color:var(--gold)}
 .r-act .i{width:18px;height:18px}
 .r-act.gold{border-color:var(--gold-line);background:var(--gold-soft);color:var(--gold)}
 .r-act .card-plus-ico{width:15px;height:20px;font-size:13px}
@@ -251,7 +253,7 @@ body.ro .name-wrap svg{display:none}
 .fs-btn[hidden]{display:none}
 /* compact: touch screens held sideways, unfolded foldables, small tablets */
 body.compact #top.mini{width:76px;padding:8px 6px;overflow-y:auto;scrollbar-width:none}
-@media (max-height:500px){ body.compact #top.mini .r-tot b{font-size:18px} body.compact #top.mini .r-thumb img{width:44px} .r-acts{gap:4px;margin-top:6px;padding-top:6px} .r-act{height:34px;width:40px} }
+@media (max-height:500px){ body.compact #top.mini #rail{gap:4px} body.compact #top.mini .r-tot b{font-size:16px} body.compact #top.mini .r-tot span{display:none} body.compact #top.mini .r-thumb img{width:38px} body.compact #top.mini #railMenu,body.compact #top.mini #railOpen{height:30px!important} .r-acts{gap:3px;margin-top:4px;padding-top:4px} .r-act{height:40px;width:48px} }
 body.compact #top.mini #rail{gap:6px}
 body.compact #top.mini .r-types,body.compact #top.mini .r-meta{display:none}
 body.compact #top.mini .r-thumb img{width:52px}
@@ -581,7 +583,7 @@ button.vrow:hover{background:var(--surface-2)}
   /* folded strip: commander, count and the actions as icons */
   #top.mini .r-meta,#top.mini .r-types{display:none}
   #top.mini .r-acts{display:flex;flex-direction:row;gap:5px;margin:0 0 0 auto;padding:0;border:0;width:auto}
-  #top.mini .r-act{width:34px;height:34px;border-radius:9px}
+  #top.mini .r-act{width:44px;height:46px;border-radius:9px}
   #top.mini .r-act .i{width:16px;height:16px}
   #top.mini #rail{gap:6px;flex-wrap:nowrap;min-width:0}
   #top.mini .r-tot b{font-size:18px}
@@ -1296,7 +1298,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117192422";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117192644";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -2017,10 +2019,10 @@ function renderRail(d){
     <div class="r-meta" title="Deck value">${fmtMoney(value.tot, value.sym)}</div>
     <div class="r-types">${chips}</div>
     <div class="r-acts">
-      <button class="r-act gold" data-ract="add" title="Add cards"><span class="card-plus-ico">+</span></button>
-      <button class="r-act" data-ract="hand" title="Test hand"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="9" height="13" rx="1.5" transform="rotate(-12 7.5 12.5)"/><rect x="9" y="4" width="9" height="13" rx="1.5"/><path d="M13.5 8.5v4M11.5 10.5h4"/></svg></button>
-      <button class="r-act" data-ract="stats" title="Deck stats and odds"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>
-      <button class="r-act" data-ract="print" title="Print"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg></button>
+      <button class="r-act gold" data-ract="add" title="Add cards"><span class="card-plus-ico">+</span><small>Add</small></button>
+      <button class="r-act" data-ract="hand" title="Test hand"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="9" height="13" rx="1.5" transform="rotate(-12 7.5 12.5)"/><rect x="9" y="4" width="9" height="13" rx="1.5"/><path d="M13.5 8.5v4M11.5 10.5h4"/></svg><small>Test</small></button>
+      <button class="r-act" data-ract="stats" title="Deck stats and odds"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><small>Stats</small></button>
+      <button class="r-act" data-ract="print" title="Print"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg><small>Print</small></button>
     </div>`;
   $("#foldTop").innerHTML = isPhone() ? I.foldU : I.panelL;
 }
