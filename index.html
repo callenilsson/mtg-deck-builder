@@ -887,7 +887,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117003015";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117003354";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -3121,8 +3121,11 @@ $("#detailModal").addEventListener("click", async e => {
       if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && (best == null || Math.abs(i - V.fi) < Math.abs(best - V.fi))) best = i;
     });
     if (best != null) setFlow(best);
+    else requestClose();          // empty space around the artworks closes the view, like the dark background
     return;
   }
+  // the empty space around the caption and between the artworks and the box closes it too
+  if (e.target === $("#detailModal") || e.target.classList.contains("dv-scroll") || e.target.classList.contains("flow-foot")){ if (!flowMoved) requestClose(); return; }
   const b = e.target.closest("button"); if (!b) return;
   if (b.hasAttribute("data-close")){ requestClose(); return; }
   if (b.id === "artSave"){ saveInPlace(); return; }
