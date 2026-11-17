@@ -156,7 +156,8 @@ body.ro .name-wrap svg{display:none}
 .art-price{color:#e9d9a8}
 .chip-st .sub{color:var(--muted);font-weight:400}
 .cur-sel{background:rgba(0,0,0,.25);border:1px solid var(--pricey-line);border-radius:6px;color:#fff;font-weight:700;font-size:13px;padding:1px 3px}
-.pricey-row .pr-count{margin-left:auto;min-width:22px;text-align:center;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.25);color:#e2d3ff;font-weight:700;font-size:12px}
+.pricey-row .pr-lbl{flex:1 1 0;min-width:0;line-height:1.15;white-space:normal;overflow-wrap:break-word}
+.pricey-row .pr-count{flex:none;margin-left:auto;min-width:22px;text-align:center;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.25);color:#e2d3ff;font-weight:700;font-size:12px}
 .pricey-row input{width:56px;background:rgba(0,0,0,.25);border:1px solid var(--pricey-line);border-radius:6px;padding:2px 5px;text-align:right;font-size:13px;font-weight:700;color:#fff;-moz-appearance:textfield}
 .pricey-row input:focus{outline:none;border-color:#d7c2ff}
 .pricey-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
@@ -286,7 +287,29 @@ body.ro .name-wrap svg{display:none}
 .colors span{display:inline-flex;align-items:center;gap:3px;color:var(--fg)}
 .sumline.bad{color:var(--danger)}
 .sumline.good{color:var(--ok)}
-.curve{display:flex;align-items:flex-end;gap:12px;margin-top:10px;padding-top:8px;border-top:1px solid var(--line-soft);max-width:380px;cursor:help}
+.viz{margin-top:10px;padding-top:8px;border-top:1px solid var(--line-soft);max-width:380px;display:grid;gap:3px}
+.viz-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:2px}
+.viz-h .eyebrow{font-size:10px}
+.viz-h small{font-size:10.5px;color:var(--faint)}
+.vrow{display:grid;grid-template-columns:78px 1fr auto;align-items:center;gap:8px;padding:2px 4px;margin:0 -4px;border:0;border-radius:6px;background:none;color:var(--fg);font-size:12px;text-align:left}
+button.vrow:hover{background:var(--surface-2)}
+.vrow.on{background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold-line)}
+.vl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.vbar{height:6px;border-radius:999px;background:var(--surface-3);overflow:hidden;display:block}
+.vbar i{display:block;height:100%;border-radius:999px;background:var(--gold)}
+.role.ok .vbar i{background:var(--ok)}
+.vn{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.vn b{color:var(--fg)}
+.cb{grid-template-columns:18px 1fr auto}
+.cb .ms{font-size:13px}
+.cb-bars{display:grid;gap:2px}
+.cb .vbar{height:4px}
+.cb .vbar.make i{background:#7fb2e8}
+.cb.short .vn em{color:var(--danger);font-style:normal}
+.viz-more{font-size:10.5px;color:var(--faint);padding-left:2px}
+.curve{display:flex;align-items:flex-end;gap:12px;cursor:help}
+.viz.first{margin-top:0;padding-top:0;border-top:0}
+.viz .stats-foot{margin-top:4px}
 .cv-bars{flex:1;display:grid;grid-template-columns:repeat(8,1fr);gap:4px;height:58px}
 .cv-col{display:grid;grid-template-rows:12px 1fr 13px;align-items:end;justify-items:center;min-width:0;height:100%}
 .cv-col i{display:block;width:100%;max-width:18px;min-height:2px;border-radius:3px 3px 1px 1px;background:linear-gradient(180deg,var(--gold),rgba(217,171,79,.45));align-self:end}
@@ -844,8 +867,9 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
   #total small{grid-area:lbl}
   #total .tot-sub{grid-area:sub;justify-self:end;margin:0}
   #total .pricey-row{grid-area:pr;justify-self:stretch;margin-top:8px}
-  #total .pricey-row{flex-wrap:nowrap}
-  #total .pricey-row input{width:46px}
+  #total .pricey-row{flex-wrap:nowrap;min-width:0}
+  #total .pricey-row input{width:44px;flex:none}
+  #total .pricey-row select{flex:none}
   .combo{order:3;flex-wrap:nowrap;align-items:center;margin-top:-2px}
   .combo .combo-lbl{flex:1;max-width:none}
   .combo .mini{width:34px}
@@ -978,7 +1002,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117015017";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117015829";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1063,7 +1087,7 @@ function subtypes(card){ const t = String(card.type || "").split("//")[0].split(
 const UI = {sort: "manual", filter: "", ctype: "", split: .5, zoom: 100, cur: "eur", pin: false, addSort: "best", pricey: 20, collapsed: {}, uiz: 100};
 try { Object.assign(UI, JSON.parse(localStorage.getItem(UIKEY) || "{}")); } catch {}
 try { const z = localStorage.getItem("command-zone-card-size"); if (z && !localStorage.getItem(UIKEY)) UI.zoom = +z; } catch {}
-UI.filter = ""; UI.ctype = "";
+UI.filter = ""; UI.ctype = ""; UI.role = "";
 /* Who is using this browser: their Google Drive identity (permissionId is stable and matches Drive sharing). */
 let LAST_ME = null;
 try { LAST_ME = JSON.parse(localStorage.getItem("command-zone-me") || "null"); } catch {}
@@ -1654,7 +1678,7 @@ function renderHeader(){
   const tot = $("#total");
   tot.innerHTML = `<b>${n}<span>/100</span></b><small>${n > 100 ? `${n - 100} too many` : n === 100 ? "Complete" : "in deck"}</small>
     ${d.commander ? `<div class="tot-sub"><span title="Locked final picks in the deck">${I.lock}<b>${locked}</b> locked</span><span title="Deck value, commander included (${value.n} of ${n} cards have a price)"><b>${fmtMoney(value.tot, value.sym)}</b> value</span></div>
-    <label class="pricey-row" title="Cards whose cheapest printing costs this much or more get a purple outline. A quick hint for cards that may be too strong for a casual table.">💎 Expensive above <input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold"><select id="curSel" class="cur-sel" title="Price currency: € from Cardmarket, $ from TCGplayer" aria-label="Currency"><option value="eur" ${UI.cur === "usd" ? "" : "selected"}>€</option><option value="usd" ${UI.cur === "usd" ? "selected" : ""}>$</option></select>${(() => { const k = [...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length; return `<span class="pr-count" title="${k} expensive card${k === 1 ? "" : "s"} in this deck and pool">${k}</span>`; })()}</label>` : ""}`;
+    <label class="pricey-row" title="Cards whose cheapest printing costs this much or more get a purple outline. A quick hint for cards that may be too strong for a casual table."><span class="pr-lbl">💎 Expensive above</span><input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold"><select id="curSel" class="cur-sel" title="Price currency: € from Cardmarket, $ from TCGplayer" aria-label="Currency"><option value="eur" ${UI.cur === "usd" ? "" : "selected"}>€</option><option value="usd" ${UI.cur === "usd" ? "selected" : ""}>$</option></select>${(() => { const k = [...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length; return `<span class="pr-count" title="${k} expensive card${k === 1 ? "" : "s"} in this deck and pool">${k}</span>`; })()}</label>` : ""}`;
   tot.classList.toggle("full", n === 100); tot.classList.toggle("over", n > 100);
   if (!d.commander) return;
   // commanders
@@ -1705,9 +1729,85 @@ function curveHTML(deck, avg){
   const b = Array(8).fill(0);
   for (const c of deck) if (c.bucket !== "Land") b[Math.min(7, Math.floor(c.card.cmc || 0))] += qOf(c);
   const max = Math.max(1, ...b);
-  return `<div class="curve" title="Mana curve: how many spells cost 0, 1, 2 … 7+ mana. Average ${avg.toFixed(2)} (lands not counted). A lower, left-leaning curve means a faster deck.">
+  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Mana curve</span><small>spells by mana value</small></div><div class="curve" title="Mana curve: how many spells cost 0, 1, 2 … 7+ mana. Average ${avg.toFixed(2)} (lands not counted). A lower, left-leaning curve means a faster deck.">
     <div class="cv-bars">${b.map((n, i) => `<div class="cv-col"><span class="cv-n">${n || ""}</span><i style="height:${Math.round(n / max * 100)}%"></i><span class="cv-l">${i === 7 ? "7+" : i}</span></div>`).join("")}</div>
-    <div class="cv-avg"><b>${avg.toFixed(1)}</b><small>avg. mana<br>value</small></div></div>`;
+    <div class="cv-avg"><b>${avg.toFixed(1)}</b><small>average</small></div></div></div>`;
+}
+/* ---- Deck roles, estimated from the rules text (no lookups): ramp, card draw, removal, board wipes ---- */
+const ROLES = [
+  {k: "ramp", label: "Ramp", goal: 10, tip: "Mana rocks, mana creatures, land search, Treasure, extra land drops"},
+  {k: "draw", label: "Card draw", goal: 10, tip: "Cards that draw you cards"},
+  {k: "removal", label: "Removal", goal: 8, tip: "Destroy, exile, damage, -X/-X, fight, bounce or counter one target"},
+  {k: "wipe", label: "Board wipes", goal: 2, tip: "Destroy, exile or shrink everything (or all creatures)"}
+];
+const ROLE_CACHE = new Map();
+function rolesOf(card){
+  if (!card) return [];
+  if (ROLE_CACHE.has(card.id + card.name)) return ROLE_CACHE.get(card.id + card.name);
+  const isLand = /\bLand\b/.test(String(card.type).split("//")[0]);
+  const tx = String(card.text || "").toLowerCase().split(card.name.toLowerCase()).join("this");
+  const r = [];
+  if (!isLand && (/\{t\}[^.\n]*:\s*add (\{|one|two|three|x)|add (one|two|three) mana|add \{[wubrgc]\}/.test(tx)
+      || /search your library for (up to \w+ )?(a |an |two |three )?(basic )?(land|forest|plains|island|swamp|mountain)/.test(tx)
+      || /put (a|up to \w+|\w+) land cards? [^.]*onto the battlefield/.test(tx) || /play an additional land|play two additional lands/.test(tx)
+      || /create (a|an|one|two|three|x|that many|\w+) (tapped )?treasure/.test(tx))) r.push("ramp");
+  if (/\bdraws? (a|an|one|two|three|four|five|x|that many|\w+) cards?|draw cards equal|draws? cards equal|draw that many/.test(tx) && !/^[^.]*if you would draw/.test(tx)) r.push("draw");
+  const wipe = /(destroy|exile) (all|each) (other )?(creatures|nonland permanents|permanents|artifacts|enchantments|nontoken|creature)|all (other )?creatures get -|deals? (\d+|x) damage to each (other )?creature|return all (creatures|nonland permanents) to/.test(tx);
+  if (wipe) r.push("wipe");
+  if (/(destroy|exile) target (?!card)(creature|artifact|enchantment|permanent|nonland|planeswalker|attacking|blocking|tapped|nontoken|creature or|artifact or)(?! you control)|deals? (\d+|x|that much) damage to (target|any target|up to)(?! player)|deals? damage equal to [^.]* to (target|any target|up to one target)(?! player)|target creature (an opponent controls )?gets -\d+\/-\d+|fights? (target|another target|up to one target)|return target (creature|nonland permanent|permanent)(?! you control)[^.]* to its owner's hand|counter target (spell|creature spell|noncreature spell)|(target|each) (player|opponent) sacrifices/.test(tx)) r.push("removal");
+  ROLE_CACHE.set(card.id + card.name, r);
+  return r;
+}
+function rolesHTML(deck){
+  const n = {}; ROLES.forEach(x => n[x.k] = 0);
+  for (const c of deck) for (const k of rolesOf(c.card)) n[k] += qOf(c);
+  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Deck roles</span><small title="Estimated from each card's rules text. Goals are the usual Commander guideline.">from card text</small></div>
+    ${ROLES.map(x => { const v = n[x.k], ok = v >= x.goal, w = Math.min(100, v / x.goal * 100);
+      return `<button class="vrow role ${ok ? "ok" : ""} ${UI.role === x.k ? "on" : ""}" data-role="${x.k}" title="${esc(x.tip)}. Goal about ${x.goal}. Click to show only these cards.">
+        <span class="vl">${x.label}</span><span class="vbar"><i style="width:${w}%"></i></span><span class="vn"><b>${v}</b>/${x.goal}</span></button>`; }).join("")}</div>`;
+}
+/* ---- Color balance: how much your spells need each color, next to how many lands make it ---- */
+function landColors(card, ci){
+  const nm = card.name, tx = String(card.text || "").toLowerCase(), out = new Set();
+  const BASIC = {Plains: "W", Island: "U", Swamp: "B", Mountain: "R", Forest: "G"};
+  for (const [b, c] of Object.entries(BASIC)) if (nm === b || nm === "Snow-Covered " + b || new RegExp(`\\b${b}\\b`).test(String(card.type))) out.add(c);
+  for (const m of tx.matchAll(/add ([^.\n]*)/g)) for (const c of ["w","u","b","r","g"]) if (m[1].includes(`{${c}}`)) out.add(c.toUpperCase());
+  if (/mana of any (color|type)|any color|search your library for a basic land/.test(tx)) ci.forEach(c => out.add(c));
+  return [...out].filter(c => ci.includes(c));
+}
+function colorBalanceHTML(d, deck){
+  const ci = deckCI(d); if (ci.length < 2) return "";
+  const need = {}, src = {}; ci.forEach(c => { need[c] = 0; src[c] = 0; });
+  for (const c of deck){
+    const q = qOf(c), isLand = /\bLand\b/.test(String(c.card.type).split("//")[0]);
+    if (isLand){ landColors(c.card, ci).forEach(x => src[x] += q); continue; }
+    for (const m of String(c.card.mana || "").matchAll(/\{([^}]+)\}/g)){
+      const parts = m[1].split("/").filter(p => "WUBRG".includes(p));
+      parts.forEach(p => { if (need[p] != null) need[p] += q / (m[1].includes("/P") ? 1 : parts.length || 1); });
+    }
+  }
+  const tn = Object.values(need).reduce((a, b) => a + b, 0) || 1, ts = Object.values(src).reduce((a, b) => a + b, 0) || 1;
+  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Color balance</span><small>spells need · lands make</small></div>
+    ${ci.map(c => { const np = need[c] / tn * 100, sp = src[c] / ts * 100, short = np - sp >= 12;
+      return `<div class="vrow cb ${short ? "short" : ""}" title="${COLOR_NAME[c]}: ${Math.round(np)}% of the colored mana symbols in your spells, ${src[c]} land${src[c] === 1 ? "" : "s"} make it (${Math.round(sp)}% of your color sources)${short ? ". Consider more " + COLOR_NAME[c] + " sources." : ""}">
+        <i class="ms ms-${c.toLowerCase()} ms-cost"></i><span class="cb-bars"><span class="vbar need"><i style="width:${np}%"></i></span><span class="vbar make"><i style="width:${sp}%"></i></span></span>
+        <span class="vn"><b>${Math.round(np)}%</b> · ${src[c]} land${src[c] === 1 ? "" : "s"}${short ? ` <em>more ${BASIC_OF[c]}s?</em>` : ""}</span></div>`; }).join("")}</div>`;
+}
+/* ---- Creature types: only shown when the deck is clearly about a type ---- */
+function typesHTML(deck){
+  const cnt = new Map(); let ch = 0;
+  for (const c of deck){
+    if (!/Creature/.test(String(c.card.type).split("//")[0])) continue;
+    if (/\bchangeling\b/i.test(c.card.text || "")){ ch += qOf(c); continue; }
+    for (const s of subtypes(c.card)) cnt.set(s, (cnt.get(s) || 0) + qOf(c));
+  }
+  const top = [...cnt.entries()].sort((a, b) => b[1] - a[1]);
+  if (!top.length || top[0][1] + ch < 8) return "";
+  const show = top.slice(0, 3), max = show[0][1] + ch, more = top.length - show.length;
+  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Creature types</span>${ch ? `<small title="Changelings are every creature type, so they count for each">✦ incl. ${ch} changeling${ch > 1 ? "s" : ""}</small>` : ""}</div>
+    ${show.map(([s, n]) => `<button class="vrow ctype ${UI.ctype === s ? "on" : ""}" data-ctype="${esc(s)}" title="${n + ch} ${esc(s)}${ch ? ` (with ${ch} changeling${ch > 1 ? "s" : ""})` : ""}. Click to show only these.">
+      <span class="vl">${esc(s)}</span><span class="vbar"><i style="width:${(n + ch) / max * 100}%"></i></span><span class="vn"><b>${n + ch}</b></span></button>`).join("")}
+    ${more ? `<small class="viz-more">+ ${more} more type${more > 1 ? "s" : ""}</small>` : ""}</div>`;
 }
 function renderStats(){
   const d = cur(); if (!d || !d.commander){ $("#stats").innerHTML = ""; return; }
@@ -1748,13 +1848,16 @@ function renderStats(){
   const spellsQ = deck.filter(c => c.bucket !== "Land").reduce((a, c) => a + qOf(c), 0);
   const avgMV = spellsQ ? deck.filter(c => c.bucket !== "Land").reduce((a, c) => a + (c.card.cmc || 0) * qOf(c), 0) / spellsQ : 0;
   const tokRow = `<tr class="tokrow" title="Tokens in the deck: not part of the 100"><td class="ic"><i class="ms ms-token"></i></td><td class="sname">Tokens</td><td class="num">${nTok}</td><td></td><td></td><td class="edh">–</td></tr>`;
-  $("#stats").innerHTML = `<table class="stbl"><thead><tr><th></th><th class="l sname">Type</th><th title="Cards in your deck">Deck</th><th title="Locked final picks">${I.lock.replace('class="i"', 'class="i" style="width:11px;height:11px"')}</th><th title="Your limit">Limit</th><th class="l" title="EDHREC's average for decks like yours${sg ? `. ${esc(sg.short)}${sg.why ? `. ${esc(sg.why)}` : ""}` : ""}">EDHREC</th></tr></thead><tbody>${rows}${tokRow}</tbody></table>
+  const gcBtn = GC ? (() => { const g = [...cmdrs(d), ...deck.map(c => c.card)].filter(isGC).map(c => c.name); return `<button class="gc ${g.length ? "has" : ""}" id="gcBtn" title="${g.length ? `Game Changers in this deck: ${esc(g.join(", "))}` : "No Game Changers in this deck"}. Game Changers are the official list of the strongest Commander cards. Even one moves a deck up a power bracket.">◆ Game Changers <b>${g.length}</b></button>`; })() : "";
+  const limitBtns = (sum === 100 ? "" : `<span class="sumline bad">${sumTxt}</span>`)
+    + (sg && !same ? `<button class="pill-btn" id="useSugg" title="Set your limits to EDHREC's numbers">Use EDHREC numbers</button>` : "")
+    + (needBasics > 0 ? `<button class="pill-btn" id="addBasics" title="Add basic lands, split by the colors your spells need">+ ${needBasics} basic land${needBasics > 1 ? "s" : ""}</button>` : "");
+  $("#stats").innerHTML = `<div class="viz first"><div class="viz-h"><span class="eyebrow">Card types</span></div>
+    <table class="stbl"><thead><tr><th></th><th class="l sname">Type</th><th title="Cards in your deck">Deck</th><th title="Locked final picks">${I.lock.replace('class="i"', 'class="i" style="width:11px;height:11px"')}</th><th title="Your limit">Limit</th><th class="l" title="EDHREC's average for decks like yours${sg ? `. ${esc(sg.short)}${sg.why ? `. ${esc(sg.why)}` : ""}` : ""}">EDHREC</th></tr></thead><tbody>${rows}${tokRow}</tbody></table>
+    ${limitBtns ? `<div class="stats-foot">${limitBtns}</div>` : ""}</div>
+    <div class="viz"><div class="viz-h"><span class="eyebrow">Colors & power</span></div><div class="stats-foot"><div class="colors">${colors}</div>${gcBtn}</div></div>
     ${spellsQ ? curveHTML(deck, avgMV) : ""}
-    <div class="stats-foot"><div class="colors">${colors}</div>
-      ${GC ? (() => { const g = [...cmdrs(d), ...deck.map(c => c.card)].filter(isGC).map(c => c.name); return `<button class="gc ${g.length ? "has" : ""}" id="gcBtn" title="${g.length ? `Game Changers in this deck: ${esc(g.join(", "))}` : "No Game Changers in this deck"}. Game Changers are the official list of the strongest Commander cards. Even one moves a deck up a power bracket.">◆ Game Changers <b>${g.length}</b></button>`; })() : ""}${sum === 100 ? "" : `<span class="sumline bad">${sumTxt}</span>`}
-      ${sg && !same ? `<button class="pill-btn" id="useSugg" title="Set your limits to EDHREC's numbers">Use EDHREC numbers</button>` : ""}
-      ${needBasics > 0 ? `<button class="pill-btn" id="addBasics" title="Add basic lands, split by the colors your spells need">+ ${needBasics} basic land${needBasics > 1 ? "s" : ""}</button>` : ""}
-</div>`;
+    ${deck.length ? rolesHTML(deck) + colorBalanceHTML(d, deck) + typesHTML(deck) : ""}`;
 }
 
 /* ---------------- EDHREC type suggestions ----------------
@@ -1894,6 +1997,7 @@ function matchesFilter(c){
   const q = UI.filter.trim().toLowerCase();
   if (q && !(`${c.card.name}\n${c.card.type}\n${c.card.text}`.toLowerCase().includes(q))) return false;
   if (UI.ctype && !subtypes(c.card).includes(UI.ctype)) return false;
+  if (UI.role && !rolesOf(c.card).includes(UI.role)) return false;
   return true;
 }
 function sortVal(c, m){
@@ -1970,7 +2074,7 @@ function boxHTML(d, zone, t){
   const lim = d.limits[t] ?? 0;
   const overSet = new Set();
   if (zone === "deck"){ let run = 0; for (const c of all){ run += qOf(c); if (run > lim) overSet.add(c.uid); } }
-  const filtering = !!(UI.filter.trim() || UI.ctype);
+  const filtering = !!(UI.filter.trim() || UI.ctype || UI.role);
   const shown = filtering ? all.filter(matchesFilter) : all;
   if (filtering && !shown.length) return "";
   const lk = sumQ(all.filter(c => c.locked)), total = sumQ(all), shownN = sumQ(shown);
@@ -2003,7 +2107,7 @@ function sameToken(a, b){
 }
 function tokenBoxHTML(d, zone){
   const toks = (d.tokens || []).filter(k => tokZone(k) === zone);
-  const filtering = !!(UI.filter.trim() || UI.ctype);
+  const filtering = !!(UI.filter.trim() || UI.ctype || UI.role);
   const shown = filtering ? toks.filter(matchesFilter) : toks;
   if (filtering && !shown.length) return "";
   const fk = zone + ":Token", folded = !!(UI.collapsed || {})[fk];
@@ -2117,7 +2221,7 @@ function renderTools(d){
   if ($("#ctypeSel").dataset.h !== html){ $("#ctypeSel").innerHTML = html; $("#ctypeSel").dataset.h = html; }
   $("#ctypeSel").value = UI.ctype;
   $("#sortSel").value = UI.sort;
-  $("#filterBox").classList.toggle("on", !!(UI.filter.trim() || UI.ctype));
+  $("#filterBox").classList.toggle("on", !!(UI.filter.trim() || UI.ctype || UI.role));
 }
 
 /* ---------------- Card actions ---------------- */
@@ -2133,10 +2237,10 @@ function moveZone(u, zone){
 }
 function moveAll(zone){
   const d = cur(); if (!d || guard(d)) return;
-  const list = d.cards.filter(c => c.zone !== zone && !c.locked && (!(UI.filter.trim() || UI.ctype) || matchesFilter(c)));
+  const list = d.cards.filter(c => c.zone !== zone && !c.locked && (!(UI.filter.trim() || UI.ctype || UI.role) || matchesFilter(c)));
   if (!list.length){ toast(zone === "deck" ? "The card pool is empty" : "No unlocked cards in the deck"); return; }
   animateBoard(() => { list.forEach(c => c.zone = zone); touch(d); renderAll(); });
-  toast(`Moved ${list.length} card${list.length > 1 ? "s" : ""} to the ${zone === "deck" ? "deck" : "card pool"}${UI.filter.trim() || UI.ctype ? " (only cards matching the filter)" : ""}`);
+  toast(`Moved ${list.length} card${list.length > 1 ? "s" : ""} to the ${zone === "deck" ? "deck" : "card pool"}${UI.filter.trim() || UI.ctype || UI.role ? " (only cards matching the filter)" : ""}`);
 }
 function limitWarn(c){
   const d = cur(); if (c.zone !== "deck") return;
@@ -2486,6 +2590,8 @@ document.addEventListener("pointerdown", e => {
 }, true);
 document.addEventListener("click", e => { if (performance.now() < swallowClickUntil){ swallowClickUntil = 0; e.preventDefault(); e.stopPropagation(); } }, true);
 $("#stats").addEventListener("click", e => {
+  const ro = e.target.closest("[data-role]"); if (ro){ UI.role = UI.role === ro.dataset.role ? "" : ro.dataset.role; renderTools(cur()); animateBoard(() => renderBoard()); renderStats(); if (UI.role) toast(`Showing ${ROLES.find(x => x.k === UI.role).label.toLowerCase()} cards. Click again to show all.`); return; }
+  const ct = e.target.closest("[data-ctype]"); if (ct){ UI.ctype = UI.ctype === ct.dataset.ctype ? "" : ct.dataset.ctype; renderTools(cur()); animateBoard(() => renderBoard()); renderStats(); return; }
   if (e.target.closest("#gcBtn")){ const d = cur(); const g = [...cmdrs(d), ...d.cards.filter(c => c.zone === "deck").map(c => c.card)].filter(isGC).map(c => c.name); toast(g.length ? `Game Changers: ${g.join(", ")}` : "No Game Changers in this deck"); return; }
   if (e.target.closest("#useSugg")){
     if (guard()) return;
@@ -2528,7 +2634,7 @@ $("#uiZoom").closest("label").addEventListener("dblclick", () => { UI.uiz = 100;
 $("#sortSel").addEventListener("change", e => { UI.sort = e.target.value; saveUI(); animateBoard(() => renderBoard()); if (UI.sort !== "manual") toast("Dragging a card switches back to “Your order”. Locked cards always come first."); });
 let filtT;
 $("#filterQ").addEventListener("input", e => { UI.filter = e.target.value; clearTimeout(filtT); filtT = setTimeout(renderBoard, 150); });
-$("#ctypeSel").addEventListener("change", e => { UI.ctype = e.target.value; renderBoard(); });
+$("#ctypeSel").addEventListener("change", e => { UI.ctype = e.target.value; renderBoard(); renderStats(); });
 $("#allToDeck").onclick = () => moveAll("deck");
 $("#allToPool").onclick = () => moveAll("options");
 
