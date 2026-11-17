@@ -659,12 +659,21 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .pdf-top p{margin:0;color:var(--muted);font-size:13px;line-height:1.5;flex:1 1 360px}
 .pdf-top b{color:var(--fg)}
 .pdf-pages{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:22px;padding:20px;background:radial-gradient(ellipse at 50% 0%,#1b1e2e,#0b0c12 70%)}
-.a4{position:relative;aspect-ratio:210/297;background:#fbfaf6;border-radius:3px;box-shadow:0 14px 34px rgba(0,0,0,.55);overflow:hidden;animation:rise .3s cubic-bezier(.2,.8,.2,1) both}
+.a4{position:relative;container-type:inline-size;aspect-ratio:210/297;background:#fbfaf6;border-radius:3px;box-shadow:0 14px 34px rgba(0,0,0,.55);overflow:hidden;animation:rise .3s cubic-bezier(.2,.8,.2,1) both}
 .a4 img,.a4 .ph{position:absolute;width:30%;height:29.63%;object-fit:cover;border-radius:1.2%/0.9%}
 .a4 .ph{background:#e7e4da;display:grid;place-items:center;font-size:9px;color:#555;text-align:center;padding:4px}
 .a4 .cut{position:absolute;background:#9a9a9a}
+.scale-note{display:inline;background:rgba(217,171,79,.14);border:1px solid var(--gold-line);border-radius:6px;padding:1px 6px;color:var(--fg)}
 .a4 .pg{position:absolute;right:5%;top:1%;font-size:9px;color:#666}
-.a4 .ruler{position:absolute;left:5%;bottom:1.6%;width:23.8%;height:2px;background:#555}
+/* positions match the PDF: bar starts 10.5 mm from the left, 284 mm down, 50 × 3 mm */
+.a4 .scalebar{position:absolute;left:5%;top:95.62%;width:23.81%}
+.a4 .sb-bar{display:flex;height:calc(100cqw * 3 / 210);min-height:4px;border:1px solid #000;box-sizing:border-box}
+.a4 .sb-bar i{flex:1;background:#000}
+.a4 .sb-bar i:nth-child(even){background:#fff}
+.a4 .sb-num{display:flex;justify-content:space-between;font:700 max(5px,1.15cqw)/1.2 system-ui,sans-serif;color:#000;margin-top:1px}
+.a4 .sb-txt{position:absolute;left:36.4%;top:95.3%;right:3%;font:max(4.5px,1.15cqw)/1.25 system-ui,sans-serif;color:#333}
+.a4 .sb-txt b{color:#000;font-size:max(5px,1.35cqw)}
+@container (max-width:420px){ .a4 .sb-num b:not(:first-child):not(:last-child){visibility:hidden} }
 .pdf-cap{text-align:center;color:var(--muted);font-size:12px;margin-top:8px}
 .pdf-foot{display:flex;gap:10px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
 .pdf-foot .progress{flex:1;min-width:120px}
@@ -930,7 +939,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117010835";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117011306";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1673,7 +1682,7 @@ function renderStats(){
     <div class="stats-foot"><div class="colors">${colors}</div>
       ${spellsQ ? `<span class="mv" title="Average mana value of the spells in the deck (lands not counted). Lower means a faster deck.">Avg. mana value <b>${avgMV.toFixed(1)}</b></span>` : ""}
       ${GC ? `<button class="gc ${gcs.length ? "has" : ""}" id="gcBtn" title="${gcs.length ? `Game Changers in this deck: ${esc(gcs.join(", "))}` : "No Game Changers in this deck"}. Game Changers are the official list of the strongest Commander cards. Even one moves a deck up a power bracket.">◆ Game Changers <b>${gcs.length}</b></button>` : ""}${sum === 100 ? "" : `<span class="sumline bad">${sumTxt}</span>`}
-      ${sg ? `<button class="pill-btn" id="useSugg" ${same ? "disabled" : ""}>${same ? "Limits match EDHREC" : "Use EDHREC numbers"}</button>` : ""}
+      ${sg && !same ? `<button class="pill-btn" id="useSugg" title="Set your limits to EDHREC's numbers">Use EDHREC numbers</button>` : ""}
       ${needBasics > 0 ? `<button class="pill-btn" id="addBasics" title="Add basic lands, split by the colors your spells need">+ ${needBasics} basic land${needBasics > 1 ? "s" : ""}</button>` : ""}
 </div>`;
 }
@@ -3574,10 +3583,10 @@ function openPdf(){
       const st = `left:${pct(mx + (k % 3) * 63, 210)};top:${pct(my + Math.floor(k / 3) * 88, 297)}`;
       return `<img src="${esc(f.thumb)}" alt="${esc(f.name)}" title="${esc(f.name)}" loading="lazy" style="${st}">`;
     }).join("");
-    html += `<div><div class="a4" style="animation-delay:${Math.min(p, 8) * 40}ms">${cuts.join("")}${cards}<span class="pg">page ${p + 1} of ${pages}</span><span class="ruler"></span></div><div class="pdf-cap">Page ${p + 1}</div></div>`;
+    html += `<div><div class="a4" style="animation-delay:${Math.min(p, 8) * 40}ms">${cuts.join("")}${cards}<span class="pg">page ${p + 1} of ${pages}</span><span class="scalebar"><span class="sb-bar"><i></i><i></i><i></i><i></i><i></i></span><span class="sb-num"><b>0</b><b>1</b><b>2</b><b>3</b><b>4</b><b>5 cm</b></span></span><span class="sb-txt"><b>CHECK THE SCALE: this bar must measure exactly 5 cm.</b><br>If it doesn't, print again at 100% / “Actual size”.</span></div><div class="pdf-cap">Page ${p + 1}</div></div>`;
   }
   $("#pdfModal").innerHTML = `<div class="modal-head"><h2>Print preview · ${esc(displayName(d))}</h2><button class="icon-btn" data-close title="Close">${I.close}</button></div>
-    <div class="pdf-top"><p><b>${n} cards</b>${nt ? ` + ${nt} token${nt > 1 ? "s" : ""}` : ""}${backs ? ` plus ${backs} back face${backs > 1 ? "s" : ""}` : ""} on <b>${pages} A4 page${pages > 1 ? "s" : ""}</b>, at real card size (6.3 × 8.8 cm) with cut marks. Each page has a 5 cm ruler to check the scale. When printing, choose <b>Actual size</b> / <b>100%</b> and turn off “Fit to page”.${n < 100 ? " The deck isn’t at 100 yet, but you can still print it." : ""}</p></div>
+    <div class="pdf-top"><p><b>${n} cards</b>${nt ? ` + ${nt} token${nt > 1 ? "s" : ""}` : ""}${backs ? ` plus ${backs} back face${backs > 1 ? "s" : ""}` : ""} on <b>${pages} A4 page${pages > 1 ? "s" : ""}</b>, at real card size (6.3 × 8.8 cm) with cut marks. <span class="scale-note">📏 Each page has a black-and-white <b>5 cm check bar</b> at the bottom: measure it after printing.</span> When printing, choose <b>Actual size</b> / <b>100%</b> and turn off “Fit to page”.${n < 100 ? " The deck isn’t at 100 yet, but you can still print it." : ""}</p></div>
     <div class="modal-body" style="padding:0"><div class="pdf-pages">${html}</div></div>
     <div class="pdf-foot"><div class="progress" hidden id="pdfProg"><i></i></div><span id="pdfMsg"></span><button class="btn" data-close>Close</button><button class="btn primary" id="makePdf">Download PDF</button></div>`;
   showScrim("#pdfScrim");
@@ -3596,11 +3605,17 @@ async function buildPdf(onProgress){
       doc.setDrawColor(150); doc.setLineWidth(0.2);
       for (let c = 0; c <= 3; c++){ const x = mx + c * W; doc.line(x, 2, x, my - 1.5); doc.line(x, PH - my + 1.5, x, PH - 2); }
       for (let r = 0; r <= 3; r++){ const y = my + r * H; doc.line(2, y, mx - 1.5, y); doc.line(PW - mx + 1.5, y, PW - 2, y); }
-      const rx = mx, ry = PH - 7;
-      doc.setDrawColor(60); doc.setLineWidth(0.3); doc.line(rx, ry, rx + 50, ry);
-      for (let t = 0; t <= 5; t++) doc.line(rx + t * 10, ry - (t % 5 ? 1.2 : 2), rx + t * 10, ry);
-      doc.setFontSize(7); doc.setTextColor(90);
-      doc.text("5 cm. Measure this line; it should be exactly 5 cm. Cards are 6.3 x 8.8 cm.", rx + 53, ry + 0.8);
+      // scale check bar: 5 blocks of exactly 1 cm, black and white, numbered, with a bold instruction next to it
+      const rx = mx, ry = PH - 13, bh = 3;
+      doc.setLineWidth(0.25); doc.setDrawColor(0);
+      for (let b = 0; b < 5; b++){ doc.setFillColor(b % 2 ? 255 : 0); doc.rect(rx + b * 10, ry, 10, bh, "FD"); }
+      doc.setFontSize(6.5); doc.setTextColor(0); doc.setFont("helvetica", "normal");
+      for (let b = 0; b <= 5; b++) doc.text(b === 5 ? "5 cm" : String(b), rx + b * 10, ry + bh + 3, {align: b === 0 ? "left" : b === 5 ? "right" : "center"});
+      doc.setFillColor(255); doc.rect(rx + 64, ry - 2, PW - mx - (rx + 64) + 1, 8.6, "F");   // keeps the cut lines out of the text
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
+      doc.text("CHECK THE SCALE: this bar must measure exactly 5 cm.", rx + 66, ry + 1.6);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(60);
+      doc.text("If it doesn't, print again at 100% / \"Actual size\" with \"Fit to page\" turned off. Cards are 6.3 x 8.8 cm.", rx + 66, ry + 5.2);
       doc.text(`${displayName(d)}  ·  page ${Math.floor(i / 9) + 1} of ${Math.ceil(faces.length / 9)}`, PW - mx, 6, {align: "right"});
     }
     const x = mx + (k % 3) * W, y = my + Math.floor(k / 3) * H;
