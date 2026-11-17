@@ -286,7 +286,15 @@ body.ro .name-wrap svg{display:none}
 .colors span{display:inline-flex;align-items:center;gap:3px;color:var(--fg)}
 .sumline.bad{color:var(--danger)}
 .sumline.good{color:var(--ok)}
-.stats-foot .mv b{color:var(--fg)}
+.curve{display:flex;align-items:flex-end;gap:12px;margin-top:10px;padding-top:8px;border-top:1px solid var(--line-soft);max-width:380px;cursor:help}
+.cv-bars{flex:1;display:grid;grid-template-columns:repeat(8,1fr);gap:4px;height:58px}
+.cv-col{display:grid;grid-template-rows:12px 1fr 13px;align-items:end;justify-items:center;min-width:0;height:100%}
+.cv-col i{display:block;width:100%;max-width:18px;min-height:2px;border-radius:3px 3px 1px 1px;background:linear-gradient(180deg,var(--gold),rgba(217,171,79,.45));align-self:end}
+.cv-n{font-size:10px;color:var(--muted);line-height:12px}
+.cv-l{font-size:10px;color:var(--faint);line-height:13px}
+.cv-avg{display:flex;flex-direction:column;align-items:flex-end;line-height:1}
+.cv-avg b{font-family:var(--display);font-size:22px;color:var(--fg)}
+.cv-avg small{font-size:10px;color:var(--muted);text-align:right;margin-top:3px;line-height:1.2}
 .gc{border:1px solid var(--line);background:none;border-radius:999px;padding:1px 9px;font-size:11.5px;color:var(--muted)}
 .gc b{color:var(--fg)}
 .gc.has{border-color:var(--pricey-line);background:var(--pricey-soft);color:#e2d3ff}
@@ -834,6 +842,8 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
   #total small{grid-area:lbl}
   #total .tot-sub{grid-area:sub;justify-self:end;margin:0}
   #total .pricey-row{grid-area:pr;justify-self:stretch;margin-top:8px}
+  #total .pricey-row{flex-wrap:nowrap}
+  #total .pricey-row input{width:46px}
   .combo{order:3;flex-wrap:nowrap;align-items:center;margin-top:-2px}
   .combo .combo-lbl{flex:1;max-width:none}
   .combo .mini{width:34px}
@@ -966,7 +976,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117014302";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117014718";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1642,7 +1652,7 @@ function renderHeader(){
   const tot = $("#total");
   tot.innerHTML = `<b>${n}<span>/100</span></b><small>${n > 100 ? `${n - 100} too many` : n === 100 ? "Complete" : "in deck"}</small>
     ${d.commander ? `<div class="tot-sub"><span title="Locked final picks in the deck">${I.lock}<b>${locked}</b> locked</span><span title="Deck value, commander included (${value.n} of ${n} cards have a price)"><b>${fmtMoney(value.tot, value.sym)}</b> value</span></div>
-    <label class="pricey-row" title="Cards whose cheapest printing costs this much or more get a purple outline. A quick hint for cards that may be too strong for a casual table.">💎 Pricey above <input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Pricey card threshold"><select id="curSel" class="cur-sel" title="Price currency: € from Cardmarket, $ from TCGplayer" aria-label="Currency"><option value="eur" ${UI.cur === "usd" ? "" : "selected"}>€</option><option value="usd" ${UI.cur === "usd" ? "selected" : ""}>$</option></select>${(() => { const k = [...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length; return `<span class="pr-count" title="${k} pricey card${k === 1 ? "" : "s"} in this deck and pool">${k}</span>`; })()}</label>` : ""}`;
+    <label class="pricey-row" title="Cards whose cheapest printing costs this much or more get a purple outline. A quick hint for cards that may be too strong for a casual table.">💎 Expensive above <input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold"><select id="curSel" class="cur-sel" title="Price currency: € from Cardmarket, $ from TCGplayer" aria-label="Currency"><option value="eur" ${UI.cur === "usd" ? "" : "selected"}>€</option><option value="usd" ${UI.cur === "usd" ? "selected" : ""}>$</option></select>${(() => { const k = [...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length; return `<span class="pr-count" title="${k} expensive card${k === 1 ? "" : "s"} in this deck and pool">${k}</span>`; })()}</label>` : ""}`;
   tot.classList.toggle("full", n === 100); tot.classList.toggle("over", n > 100);
   if (!d.commander) return;
   // commanders
@@ -1688,6 +1698,15 @@ async function loadGameChangers(){
   } catch {} gcBusy = false;
 }
 const isGC = c => !!(GC && c && (GC.has(c.name) || GC.has(String(c.name).split(" // ")[0])));
+/* Mana curve of the spells in the deck (lands not counted): how many cost 0, 1, 2 … 7 or more. */
+function curveHTML(deck, avg){
+  const b = Array(8).fill(0);
+  for (const c of deck) if (c.bucket !== "Land") b[Math.min(7, Math.floor(c.card.cmc || 0))] += qOf(c);
+  const max = Math.max(1, ...b);
+  return `<div class="curve" title="Mana curve: how many spells cost 0, 1, 2 … 7+ mana. Average ${avg.toFixed(2)} (lands not counted). A lower, left-leaning curve means a faster deck.">
+    <div class="cv-bars">${b.map((n, i) => `<div class="cv-col"><span class="cv-n">${n || ""}</span><i style="height:${Math.round(n / max * 100)}%"></i><span class="cv-l">${i === 7 ? "7+" : i}</span></div>`).join("")}</div>
+    <div class="cv-avg"><b>${avg.toFixed(1)}</b><small>avg. mana<br>value</small></div></div>`;
+}
 function renderStats(){
   const d = cur(); if (!d || !d.commander){ $("#stats").innerHTML = ""; return; }
   const deck = d.cards.filter(c => c.zone === "deck");
@@ -1724,14 +1743,13 @@ function renderStats(){
   const needBasics = sg && sg.basic ? Math.max(0, Math.min(sg.basic, (d.limits.Land ?? 0) - sumQ(deck.filter(c => c.bucket === "Land" && !c.card.basic))) - basicsHave) : 0;
   const nTok = sumQ((d.tokens || []).filter(k => tokZone(k) === "deck"));
   if (!GC) loadGameChangers();
-  const gcs = [...cmdrs(d), ...deck.map(c => c.card)].filter(isGC).map(c => c.name);
   const spellsQ = deck.filter(c => c.bucket !== "Land").reduce((a, c) => a + qOf(c), 0);
   const avgMV = spellsQ ? deck.filter(c => c.bucket !== "Land").reduce((a, c) => a + (c.card.cmc || 0) * qOf(c), 0) / spellsQ : 0;
   const tokRow = `<tr class="tokrow" title="Tokens in the deck: not part of the 100"><td class="ic"><i class="ms ms-token"></i></td><td class="sname">Tokens</td><td class="num">${nTok}</td><td></td><td></td><td class="edh">–</td></tr>`;
   $("#stats").innerHTML = `<table class="stbl"><thead><tr><th></th><th class="l sname">Type</th><th title="Cards in your deck">Deck</th><th title="Locked final picks">${I.lock.replace('class="i"', 'class="i" style="width:11px;height:11px"')}</th><th title="Your limit">Limit</th><th class="l" title="EDHREC's average for decks like yours${sg ? `. ${esc(sg.short)}${sg.why ? `. ${esc(sg.why)}` : ""}` : ""}">EDHREC</th></tr></thead><tbody>${rows}${tokRow}</tbody></table>
+    ${spellsQ ? curveHTML(deck, avgMV) : ""}
     <div class="stats-foot"><div class="colors">${colors}</div>
-      ${spellsQ ? `<span class="mv" title="Average mana value of the spells in the deck (lands not counted). Lower means a faster deck.">Avg. mana value <b>${avgMV.toFixed(1)}</b></span>` : ""}
-      ${GC ? `<button class="gc ${gcs.length ? "has" : ""}" id="gcBtn" title="${gcs.length ? `Game Changers in this deck: ${esc(gcs.join(", "))}` : "No Game Changers in this deck"}. Game Changers are the official list of the strongest Commander cards. Even one moves a deck up a power bracket.">◆ Game Changers <b>${gcs.length}</b></button>` : ""}${sum === 100 ? "" : `<span class="sumline bad">${sumTxt}</span>`}
+      ${GC ? (() => { const g = [...cmdrs(d), ...deck.map(c => c.card)].filter(isGC).map(c => c.name); return `<button class="gc ${g.length ? "has" : ""}" id="gcBtn" title="${g.length ? `Game Changers in this deck: ${esc(g.join(", "))}` : "No Game Changers in this deck"}. Game Changers are the official list of the strongest Commander cards. Even one moves a deck up a power bracket.">◆ Game Changers <b>${g.length}</b></button>`; })() : ""}${sum === 100 ? "" : `<span class="sumline bad">${sumTxt}</span>`}
       ${sg && !same ? `<button class="pill-btn" id="useSugg" title="Set your limits to EDHREC's numbers">Use EDHREC numbers</button>` : ""}
       ${needBasics > 0 ? `<button class="pill-btn" id="addBasics" title="Add basic lands, split by the colors your spells need">+ ${needBasics} basic land${needBasics > 1 ? "s" : ""}</button>` : ""}
 </div>`;
@@ -1934,7 +1952,7 @@ function tileHTML(c, over, d){
       ${c.card.custom ? `<span class="custom-tag" title="Custom art or name">${I.brush}</span>` : ""}
       <img src="${esc(imgOf(c.card))}" ${srcsetAttr(c.card)} alt="${esc(c.card.name)}" loading="lazy" draggable="false" onerror="this.remove()">
       ${canMulti(c.card) ? qtyHTML(c) : ""}
-      ${isPricey(c.card) ? `<span class="pricey-tag" title="Pricey: ${esc(priceText(c.card))}">💎 ${esc(priceText(c.card))}</span>` : ""}
+      ${isPricey(c.card) ? `<span class="pricey-tag" title="Expensive: ${esc(priceText(c.card))}">💎 ${esc(priceText(c.card))}</span>` : ""}
       <div class="ct-badges">${c.locked ? `<i title="Locked">${I.lock}</i>` : ""}${c.focus ? `<i title="Building around this card">${I.focus}</i>` : ""}</div>
     </div>
     ${tileStatsHTML(c, d)}
