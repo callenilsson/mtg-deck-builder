@@ -490,15 +490,18 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .more{display:flex;justify-content:center;margin-top:16px}
 
 /* ---------- Card view: cover flow on top, details and edits below ---------- */
-.detail{width:min(960px,100%);max-height:100%;background:none;border:0;box-shadow:none}
+.detail{width:min(960px,100%);max-height:100%;overflow:hidden}
 .detail .dv-scroll{position:relative;scrollbar-width:thin}
-.dv-box{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.6);margin-top:8px}
-.dv-box .modal-head{flex-wrap:wrap}
+/* the artworks sit on a dark stage inside the window, so the page behind doesn't distract */
+.detail .flow-top{background:#0b0c12;padding:12px 8px 0}
+.detail .flow-foot{background:#0b0c12;border-bottom:1px solid var(--line)!important;padding:8px 14px!important}
+.dv-box{background:none}
+.dv-box .modal-head{flex-wrap:wrap;border-top:0}
 .dv-x{position:absolute;right:4px;top:4px;z-index:300;background:rgba(10,10,14,.6);color:var(--fg)}
 .detail .flow-foot{border:0;padding:6px 8px 4px;color:var(--muted)}
-#detailScrim{background:rgba(5,6,10,.88)}
+#detailScrim{background:rgba(5,6,10,.84)}
 .dv-scroll{overflow-y:auto;min-height:0;flex:1}
-.flow{--flw:250px;position:relative;height:calc(var(--flw) * 1.397 * 1.2 + 34px);perspective:1100px;overflow:hidden;background:none;--old-bg:radial-gradient(ellipse at 50% 28%,#20243a,#0b0c12 72%);outline:none;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}
+.flow{--flw:250px;position:relative;height:calc(var(--flw) * 1.397 * 1.2 + 34px);perspective:1100px;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#20243a,#0b0c12 72%);--old-bg:radial-gradient(ellipse at 50% 28%,#20243a,#0b0c12 72%);outline:none;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}
 .flow:focus-visible{box-shadow:inset 0 0 0 2px var(--gold)}
 .flow-stage{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
 .flow-stage.instant .fl{transition:none!important}
@@ -888,7 +891,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117003926";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117004600";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1052,14 +1055,23 @@ function toCard(sc){
   };
 }
 let sfLast = 0;
+/* Scryfall allows about 10 requests a second. Requests are spaced out, and when Scryfall says "slow down" (429; in a browser
+   this can also show up as a failed connection) everything waits a moment and tries again: 1 s, 2 s, 4 s. */
 async function sf(path, opts){
-  const wait = Math.max(0, sfLast + 110 - Date.now());
-  sfLast = Date.now() + wait;
-  if (wait) await sleep(wait);
-  const r = await fetch("https://api.scryfall.com" + path, opts);
-  if (r.status === 404) return null;
-  if (!r.ok) throw new Error("Scryfall answered " + r.status);
-  return r.json();
+  for (let attempt = 0; ; attempt++){
+    const wait = Math.max(0, sfLast + 120 - Date.now());
+    sfLast = Date.now() + wait;
+    if (wait) await sleep(wait);
+    let r;
+    try { r = await fetch("https://api.scryfall.com" + path, opts); }
+    catch (e){ if (attempt >= 3 || navigator.onLine === false) throw e; r = null; }
+    if (r && r.status === 404) return null;
+    if (r && r.ok) return r.json();
+    if (attempt >= 3) throw new Error("Scryfall is busy right now. Try again in a moment.");
+    const back = 1000 * 2 ** attempt;
+    sfLast = Math.max(sfLast, Date.now() + back);          // everyone backs off together
+    await sleep(back);
+  }
 }
 const cardCache = new Map();
 async function sfCollection(ids){
@@ -1084,12 +1096,55 @@ let PRICES = {};
 try { PRICES = JSON.parse(localStorage.getItem(PKEY) || "{}"); } catch {}
 let pricesT;
 function savePrices(){ clearTimeout(pricesT); pricesT = setTimeout(() => { try { if (CLOUD()) localStorage.removeItem(PKEY); else localStorage.setItem(PKEY, JSON.stringify(PRICES)); } catch {} }, 400); }
+/* The price shown for a card is its cheapest paper printing (not the artwork you picked): a steady "how strong / how
+   sought-after is this card" signal. Stored on the card in the library (card.cheap), refreshed weekly by the deck's owner.
+   Basic lands and tokens use their own printing's price. */
+const CHEAP_MEM = {};
+const usesCheapest = c => c && !c.basic && !/\bToken\b/.test(c.type || "");
 function priceOf(card){
-  const p = card && PRICES[card.id]; if (!p) return null;
+  if (!card) return null;
+  const ch = usesCheapest(card) ? (card.cheap || CHEAP_MEM[card.name]) : null;
+  const p = ch || PRICES[card.id]; if (!p) return null;
   const want = UI.cur === "usd" ? "u" : "e", other = want === "u" ? "e" : "u";
   if (p[want] != null) return {v: p[want], sym: want === "u" ? "$" : "€"};
   if (p[other] != null) return {v: p[other], sym: other === "u" ? "$" : "€", alt: true};
   return null;
+}
+async function fetchCheapest(name){
+  if (CHEAP_MEM[name]) return CHEAP_MEM[name];
+  const j = await sf(`/cards/search?q=${encodeURIComponent(`!"${name.split(" // ")[0]}" game:paper`)}&unique=prints&order=eur&dir=asc`);
+  let e = null, u = null;
+  for (const c of (j && j.data) || []){
+    const pe = c.prices && c.prices.eur != null ? +c.prices.eur : null, pu = c.prices && c.prices.usd != null ? +c.prices.usd : null;
+    if (pe != null && (e == null || pe < e)) e = pe;
+    if (pu != null && (u == null || pu < u)) u = pu;
+  }
+  return CHEAP_MEM[name] = {e, u, t: Date.now()};
+}
+let cheapBusy = false;
+async function refreshCheap(d){
+  if (!d || cheapBusy) return;
+  cheapBusy = true;
+  try {
+    const mine = !roDeck(d), week = 7 * 864e5;
+    const cards = [...cmdrs(d), ...d.cards.map(c => c.card)].filter(usesCheapest);
+    let wrote = false, got = 0;
+    for (const c of cards){
+      if (c.cheap && Date.now() - c.cheap.t < week){ CHEAP_MEM[c.name] = CHEAP_MEM[c.name] || c.cheap; continue; }
+      if (cur() !== d) break;
+      // background work: wait while a card view or the add window is open, so artworks and search load first
+      while ((V || !$("#addScrim").hidden) && cur() === d) await sleep(500);
+      if (cur() !== d) break;
+      const had = !!CHEAP_MEM[c.name];
+      if (!had) await sleep(380);            // background lookups go gently (about 2 a second)
+      const r = await fetchCheapest(c.name);
+      if (mine && (!c.cheap || c.cheap.t !== r.t)){ c.cheap = r; wrote = true; }
+      if (!had && ++got % 12 === 0 && cur() === d){ renderBoard(); renderHeader(); }
+    }
+    if (wrote && cur() === d) touch(d);
+    if (cur() === d){ renderBoard(); renderHeader(); }
+  } catch {}
+  cheapBusy = false;
 }
 function fmtMoney(v, sym){ return sym + (v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(2)); }
 function priceText(card){ const p = priceOf(card); return p ? fmtMoney(p.v, p.sym) : "–"; }
@@ -1386,7 +1441,7 @@ function render(){
   $("#roBanner").hidden = !ro;
   if (ro) $("#roBanner").innerHTML = `${personAvatar(d.owner)}<span><b>${esc(ownerName(d))}’s deck</b><small>View only</small></span><button class="btn sm" id="roCopy">${I.copy}Copy to my decks</button>`;
   renderSidebar(); renderHeader();
-  if (ready){ renderBoard(); refreshPrices(d); } else renderWelcome();
+  if (ready){ renderBoard(); refreshPrices(d); refreshCheap(d); } else renderWelcome();
 }
 function personAvatar(p, cls = ""){
   const n = (p && p.name) || "?";
@@ -1721,7 +1776,7 @@ function srcsetAttr(c){
 }
 function tileStatsHTML(c, d){
   const pricey = isPricey(c.card);
-  const m = edhStats(d), price = `<span class="price${pricey ? " pricey" : ""}" title="${UI.cur === "usd" ? "TCGplayer" : "Cardmarket"} price for this printing${pricey ? " · expensive" : ""}">${priceText(c.card)}</span>`;
+  const m = edhStats(d), price = `<span class="price${pricey ? " pricey" : ""}" title="Cheapest printing (${UI.cur === "usd" ? "TCGplayer" : "Cardmarket"})${pricey ? " · expensive" : ""}">${priceText(c.card)}</span>`;
   if (!m) return `<div class="ct-stats"><div class="st-row faint">EDHREC…</div><div class="st-row">${price}</div></div>`;
   const s = statFor(m, c.card.name);
   if (!s) return `<div class="ct-stats"><div class="st-row faint" title="Not on ${esc(cmdKey(d))}'s EDHREC page">Not on EDHREC</div><div class="st-row">${price}</div></div>`;
@@ -1864,7 +1919,7 @@ function renderBoard(){
   $("#optBoxes").innerHTML = (d.typeOrder.map(t => boxHTML(d, "options", t)).join("") || `<div class="empty-note">No cards match the filter.</div>`) + tokenBoxHTML(d, "options");
   $("#deckBoxes").innerHTML = (d.typeOrder.map(t => boxHTML(d, "deck", t)).join("") || `<div class="empty-note">No cards match the filter.</div>`) + tokenBoxHTML(d, "deck");
   const pool = d.cards.filter(c => c.zone === "options"), deck = d.cards.filter(c => c.zone === "deck");
-  const pv = sumPrice(cardsQ(pool)), dv = sumPrice(cardsQ(deck));
+  const pv = sumPrice(cardsQ(pool)), dv = sumPrice([...cmdrs(d), ...cardsQ(deck)]);   // deck value includes the commander, same as the commander panel
   const pc = list => sumQ(list.filter(c => isPricey(c.card))), po = pc(pool), pd = pc(deck);
   const sym = UI.cur === "usd" ? "$" : "€";
   $("#optMeta").innerHTML = `${sumQ(pool)} cards · ${fmtMoney(pv.tot, pv.sym)}${po ? ` · <span class="ph-pricey" title="${po} cards at ${sym}${priceyTh(d)} or more">💎 ${po}</span>` : ""}`;
@@ -2555,6 +2610,9 @@ function openDetail(o, srcEl){
   prev.hidden = true; showScrim("#detailScrim"); renderDetail();
   animateOpen(srcEl);
   loadUserArt(); loadBase(); loadPrints();
+  // the card you opened gets its cheapest price right away (the background lookups wait meanwhile)
+  const nm = V.card.name, tok = V.token;
+  if (usesCheapest(V.card) && !V.card.cheap && !CHEAP_MEM[nm]) fetchCheapest(nm).then(() => { if (V && V.token === tok) renderDetailParts(); }).catch(() => {});
 }
 
 /* ---------------- Flights between the board and the cover flow ----------------
@@ -2677,7 +2735,7 @@ function renderDetailParts(){
       if (syn != null) chips.push(`<span class="chip-st" title="Synergy: how much more often it's played with this commander than in other decks that could play it"><b class="${syn > 0 ? "pos" : syn < 0 ? "neg" : ""}">${syn > 0 ? "+" : ""}${syn}%</b> synergy</span>`);
     } else chips.push(`<span class="chip-st" title="Not on ${esc(cmdKey(d))}'s EDHREC page">Not on EDHREC</span>`);
   }
-  chips.push(`<span class="chip-st price${isPricey(c) ? " pricey" : ""}" title="This printing${pa && pa.e != null ? ` · €${pa.e.toFixed(2)}` : ""}${pa && pa.u != null ? ` · $${pa.u.toFixed(2)}` : ""}"><b>${pr ? fmtMoney(pr.v, pr.sym) : "–"}</b></span>`);
+  chips.push(`<span class="chip-st price${isPricey(c) ? " pricey" : ""}" title="Price of the cheapest printing of this card"><b>${pr ? fmtMoney(pr.v, pr.sym) : "–"}</b> cheapest</span>`);
   if (V.rec && V.rec.pairs && V.rec.pairs.length) chips.push(`<span class="chip-st" title="Also played with ${V.rec.pairs.map(esc).join(", ")}">Combo ×${V.rec.pairs.length}</span>`);
   $("#dvInfo").innerHTML = `<div class="type-line">${esc(c.type)}${centerIsCustom() && V.name.trim() ? ` · printed as “${esc(V.name.trim())}”` : ""}</div>
     <div class="oracle">${manaHTML(c.text)}</div>${c.pt ? `<div class="pt">${esc(c.pt)}</div>` : ""}
@@ -2801,7 +2859,7 @@ function layoutFlow(){
     const what = e.t === "c" ? `<b>✦ Your version${V.custs.length > 1 ? " " + custNumber(e.cid) : ""}</b> · based on ${esc(p.set || "this printing")}`
       : `${V.rebase ? `<b class="rebase-cap">New base:</b> ` : ""}<b>${esc(p.set || "This version")}</b>${p.artist ? ` · art by ${esc(p.artist)}` : ""}`;
     const yr = e.t === "p" && p.year ? ` (${p.year})` : "";
-    cap.innerHTML = `${what}${yr}${pr ? ` · <span class="price">${fmtMoney(pr.v, pr.sym)}</span>` : ""} · ${V.fi + 1} of ${list.length}${V.artQ && V.artQ.trim() ? ` matching “${esc(V.artQ.trim())}”` : ""}${V.morePrints ? " (loading more artworks…)" : V.prints.length < 2 ? " (loading other artworks…)" : ""}`;
+    cap.innerHTML = `${what}${yr} · ${V.fi + 1} of ${list.length}${V.artQ && V.artQ.trim() ? ` matching “${esc(V.artQ.trim())}”` : ""}${V.morePrints ? " (loading more artworks…)" : V.prints.length < 2 ? " (loading other artworks…)" : ""}`;
   }
   updateOverlay();
 }
@@ -3276,7 +3334,8 @@ async function buildViewCard(v){
     const e = entries()[v.fi];
     const chosen = e && e.t === "c" ? custs.find(c => c.cid === e.cid) : null;
     const baseOf = chosen ? v.custs.find(s => s.cid === chosen.cid).custBase : (e && e.t === "p" ? e.p : v.card);
-    return {card: {...plainPrint(baseOf), ...(chosen ? {custom: {key: chosen.key, name: chosen.name || null, cid: chosen.cid}} : {}), ...(custs.length ? {custs} : {})}, custs, chosen};
+    const ch = (viewTarget(v) || {}).cheap || CHEAP_MEM[baseOf.name];
+    return {card: {...plainPrint(baseOf), ...(ch && usesCheapest(baseOf) ? {cheap: ch} : {}), ...(chosen ? {custom: {key: chosen.key, name: chosen.name || null, cid: chosen.cid}} : {}), ...(custs.length ? {custs} : {})}, custs, chosen};
   } catch { toast("Couldn’t build your custom card (an image didn’t load). Try again."); return null; }
   finally { V = keepV; }
 }
