@@ -243,9 +243,11 @@ body.ro .name-wrap svg{display:none}
 .r-act .i{width:18px;height:18px}
 .r-act.gold{border-color:var(--gold-line);background:var(--gold-soft);color:var(--gold)}
 .r-act .card-plus-ico{width:15px;height:20px;font-size:13px}
-.fs-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);border-radius:999px;padding:4px 10px;flex:none}
+.fs-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--gold-line);background:var(--gold-soft);color:var(--gold);border-radius:999px;padding:5px 11px;flex:none;font-weight:600;font-size:12px;cursor:pointer}
+.fs-btn:hover{background:rgba(217,171,79,.24)}
+.fs-btn .tl{color:inherit!important}
 .fs-btn .i{width:15px;height:15px}
-.fs-btn.on{color:var(--gold);border-color:var(--gold-line)}
+.fs-btn.on{color:#1b1407;background:var(--gold);border-color:var(--gold)}
 .fs-btn[hidden]{display:none}
 /* compact: touch screens held sideways, unfolded foldables, small tablets */
 body.compact #top.mini{width:76px;padding:8px 6px;overflow-y:auto;scrollbar-width:none}
@@ -259,6 +261,8 @@ body.compact #app.side-closed #sidebar{margin-left:calc(-1 * min(var(--sideW,272
 body.compact #sideScrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:65}
 body.compact #app.side-closed #sideScrim{display:none}
 body.compact .pane-grip{display:none!important}
+body.compact #openSide,body.compact #railMenu{display:inline-grid!important}
+body.compact #top.mini #railMenu{width:44px;height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
 body.compact #tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:8px;padding:5px 10px}
 body.compact #tools .tl:not(.fs-btn .tl){display:none}
 body.compact #tools .tool.size input{width:90px}
@@ -1127,6 +1131,9 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 #sidebar,#top,#tools,.panel-head,.box-head,.ct-stats,.acts,.add-tile,.modal-head,.modal-top,.dv-body,.flow-foot,.rt-meta,.rt-acts,#confirmModal,.pdf-top,.pdf-foot,#toast,.empty-note{zoom:var(--uiz)}
 .cmds{zoom:calc(1 / var(--uiz))}
 .cmd-col .acts{zoom:var(--uiz)}
+.cw .acts{zoom:max(var(--uiz),.75)}
+/* narrow cards: the four buttons go 2 × 2 instead of shrinking away */
+@container (max-width:118px){ .cw .acts{display:grid;grid-template-columns:1fr 1fr;gap:4px} .cw .acts .act-slot{display:none} .cw .acts .del{margin-left:0} .cw .acts button{min-width:24px} }
 .a-ico{font-family:var(--display);font-weight:700;font-size:15px;line-height:1}
 .a-ico.sm{font-size:10px}
 @media (min-width:821px), (orientation:landscape) and (max-height:500px){ .cmds .cmd-col{width:min(var(--tile,180px),calc(284px * var(--uiz)))} }
@@ -1234,7 +1241,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117172610";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117174532";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1959,7 +1966,6 @@ function renderRail(d){
       <button class="r-act" data-ract="hand" title="Test hand"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="9" height="13" rx="1.5" transform="rotate(-12 7.5 12.5)"/><rect x="9" y="4" width="9" height="13" rx="1.5"/><path d="M13.5 8.5v4M11.5 10.5h4"/></svg></button>
       <button class="r-act" data-ract="stats" title="Deck stats and odds"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>
       <button class="r-act" data-ract="print" title="Print"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg></button>
-      ${fsSupported() || IOS ? `<button class="r-act" data-ract="fs" title="${isFull() ? "Leave full screen" : "Full screen"}">${isFull() ? FSX_ICO : FS_ICO}</button>` : ""}
     </div>`;
   $("#foldTop").innerHTML = isPhone() ? I.foldU : I.panelL;
 }
@@ -5010,6 +5016,7 @@ function syncFull(){
   const d = cur(); if (d && d.commander) renderRail(d);
 }
 document.addEventListener("fullscreenchange", syncFull); document.addEventListener("webkitfullscreenchange", syncFull);
+$("#fsBtn").addEventListener("click", toggleFull);
 
 /* ---------------- Phones: the stats live in their own window, so the cards keep their room ---------------- */
 let statsSpot = null;
