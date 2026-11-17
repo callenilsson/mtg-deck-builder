@@ -564,8 +564,21 @@ button.vrow:hover{background:var(--surface-2)}
 .pm{width:26px;height:26px;border-radius:50%;border:1px solid var(--gold-line);background:rgba(0,0,0,.2);color:var(--gold);font-size:16px;font-weight:700;line-height:1;display:grid;place-items:center;padding:0;flex:none;cursor:pointer}
 .pm:hover{background:rgba(217,171,79,.22)}
 .pm:disabled{opacity:.35;cursor:default}
-.tool.size.ui output{min-width:42px;text-align:center}
+.tool.size output{min-width:42px;text-align:center}
 .tl-ico{display:none}
+.label-s{display:none}
+@media (max-width:820px) and (min-height:501px), (max-width:820px) and (orientation:portrait){
+  #top .name-row{flex-wrap:wrap;row-gap:6px}
+  #top .name-wrap{flex:1 1 0;min-width:0}
+  #top .top-actions{flex:1 1 100%;order:3;display:flex;gap:5px}
+  #top .top-actions > .btn,#top .top-actions > .card-plus-btn{flex:1 1 0;min-width:0;justify-content:center;gap:5px;height:36px;padding:0 6px;font-size:12.5px;overflow:hidden;white-space:nowrap}
+  #top .top-actions .label,#top .top-actions .label-wide{display:inline!important}
+  #top .top-actions .label-wide,#top .top-actions #drawHandTop .label{display:none!important}
+  #top .top-actions .label-s{display:inline!important}
+  #top .top-actions .fold-btn{flex:0 0 auto;position:static}
+  #top.mini .top-actions{display:none}
+  #top.mini .r-acts{display:none}
+}
 /* narrow screens: the toolbar wraps into rows that fill the width (no sideways scrolling) */
 @media (max-width:820px) and (min-height:501px), (max-width:820px) and (orientation:portrait){ #tools{--tools-narrow:1} }
 @media (max-width:820px) and (min-height:501px), (max-width:820px) and (orientation:portrait), (orientation:landscape) and (max-height:500px){
@@ -575,16 +588,14 @@ button.vrow:hover{background:var(--surface-2)}
   #tools .tl-ico{display:inline-grid;place-items:center;flex:none;color:var(--gold)}
   #tools .tl-ico.a-ico{font-size:12px}
   #tools .tool.fs-btn{flex:0 0 auto;padding:5px 9px}
-  #tools .tool.size{flex:3 1 200px;justify-content:space-between;padding:3px 8px;gap:6px}
-  #tools .tool.size input{flex:1;width:auto;min-width:50px}
-  #tools .tool.size.ui{flex:1 1 auto;justify-content:center}
+  #tools .tool.size{flex:1 1 auto;justify-content:center;padding:3px 8px;gap:6px}
   #tools label.tool{flex:1 1 130px}
   #tools label.tool select{flex:1;min-width:0;width:100%}
   #tools .tool.filter{flex:1 1 140px}
   #tools .tool.filter{overflow:hidden}
   #tools .tool.filter input{min-width:0;flex:1 1 40px;width:auto}
   #tools .tool.filter select{flex:0 1 auto;min-width:0;max-width:52%;text-overflow:ellipsis}
-  #tools .tool.moves{flex:0 1 auto;display:flex;gap:4px}
+  #tools .tool.moves{flex:1 1 150px;display:flex;gap:4px}
   #tools .tool.moves .btn{flex:1;justify-content:center;padding:6px 8px;font-size:12.5px}
 }
 body.compact #tools>*{flex:1 1 auto;min-width:0}
@@ -592,8 +603,7 @@ body.compact #tools .tools-gap{display:none}
 body.compact #tools .tl{display:none}
 body.compact #tools .tl-ico{display:inline-grid;place-items:center;flex:none;color:var(--gold)}
 body.compact #tools .tool.fs-btn{flex:0 0 auto}
-body.compact #tools .tool.size{flex:3 1 200px;justify-content:space-between}
-body.compact #tools .tool.size input{flex:1;width:auto;min-width:60px}
+body.compact #tools .tool.size{flex:1 1 auto;justify-content:center}
 body.compact #tools .tool.filter{flex:2 1 170px}
 body.compact #tools .tool.moves{flex:1 1 220px;display:flex;gap:6px}
 body.compact #tools .tool.moves .btn{flex:1;justify-content:center}
@@ -1208,8 +1218,8 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
         <button class="icon-btn" id="openSide" title="Show or hide your decks"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
         <label class="name-wrap" title="Click to rename this deck"><input id="deckName" placeholder="Name your deck" aria-label="Deck name" autocomplete="off"><svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></label>
         <div class="top-actions">
-          <button class="card-plus-btn" id="addAny" title="Add cards: EDHREC picks for your commander, or search any card"><span class="card-plus-ico">+</span><span class="label-wide">Add cards</span></button>
-          <button class="btn" id="drawHandTop" data-drawhand title="Deal a random opening hand from this deck and play a few turns"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="9" height="13" rx="1.5" transform="rotate(-12 7.5 12.5)"/><rect x="9" y="4" width="9" height="13" rx="1.5"/><path d="M13.5 8.5v4M11.5 10.5h4"/></svg><span class="label">Test hand</span></button>
+          <button class="card-plus-btn" id="addAny" title="Add cards: EDHREC picks for your commander, or search any card"><span class="card-plus-ico">+</span><span class="label-wide">Add cards</span><span class="label-s">Add</span></button>
+          <button class="btn" id="drawHandTop" data-drawhand title="Deal a random opening hand from this deck and play a few turns"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="9" height="13" rx="1.5" transform="rotate(-12 7.5 12.5)"/><rect x="9" y="4" width="9" height="13" rx="1.5"/><path d="M13.5 8.5v4M11.5 10.5h4"/></svg><span class="label">Test hand</span><span class="label-s">Test</span></button>
           
           <button class="btn phone-only" id="statsBtn" title="Deck stats and odds"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="label">Stats</span></button>
           <button class="btn" id="pdfBtn" title="Preview and print proxies at real card size"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg><span class="label">Print</span></button>
@@ -1225,7 +1235,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 
     <div id="tools" hidden>
       <button class="tool fs-btn" id="fsBtn" hidden></button>
-      <div class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><span class="tl-ico z-ico" aria-hidden="true"></span><button class="pm" data-zstep="-10" aria-label="Smaller cards">−</button><input type="range" id="zoom" min="20" max="400" step="5" value="100" aria-label="Card size"><button class="pm" data-zstep="10" aria-label="Bigger cards">+</button><output id="zoomVal">100%</output></div>
+      <div class="tool size" title="Card size on this screen. Double-click the number to reset."><span class="tl">Card size</span><span class="tl-ico z-ico" aria-hidden="true"></span><button class="pm" data-zstep="-10" aria-label="Smaller cards">−</button><output id="zoomVal">100%</output><button class="pm" data-zstep="10" aria-label="Bigger cards">+</button></div>
       <div class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click the number to reset."><span class="tl">Interface</span><span class="tl-ico a-ico" aria-hidden="true">Aa</span><button class="pm" data-ustep="-10" aria-label="Smaller interface">−</button><output id="uiZoomVal">100%</output><button class="pm" data-ustep="10" aria-label="Bigger interface">+</button></div>
       <label class="tool"><span class="tl">Sort</span><select id="sortSel">
         <option value="manual">Your order</option><option value="incl">% of decks (EDHREC)</option><option value="syn">Synergy (EDHREC)</option>
@@ -1275,7 +1285,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117184145";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117191702";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -3133,15 +3143,12 @@ function applyZoom(){
   $("#top").style.setProperty("--tile", Math.round(base * z) + "px");
   const sz = `(max-width:820px) 46vw, ${Math.round(base * z)}px`;
   document.querySelectorAll("img[sizes]").forEach(im => im.sizes = sz);
-  $("#zoom").value = UI.zoom; $("#zoomVal").textContent = Math.round(z * 100) + "%";
+  $("#zoomVal").textContent = Math.round(z * 100) + "%";
+  document.querySelectorAll("[data-zstep]").forEach(b => b.disabled = +b.dataset.zstep < 0 ? UI.zoom <= 20 : UI.zoom >= 400);
 }
 let zoomRaf = 0;
-$("#zoom").addEventListener("input", e => {
-  UI.zoom = +e.target.value; $("#zoomVal").textContent = UI.zoom + "%";
-  if (!zoomRaf) zoomRaf = requestAnimationFrame(() => { zoomRaf = 0; keepAnchors(applyZoom); });
-});
-$("#zoom").addEventListener("change", () => saveUI());
-$("#zoom").closest(".tool").addEventListener("dblclick", e => { if (e.target.closest(".pm")) return; UI.zoom = 100; keepAnchors(applyZoom); saveUI(); });
+
+$("#zoomVal").addEventListener("dblclick", () => { UI.zoom = 100; keepAnchors(applyZoom); saveUI(); });
 document.addEventListener("click", e => {
   const z = e.target.closest("[data-zstep]");
   if (z){ UI.zoom = Math.max(20, Math.min(400, Math.round(((+UI.zoom || 100) + +z.dataset.zstep) / 5) * 5)); keepAnchors(applyZoom); saveUI(); return; }
