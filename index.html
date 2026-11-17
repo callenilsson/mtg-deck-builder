@@ -214,6 +214,9 @@ body.ro .name-wrap svg{display:none}
 /* drag handles on the right edge of the deck list and the commander panel (computers only) */
 .pane-grip{display:none}
 @media (min-width:821px), (orientation:landscape) and (max-height:500px){
+  /* at large interface sizes the menus may not crowd out the cards */
+  #top:not(.mini){max-width:calc(36vw / var(--uiz))}
+  #sidebar{max-width:calc(30vw / var(--uiz))}
   .pane-grip{display:block;width:14px;cursor:col-resize;touch-action:none;z-index:45;position:relative}
   .pane-grip::after{content:"";position:absolute;top:0;bottom:0;left:6px;width:1px;background:transparent;transition:background .15s}
   .pane-grip::before{content:"";position:absolute;top:50%;left:4px;width:6px;height:36px;margin-top:-18px;border-radius:3px;background:var(--line);opacity:.9}
@@ -569,6 +572,11 @@ button.vrow:hover{background:var(--surface-2)}
 .z-ico{width:9px;height:12px;border:1.6px solid currentColor;border-radius:2px;flex:none}
 .z-ico.big{width:13px;height:18px}
 #tools{flex-wrap:wrap}
+#tools>*{min-width:0;max-width:100%}
+#tools .tool{overflow:hidden}
+#tools select,#tools input:not([type=range]){min-width:0}
+#tools .tool.filter input{flex:1 1 40px;width:auto}
+#tools .tool.filter select{flex:0 1 auto;max-width:55%;text-overflow:ellipsis}
 #tools .tool.size{min-width:0}
 .tool.size input{flex:0 1 120px;min-width:50px;accent-color:var(--gold);margin:0;cursor:pointer}
 .pm{width:26px;height:26px;border-radius:50%;border:1px solid var(--gold-line);background:rgba(0,0,0,.2);color:var(--gold);font-size:16px;font-weight:700;line-height:1;display:grid;place-items:center;padding:0;flex:none;cursor:pointer}
@@ -598,7 +606,7 @@ button.vrow:hover{background:var(--surface-2)}
   #top.mini .top-actions{display:none}
   /* folded strip: commander, count and the actions as icons */
   #top.mini .r-meta,#top.mini .r-types{display:none}
-  #top.mini .r-acts{display:flex;flex-direction:row;gap:5px;margin:0 0 0 auto;padding:0;border:0;width:auto}
+  #top.mini .r-acts{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;gap:5px;margin:0 0 0 auto;padding:0;border:0;width:auto;max-width:100%}
   #top.mini #railOpen{order:99;width:36px;height:36px;flex:none}
   #top.mini .r-act{width:44px;height:46px;border-radius:9px}
   #top.mini .r-act .i{width:16px;height:16px}
@@ -1322,7 +1330,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117230926";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117231440";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
