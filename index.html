@@ -243,11 +243,11 @@ body.ro .name-wrap svg{display:none}
 .r-act .i{width:18px;height:18px}
 .r-act.gold{border-color:var(--gold-line);background:var(--gold-soft);color:var(--gold)}
 .r-act .card-plus-ico{width:15px;height:20px;font-size:13px}
-.fs-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--gold-line);background:var(--gold-soft);color:var(--gold);border-radius:999px;padding:5px 11px;flex:none;font-weight:600;font-size:12px;cursor:pointer}
-.fs-btn:hover{background:rgba(217,171,79,.24)}
+.tool.fs-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:999px;padding:5px 11px;flex:none;font-weight:500;font-size:12px;cursor:pointer}
+.tool.fs-btn:hover{border-color:var(--gold-line);color:var(--gold)}
 .fs-btn .tl{color:inherit!important}
 .fs-btn .i{width:15px;height:15px}
-.fs-btn.on{color:#1b1407;background:var(--gold);border-color:var(--gold)}
+.tool.fs-btn.on{color:#1b1407;background:var(--gold);border-color:var(--gold)}
 .fs-btn[hidden]{display:none}
 /* compact: touch screens held sideways, unfolded foldables, small tablets */
 body.compact #top.mini{width:76px;padding:8px 6px;overflow-y:auto;scrollbar-width:none}
@@ -563,6 +563,10 @@ button.vrow:hover{background:var(--surface-2)}
 .z-ico{width:9px;height:12px;border:1.6px solid currentColor;border-radius:2px;flex:none}
 .z-ico.big{width:13px;height:18px}
 .tool.size input{width:120px;accent-color:var(--gold);margin:0;cursor:pointer}
+.pm{width:26px;height:26px;border-radius:50%;border:1px solid var(--gold-line);background:rgba(0,0,0,.2);color:var(--gold);font-size:16px;font-weight:700;line-height:1;display:grid;place-items:center;padding:0;flex:none;cursor:pointer}
+.pm:hover{background:rgba(217,171,79,.22)}
+.pm:disabled{opacity:.35;cursor:default}
+.tool.size.ui output{min-width:42px;text-align:center}
 .tool.size output{min-width:38px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .tool.filter{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:0 4px 0 9px}
 .tool.filter:focus-within{border-color:var(--gold-line)}
@@ -1191,8 +1195,8 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 
     <div id="tools" hidden>
       <button class="tool fs-btn" id="fsBtn" hidden></button>
-      <label class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><span class="z-ico"></span><input type="range" id="zoom" min="20" max="400" step="5" value="100" aria-label="Card size"><span class="z-ico big"></span><output id="zoomVal">100%</output></label>
-      <label class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click to reset."><span class="tl">Interface</span><span class="a-ico sm">A</span><input type="range" id="uiZoom" min="40" max="200" step="5" value="100" aria-label="Interface size"><span class="a-ico">A</span><output id="uiZoomVal">100%</output></label>
+      <div class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><button class="pm" data-zstep="-10" aria-label="Smaller cards">−</button><input type="range" id="zoom" min="20" max="400" step="5" value="100" aria-label="Card size"><button class="pm" data-zstep="10" aria-label="Bigger cards">+</button><output id="zoomVal">100%</output></div>
+      <div class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click the number to reset."><span class="tl">Interface</span><button class="pm" data-ustep="-10" aria-label="Smaller interface">−</button><output id="uiZoomVal">100%</output><button class="pm" data-ustep="10" aria-label="Bigger interface">+</button></div>
       <label class="tool"><span class="tl">Sort</span><select id="sortSel">
         <option value="manual">Your order</option><option value="incl">% of decks (EDHREC)</option><option value="syn">Synergy (EDHREC)</option>
         <option value="price">Price, high to low</option><option value="cheap">Price, low to high</option><option value="cmc">Mana value</option>
@@ -1241,7 +1245,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117174532";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117182233";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -3107,17 +3111,23 @@ $("#zoom").addEventListener("input", e => {
   if (!zoomRaf) zoomRaf = requestAnimationFrame(() => { zoomRaf = 0; keepAnchors(applyZoom); });
 });
 $("#zoom").addEventListener("change", () => saveUI());
-$("#zoom").closest("label").addEventListener("dblclick", () => { UI.zoom = 100; keepAnchors(applyZoom); saveUI(); });
+$("#zoom").closest(".tool").addEventListener("dblclick", e => { if (e.target.closest(".pm")) return; UI.zoom = 100; keepAnchors(applyZoom); saveUI(); });
+document.addEventListener("click", e => {
+  const z = e.target.closest("[data-zstep]");
+  if (z){ UI.zoom = Math.max(20, Math.min(400, Math.round(((+UI.zoom || 100) + +z.dataset.zstep) / 5) * 5)); keepAnchors(applyZoom); saveUI(); return; }
+  const u = e.target.closest("[data-ustep]");
+  if (u){ UI.uiz = Math.max(40, Math.min(200, (+UI.uiz || 100) + +u.dataset.ustep)); keepAnchors(applyUiZoom); saveUI(); }
+});
 addEventListener("resize", applyZoom);
 function applyUiZoom(){
   const z = Math.max(.4, Math.min(2, (+UI.uiz || 100) / 100));
   document.documentElement.style.setProperty("--uiz", z);
-  $("#uiZoom").value = Math.round(z * 100); $("#uiZoomVal").textContent = Math.round(z * 100) + "%";
+  $("#uiZoomVal").textContent = Math.round(z * 100) + "%";
+  document.querySelectorAll("[data-ustep]").forEach(b => b.disabled = +b.dataset.ustep < 0 ? z <= .4 : z >= 2);
   if (V) layoutFlow();
 }
-$("#uiZoom").addEventListener("input", e => { $("#uiZoomVal").textContent = e.target.value + "%"; });
-$("#uiZoom").addEventListener("change", e => { UI.uiz = +e.target.value; keepAnchors(applyUiZoom); saveUI(); });
-$("#uiZoom").closest("label").addEventListener("dblclick", () => { UI.uiz = 100; keepAnchors(applyUiZoom); saveUI(); });
+
+$("#uiZoomVal").addEventListener("dblclick", () => { UI.uiz = 100; keepAnchors(applyUiZoom); saveUI(); });
 $("#sortSel").addEventListener("change", e => { UI.sort = e.target.value; saveUI(); animateBoard(() => renderBoard()); if (UI.sort !== "manual") toast("Dragging a card switches back to “Your order”. Locked cards always come first."); });
 let filtT;
 $("#filterQ").addEventListener("input", e => { UI.filter = e.target.value; clearTimeout(filtT); filtT = setTimeout(renderBoard, 150); });
