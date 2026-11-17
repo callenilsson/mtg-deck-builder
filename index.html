@@ -334,11 +334,19 @@ button.vrow:hover{background:var(--surface-2)}
 .vn{font-size:11.5px;color:var(--muted);white-space:nowrap}
 .vn b{color:var(--fg)}
 .cb3-q{margin:0 0 4px;font-size:12px;color:var(--fg)}
-.cb3{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"name name verdict" "l1 d1 n1" "l2 d2 n2";align-items:center;column-gap:8px;row-gap:3px;padding:6px 8px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line-soft);margin-bottom:4px}
+.cb3{display:grid;grid-template-columns:auto 1fr auto;align-items:center;column-gap:8px;row-gap:3px;padding:6px 8px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line-soft);margin-bottom:4px}
 .cb3.short{border-color:rgba(239,90,95,.35)}
-.cb3-name{grid-area:name;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+.cb3-note{margin:0 0 6px;padding:6px 8px;border-radius:7px;background:rgba(127,178,232,.08);border:1px solid rgba(127,178,232,.3);font-size:11.5px;color:#bcd6f2;line-height:1.35}
+.cb3-note b{color:#fff}
+.cb3-src{font-weight:400;color:var(--muted);font-size:11px}
+.cb3-hard{grid-column:1/-1;font-size:11.5px;color:var(--muted);line-height:1.35}
+.cb3-hard b{color:var(--fg);font-weight:600}
+.cb3-hard b.good{color:var(--ok)}.cb3-hard b.bad{color:#f1a08f}
+.cb3-hard .mana{display:inline-flex;gap:1px;vertical-align:-1px}
+.cb3-hard .mana .ms{font-size:10px!important;width:auto;height:auto}
+.cb3-name{grid-column:1/3;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
 .cb3-name .ms{font-size:13px}
-.cb3-v{grid-area:verdict;font-size:11.5px;font-weight:600}
+.cb3-v{grid-column:3;font-size:11.5px;font-weight:600}
 .cb3-v.good{color:var(--ok)}.cb3-v.bad{color:#f1a08f}
 .cb3-l{font-size:11.5px;color:var(--muted);white-space:nowrap}
 .cb3-n{font-size:11px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -1061,7 +1069,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117021421";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117022117";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1806,10 +1814,11 @@ const INFO = {
     <li><b>Removal</b> gets rid of one thing: destroy, exile, damage, fight, bounce, counter</li>
     <li><b>Board wipes</b> get rid of everything at once</li></ul>
     <p class="tip">Common goal: about 10 ramp, 10 draw, 8 removal, 2 wipes. The bar turns green when you reach it. Click a row to see those cards.</p>`,
-  balance: () => `<p>If your spells need a color that your lands rarely make, you'll get stuck with cards you can't cast.</p>
-    <ul><li><b>Spells</b> of all colored mana symbols in your spells' costs, how many are this color ({B}{B}{G} is 2 black, 1 green)</li>
-    <li><b>Lands</b> how many of your lands can make this color (a land with two colors counts for both)</li></ul>
-    <p class="tip">The two bars should be about as long. If the Lands bar is clearly shorter, the hint says which basic lands to swap.</p>`,
+  balance: () => `<p>For every spell: how likely you are to have the colored mana it needs by the turn you'd want to cast it.</p>
+    <ul><li><b>Sources</b> lands, mana rocks and mana creatures that make this color (a dual land counts for both colors)</li>
+    <li><b>On time</b> by the turn equal to its mana value: a {3}{B}{B} card needs 2 black sources by turn 5</li>
+    <li><b>The math</b> your opening 7 plus one draw per turn, from 99 cards, on the play without a mulligan</li></ul>
+    <p class="tip">The usual goal is 9 of 10 games (90%). Hover a color to see each card's chance.</p>`,
   pricey: () => `<p>Marks cards that cost a lot, as a hint they may be too strong for a casual table.</p>
     <ul><li><b>Price</b> the card's cheapest printing (Cardmarket €, TCGplayer $), not the artwork you picked</li>
     <li><b>Marked</b> purple outline and price tag, here and in Add cards</li>
@@ -1901,40 +1910,62 @@ function landColors(card, ci){
   if (/mana of any (color|type)|any color|search your library for a basic land/.test(tx)) ci.forEach(c => out.add(c));
   return [...out].filter(c => ci.includes(c));
 }
+/* Chance to have at least k successes when drawing n cards from N, with K successes in the deck (hypergeometric). */
+const LF = [0]; function lnFact(n){ for (let i = LF.length; i <= n; i++) LF[i] = LF[i - 1] + Math.log(i); return LF[n]; }
+function lnC(n, k){ return k < 0 || k > n ? -Infinity : lnFact(n) - lnFact(k) - lnFact(n - k); }
+function atLeast(N, K, n, k){
+  if (k <= 0) return 1; if (K < k) return 0; n = Math.min(n, N);
+  let p = 0; for (let i = 0; i < k; i++) p += Math.exp(lnC(K, i) + lnC(N - K, n - i) - lnC(N, n));
+  return Math.max(0, Math.min(1, 1 - p));
+}
+/* Mana sources per color: lands, mana rocks and mana creatures that make it (Treasure makers count for any color). */
+function sourceColors(card, ci){
+  const isLand = /\bLand\b/.test(String(card.type).split("//")[0]);
+  if (isLand) return landColors(card, ci);
+  if (!rolesOf(card).includes("ramp")) return [];
+  const tx = String(card.text || "").toLowerCase(), out = new Set();
+  if (/mana of any (color|type)|any color|treasure/.test(tx)) ci.forEach(c => out.add(c));
+  for (const m of tx.matchAll(/add ([^.\n]*)/g)) for (const c of ["w","u","b","r","g"]) if (m[1].includes(`{${c}}`)) out.add(c.toUpperCase());
+  return [...out].filter(c => ci.includes(c));
+}
+/* Castability: for every spell, the chance to have enough sources of its color by the turn matching its mana value
+   (on the play, no mulligan: 7 cards + 1 per turn after the first, from a 99-card deck). Goal: 90%. */
 function colorBalanceHTML(d, deck){
-  const ci = deckCI(d); if (ci.length < 2) return "";
-  const need = {}, src = {}; ci.forEach(c => { need[c] = 0; src[c] = 0; });
+  const ci = deckCI(d); if (!ci.length) return "";
+  const N = Math.max(60, 100 - cmdrs(d).length), GOAL = .9;
+  const src = {}, srcLand = {}; ci.forEach(c => { src[c] = 0; srcLand[c] = 0; });
+  for (const c of deck){ const cols = sourceColors(c.card, ci), land = /\bLand\b/.test(String(c.card.type).split("//")[0]); cols.forEach(x => { src[x] += qOf(c); if (land) srcLand[x] += qOf(c); }); }
+  const per = {}; ci.forEach(c => per[c] = []);
   for (const c of deck){
-    const q = qOf(c), isLand = /\bLand\b/.test(String(c.card.type).split("//")[0]);
-    if (isLand){ landColors(c.card, ci).forEach(x => src[x] += q); continue; }
-    for (const m of String(c.card.mana || "").matchAll(/\{([^}]+)\}/g)){
-      const parts = m[1].split("/").filter(p => "WUBRG".includes(p));
-      parts.forEach(p => { if (need[p] != null) need[p] += q / (m[1].includes("/P") ? 1 : parts.length || 1); });
-    }
+    if (/\bLand\b/.test(String(c.card.type).split("//")[0])) continue;
+    const cost = String(c.card.mana || "").split(" // ")[0], pips = {};
+    for (const m of cost.matchAll(/\{([WUBRG])\}/g)) pips[m[1]] = (pips[m[1]] || 0) + 1;
+    const turn = Math.max(1, Math.round(c.card.cmc || 0)), seen = 7 + turn - 1;
+    for (const [col, k] of Object.entries(pips)) if (per[col]) per[col].push({name: c.card.name, cost, k, turn, p: atLeast(N, src[col], seen, k)});
   }
-  // real counts: colored mana symbols in your spells, and how many of your lands make each color
-  const tn = Object.values(need).reduce((a, b) => a + b, 0) || 1;
-  const lands = deck.filter(c => /\bLand\b/.test(String(c.card.type).split("//")[0]) && landColors(c.card, ci).length).reduce((a, c) => a + qOf(c), 0) || 1;
-  const np = c => need[c] / tn * 100, sp = c => src[c] / lands * 100;
-  const fmt = v => Number.isInteger(v) ? v : v.toFixed(1);
-  const bar = (pct, c) => `<span class="cb3-bar"><i class="mc-${c}" style="width:${Math.min(100, pct).toFixed(1)}%"></i></span>`;
-  const isShort = c => np(c) - sp(c) >= 12;
-  const rows = [...ci].sort((a, b) => np(b) - np(a)).map(c => `<div class="cb3 ${isShort(c) ? "short" : ""}">
-      <span class="cb3-name"><i class="ms ms-${c.toLowerCase()} ms-cost"></i>${COLOR_NAME[c][0].toUpperCase() + COLOR_NAME[c].slice(1)}</span>
-      <span class="cb3-l">Spells</span>${bar(np(c), c)}<span class="cb3-n"><b>${fmt(need[c])}</b> of ${fmt(tn)} mana symbols</span>
-      <span class="cb3-l">Lands</span>${bar(sp(c), c)}<span class="cb3-n"><b>${src[c]}</b> of ${lands} lands</span>
-      <span class="cb3-v ${isShort(c) ? "bad" : "good"}">${isShort(c) ? "⚠ too few lands" : "✓ enough"}</span></div>`).join("");
-  const short = ci.filter(isShort).sort((a, b) => (np(b) - sp(b)) - (np(a) - sp(a)));
-  const most = ci.filter(c => !short.includes(c)).sort((a, b) => (sp(b) - np(b)) - (sp(a) - np(a)))[0];
-  let hint;
-  if (short.length){
-    const c = short[0], add = Math.max(1, Math.round((np(c) - sp(c)) / 100 * lands));
-    hint = `<p class="cb2-hint">⚠ Add about <b>${add} ${BASIC_OF[c]}${add > 1 ? "s" : ""}</b>${most ? ` (swap out ${BASIC_OF[most]}s)` : ""}, so more of your lands make ${COLOR_NAME[c]}.</p>`;
-  } else hint = `<p class="cb2-hint ok">✓ Your lands make the colors your spells need.</p>`;
-  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Color balance ${infoBtn("balance")}</span></div>
-    <p class="cb3-q">Do your lands make the colors your spells need?</p>
-    ${rows}
-    ${hint}</div>`;
+  const pct = p => Math.round(p * 100) + "%";
+  const needFor = it => { for (let K = src[it.col] || 0; K <= 60; K++) if (atLeast(N, K, 7 + it.turn - 1, it.k) >= GOAL) return K; return null; };
+  let worst = null;
+  const rows = [...ci].filter(c => per[c].length).sort((a, b) => Math.min(...per[a].map(x => x.p)) - Math.min(...per[b].map(x => x.p))).map(c => {
+    const list = per[c].sort((a, b) => a.p - b.p), ok = list.filter(x => x.p >= GOAL).length, hard = list[0];
+    hard.col = c; const need = hard.p < GOAL ? needFor(hard) : null, more = need != null ? need - src[c] : 0;
+    if (hard.p < GOAL && (!worst || hard.p < worst.p)) worst = {...hard, more};
+    const share = ok / list.length * 100, stuck = list.length - ok;
+    return `<div class="cb3 ${stuck ? "short" : ""}" title="${list.slice(0, 8).map(x => `${x.name}: ${pct(x.p)} by turn ${x.turn}`).join("\n")}${list.length > 8 ? "\n…" : ""}">
+      <span class="cb3-name"><i class="ms ms-${c.toLowerCase()} ms-cost"></i>${COLOR_NAME[c][0].toUpperCase() + COLOR_NAME[c].slice(1)} <small class="cb3-src">${src[c]} source${src[c] === 1 ? "" : "s"}${src[c] !== srcLand[c] ? ` (${srcLand[c]} lands)` : ""}</small></span>
+      <span class="cb3-v ${stuck ? "bad" : "good"}">${stuck ? `⚠ ${stuck} often late` : "✓ all on time"}</span>
+      <span class="cb3-l">On time</span><span class="cb3-bar"><i class="mc-${c}" style="width:${share.toFixed(1)}%"></i></span><span class="cb3-n"><b>${ok}</b> of ${list.length} cards</span>
+      <span class="cb3-hard">Hardest: <b>${esc(hard.name)}</b> <span class="mana">${manaHTML(hard.cost)}</span> by turn ${hard.turn}: <b class="${hard.p >= GOAL ? "good" : "bad"}">${pct(hard.p)}</b>${more > 0 && more <= 8 ? ` · ${more} more source${more > 1 ? "s" : ""} would fix it` : ""}</span></div>`;
+  }).join("");
+  const short = (d.limits.Land || 0) && deck.filter(c => c.bucket === "Land").reduce((a, c) => a + qOf(c), 0) < (d.limits.Land || 0) - 2;
+  const hint = short ? "" : worst ? `<p class="cb2-hint">⚠ ${esc(worst.name)} is castable on time only ${pct(worst.p)} of games. ${worst.more > 0 && worst.more <= 8 ? `About <b>${worst.more} more ${COLOR_NAME[worst.col]} source${worst.more > 1 ? "s" : ""}</b> (e.g. ${BASIC_OF[worst.col]}s) would fix that.` : "That's hard to fix with lands alone: consider a card with fewer colored symbols."}</p>`
+    : `<p class="cb2-hint ok">✓ You can cast your spells on time in at least 9 of 10 games.</p>`;
+  const landsNow = deck.filter(c => c.bucket === "Land").reduce((a, c) => a + qOf(c), 0), landsGoal = d.limits.Land || 0;
+  const early = landsGoal && landsNow < landsGoal - 2
+    ? `<p class="cb3-note">Your deck has <b>${landsNow} of ${landsGoal} lands</b> so far, so these chances are low for now. They go up as you add lands.</p>` : "";
+  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Color balance ${infoBtn("balance")}</span><small>chance to cast on time</small></div>
+    <p class="cb3-q">Can you cast your spells on time, with the colors your mana makes?</p>
+    ${early}${rows}${hint}</div>`;
 }
 /* ---- Creature types: only shown when the deck is clearly about a type ---- */
 function typesHTML(deck){
