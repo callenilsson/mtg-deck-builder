@@ -547,6 +547,9 @@ button.vrow:hover{background:var(--surface-2)}
 .lock-sep{grid-column:1/-1;height:0;border-top:1px dashed var(--gold-line);margin:-4px 0;opacity:.6}
 
 .cw{display:flex;flex-direction:column;gap:5px;min-width:0;position:relative;container-type:inline-size}
+/* cards far off-screen aren't laid out or painted until you scroll near them (keeps redraws fast with big pools) */
+.panel-scroll .cw{content-visibility:auto;contain-intrinsic-size:auto var(--tile,180px) auto calc(var(--tile,180px) * 1.4 + 86px)}
+.panel-scroll .cw.dragging,.panel-scroll .cw.landing{content-visibility:visible}
 .cw.ins-before::before,.cw.ins-after::before{content:"";position:absolute;top:2%;height:calc(var(--tile)*1.3);max-height:80%;width:4px;border-radius:3px;background:var(--gold);z-index:3}
 .cw.ins-before::before{left:-8px}.cw.ins-after::before{right:-8px}
 .cw.dragging{opacity:1}
@@ -1152,7 +1155,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117024341";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117152342";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
