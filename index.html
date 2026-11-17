@@ -505,6 +505,15 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .rt-img{aspect-ratio:63/88;border-radius:var(--radius-card);overflow:hidden;background:var(--surface-3);border:0;padding:0;position:relative;box-shadow:0 4px 12px rgba(0,0,0,.4);transition:transform .14s}
 .rt-img:hover{transform:translateY(-3px)}
 .rt-img img{width:100%;height:100%;object-fit:cover;display:block}
+.hl-tags{position:absolute;left:5px;top:12%;display:flex;flex-direction:column;align-items:flex-start;gap:3px;pointer-events:auto}
+.hl{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(10,10,14,.86);border:1px solid var(--line);color:#dfe3f5;white-space:nowrap;cursor:help}
+.hl-top{color:var(--gold);border-color:var(--gold-line)}
+.hl-lift{color:var(--ok);border-color:rgba(85,196,143,.45)}
+.hl-new{color:#8fc8ff;border-color:rgba(143,200,255,.45)}
+.hl-gc{color:#e2d3ff;border-color:var(--pricey-line);background:rgba(60,30,100,.9)}
+.chip-break{flex-basis:100%;height:0}
+.chip-lbl{align-self:center;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.hl-chip.hl-gc.on{background:var(--pricey-soft);border-color:var(--pricey-line);color:#e2d3ff}
 .rt-img .tag{position:absolute;left:6px;bottom:6px;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(10,10,14,.85);color:var(--gold);border:1px solid var(--gold-line)}
 .rt-meta{font-size:12px;color:var(--muted);line-height:1.35;min-height:32px}
 .rt-meta b{color:var(--fg);font-weight:600;display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -555,16 +564,16 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .fl-over.user canvas{pointer-events:auto;cursor:move;touch-action:none}
 .fl-over.stale canvas,.fl-over.stale .name-over,.fl-over.stale .name-pen{display:none}
 .name-over{position:absolute;left:7.2%;top:5.1%;width:63%;height:5%;pointer-events:auto;font:700 calc(var(--flw) * .047) Georgia,"Times New Roman",serif;padding:0 5px;border-radius:4px;border:1px dashed transparent;background:transparent;color:transparent;caret-color:var(--gold);cursor:text}
-.name-over{border-color:rgba(217,171,79,.6)!important}
+.name-over{border:1.5px solid rgba(217,171,79,.85)!important;background:rgba(255,255,255,.10);box-shadow:inset 0 1px 3px rgba(0,0,0,.35),0 0 0 3px rgba(217,171,79,.18)}
 .name-over:focus{border-color:var(--gold)!important}
 .name-over::placeholder{color:transparent}
-.name-pen{position:absolute;left:-14px;top:4.4%;width:28px;height:28px;border-radius:50%;background:var(--gold);color:#1b1407;border:2px solid var(--bg);display:grid;place-items:center;pointer-events:auto;padding:0;box-shadow:0 4px 12px rgba(0,0,0,.5);transition:transform .15s}
-.name-pen:hover{transform:scale(1.1)}
-.name-pen svg.i{width:14px;height:14px;stroke-width:2.2}
+.name-pen{position:absolute;left:7.2%;top:calc(5.1% - 21px);height:20px;display:inline-flex;align-items:center;gap:4px;padding:0 8px 0 6px;border-radius:7px 7px 0 0;background:var(--gold);color:#1b1407;border:0;font:700 11px/1 system-ui,sans-serif;pointer-events:auto;box-shadow:0 -2px 8px rgba(0,0,0,.35);transition:filter .15s}
+.name-pen:hover{filter:brightness(1.1)}
+.name-pen svg.i{width:12px;height:12px;stroke-width:2.4}
 .name-over:hover{border-color:var(--gold);background:rgba(10,10,14,.25)}
 .name-over:focus{outline:none;border-style:solid;border-color:var(--gold);background:rgba(10,10,14,.92);color:#f2ecd9}
 .name-over:focus::placeholder{color:#8a8ca3}
-@media (hover:none){.name-over{border-color:rgba(217,171,79,.55)}}
+
 .flow-empty{display:grid;place-items:center;height:100%;color:var(--muted)}
 .flow-foot{display:flex;align-items:center;gap:12px;padding:8px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .flow-top{display:flex;justify-content:center;padding:2px 8px 0}
@@ -939,7 +948,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117011306";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117012305";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1310,7 +1319,8 @@ async function buildRecs(d, bucket, focus){
       for (const cv of list.cardviews || []){
         if (seen.has(cv.name) || skip.has(cv.name)) continue; seen.add(cv.name);
         let e = map.get(cv.name);
-        if (!e){ e = {name: cv.name, id: cv.id, score: 0, incl: null, syn: null, pairs: []}; map.set(cv.name, e); }
+        if (!e){ e = {name: cv.name, id: cv.id, score: 0, incl: null, syn: null, pairs: [], lists: []}; map.set(cv.name, e); }
+        if (src.kind === "cmd" && !e.lists.includes(list.tag)) e.lists.push(list.tag);
         const incl = cv.potential_decks ? cv.num_decks / cv.potential_decks : 0;
         if (src.kind === "cmd"){ e.incl = incl; e.syn = cv.synergy ?? null; e.score += incl + Math.max(0, cv.synergy || 0) * 1.2 + 0.25; }
         else { e.pairs.push(src.name); e.score += 0.35 + incl * 0.6; }
@@ -1634,7 +1644,7 @@ async function loadGameChangers(){
   try {
     const names = new Set(); let url = `/cards/search?q=${encodeURIComponent("is:gamechanger")}&unique=oracle`;
     while (url){ const j = await sf(url); (j && j.data || []).forEach(c => names.add(c.name)); url = j && j.has_more ? j.next_page.replace("https://api.scryfall.com", "") : null; }
-    GC = names; renderStats();
+    GC = names; renderStats(); if (!$("#addScrim").hidden && A.mode === "cards") renderAddBody();
   } catch {} gcBusy = false;
 }
 const isGC = c => !!(GC && c && (GC.has(c.name) || GC.has(String(c.name).split(" // ")[0])));
@@ -1878,7 +1888,7 @@ function changeQty(u, delta){
 function tileHTML(c, over, d){
   const inDeck = c.zone === "deck";
   const lock = inDeck ? `<button data-act="lock" class="${c.locked ? "on" : ""}" title="${c.locked ? "Unlock" : "Lock as a final pick"}">${c.locked ? I.lock : I.unlock}</button>` : "";
-  return `<div class="cw${over ? " over" : ""}${c.locked ? " locked" : ""}${isPricey(c.card) ? " pricey" : ""}" data-uid="${c.uid}">
+  return `<div class="cw${c.uid === LANDING ? " landing" : ""}${over ? " over" : ""}${c.locked ? " locked" : ""}${isPricey(c.card) ? " pricey" : ""}" data-uid="${c.uid}">
     <div class="ct" data-img="${esc(largeOf(c.card))}" title="${esc(c.card.name)}">
       <span class="ct-name">${esc(c.card.name)}</span>
       ${c.card.custom ? `<span class="custom-tag" title="Custom art or name">${I.brush}</span>` : ""}
@@ -2207,14 +2217,15 @@ function hitTest(){
     drag.target = {zone, live: true};
     if (box && !(c.locked && zone !== "deck")){
       const grid = box.querySelector(".grid"), el = drag.el;
-      let tEl = under.closest(".cw[data-uid]"); if (tEl && (tEl === el || !grid.contains(tEl))) tEl = null;
+      let tEl = slotUnder(grid, el, x, y);
+      if (!tEl) drag.lastOver = null;
       const tc = tEl && findCard(tEl.dataset.uid);
       // reorder only in "Your order", and only among cards in the same group (locked or not)
-      if (UI.sort === "manual" && tEl && tc && tc.locked === c.locked && !(drag.settle > performance.now() && drag.lastOver === tEl)){
+      if (UI.sort === "manual" && tEl && tc && tc.locked === c.locked && drag.lastOver !== tEl){
         const sib = [...grid.children], before = el.parentElement === grid && sib.indexOf(el) < sib.indexOf(tEl);
         if (before ? tEl.nextElementSibling !== el : tEl.previousElementSibling !== el){
           liveMove(grid, () => grid.insertBefore(el, before ? tEl.nextElementSibling : tEl));
-          drag.lastOver = tEl; drag.settle = performance.now() + 260;
+          drag.lastOver = tEl;
         }
       } else if (el.parentElement !== grid){
         // another side or section: join the end of the matching group
@@ -2232,6 +2243,17 @@ function hitTest(){
   }
   setMarks(marks);
 }
+/* Which card's resting place is under the finger. Uses where the cards really sit (their slide animations removed)
+   and the middle 70% of each card, so edges and moving cards don't cause flip-flopping. */
+function slotUnder(grid, self, x, y){
+  for (const k of grid.querySelectorAll(".cw[data-uid]")){
+    if (k === self) continue;
+    const r = k.getBoundingClientRect(), m = new DOMMatrixReadOnly(getComputedStyle(k).transform === "none" ? undefined : getComputedStyle(k).transform);
+    const L = r.left - m.m41, T = r.top - m.m42, w = r.width, h = r.height;
+    if (x > L + w * .15 && x < L + w * .85 && y > T + h * .15 && y < T + h * .85) return k;
+  }
+  return null;
+}
 /* Move the dragged card's place in the page; the cards around it glide to their new spots. */
 function liveMove(grid, mutate){
   const old = drag.el.parentElement;
@@ -2245,19 +2267,22 @@ function liveMove(grid, mutate){
   }
 }
 /* After a drop the lifted card glides into its new spot and settles (the board has re-rendered by then). */
+let LANDING = null;
 function landGhost(dr){
   const g = dr.ghost, inner = g.querySelector(".ghost-in");
   const el = document.querySelector(`#board .cw[data-uid="${dr.uid}"]`), ct = el && el.querySelector(".ct");
-  if (!ct || REDUCED.matches){ g.remove(); return; }
+  const unhide = () => { LANDING = null; document.querySelectorAll("#board .cw.landing").forEach(e => e.classList.remove("landing")); };
+  if (!ct || REDUCED.matches){ g.remove(); unhide(); return; }
   const to = ct.getBoundingClientRect(), from = g.getBoundingClientRect();
-  if (!to.width || to.bottom < 0 || to.top > innerHeight){ g.remove(); return; }
+  if (!to.width || to.bottom < 0 || to.top > innerHeight){ g.remove(); unhide(); return; }
   el.classList.add("landing");
   const sx = to.width / from.width, sy = to.height / from.height;
   g.style.transformOrigin = "0 0";
   const anim = g.animate([{transform: g.style.transform}, {transform: `translate3d(${to.left}px, ${to.top}px, 0) scale(${sx}, ${sy})`}],
     {duration: 240, easing: "cubic-bezier(.2,.8,.2,1)", fill: "forwards"});
   if (inner){ inner.style.transform = "scale(1)"; inner.style.boxShadow = "0 0 0 0 rgba(0,0,0,0)"; }
-  const done = () => { g.remove(); const e2 = document.querySelector(`#board .cw[data-uid="${dr.uid}"]`); if (e2) e2.classList.remove("landing"); };
+  let fin = false;
+  const done = () => { if (fin) return; fin = true; unhide(); g.remove(); };
   anim.onfinish = done; setTimeout(done, 400);
 }
 function autoScroll(){
@@ -2275,7 +2300,7 @@ function autoScroll(){
 function endDrag(commit){
   if (drag && commit) hitTest();
   const dr = drag; drag = null; if (dr.raf) cancelAnimationFrame(dr.raf);
-  if (dr.kind === "card") setTimeout(() => landGhost(dr), 0); else dr.ghost.remove();
+  if (dr.kind === "card"){ LANDING = dr.uid; dr.el.classList.add("landing"); setTimeout(() => landGhost(dr), 0); } else dr.ghost.remove();
   dr.el.classList.remove("dragging", "lifted");
   if (!commit && dr.kind === "card") renderBoard();
   document.body.classList.remove("is-dragging");
@@ -2480,7 +2505,9 @@ function renderAddShell(){
       <div class="searchrow"><div class="search">${I.search}<input id="addQ" type="search" placeholder="${A.mode === "partner" ? "Search partners…" : "Search legends: Atraxa, Edgar Markov, elves…"}" autocomplete="off"><button class="clear" id="clearQ" title="Clear search" hidden>${I.close}</button></div></div>
       <div class="basis" id="basis">${A.mode === "partner" ? `Commanders that can pair with <b>${esc(d.commander.name)}</b>.` : "Legal commanders, most played on EDHREC first."}</div>`;
   } else {
-    const chips = ["Any", ...d.typeOrder].map(t => `<button class="chip ${A.bucket === t ? "on" : ""}" data-bucket="${t}"><i class="ms ${MS[t]}"></i>${PLURAL[t]}</button>`).join("");
+    const chips = ["Any", ...d.typeOrder].map(t => `<button class="chip ${A.bucket === t && !A.hl ? "on" : ""}" data-bucket="${t}"><i class="ms ${MS[t]}"></i>${PLURAL[t]}</button>`).join("")
+      + `<span class="chip-break" aria-hidden="true"></span><span class="chip-lbl">EDHREC lists</span>` + HIGHLIGHTS.map(h => `<button class="chip hl-chip hl-${h.k} ${A.hl === h.k ? "on" : ""}" data-hl="${h.k}" title="${esc(h.tip)}">${h.icon} ${h.chip}</button>`).join("");
+    loadGameChangers();
     top = `<div class="searchrow"><div class="search">${I.search}<input id="addQ" type="search" placeholder="Search name or rules text. Creature types: t:squirrel" autocomplete="off"><button class="clear" id="clearQ" title="Clear search, back to EDHREC picks" hidden>${I.close}</button></div>
       <label class="toggle" title="Only show cards your commander allows when searching"><input type="checkbox" id="onlyColors" ${A.colors ? "checked" : ""}>Only ${pipsHTML(deckCI(d))}</label></div>
       <div class="chips" id="chips">${chips}</div>
@@ -2506,16 +2533,36 @@ function renderAddBody(){
       : `EDHREC picks for <b>${esc(cmdKey(d))}</b>${foc.length ? `, built around ${d.cards.filter(c => c.focus).map(c => `<span class="ba-chip"><b>${esc(c.card.name)}</b><button data-unfocus="${c.uid}" title="Stop building around ${esc(c.card.name)}">×</button></span>`).join(" ")}` : ""}.
         <select id="addSort" aria-label="Sort picks"><option value="best">Best match first</option><option value="incl">% of decks</option><option value="syn">Highest synergy</option><option value="cheap">Cheapest</option><option value="price">Most expensive</option></select>`;
     if ($("#addSort")) $("#addSort").value = UI.addSort;
-    document.querySelectorAll("#chips .chip").forEach(ch => ch.classList.toggle("on", ch.dataset.bucket === A.bucket));
+    document.querySelectorAll("#chips .chip").forEach(ch => ch.classList.toggle("on", ch.dataset.hl ? ch.dataset.hl === A.hl : !A.hl && ch.dataset.bucket === A.bucket));
   }
   $("#clearQ").hidden = !A.q;
-  const visible = sortedResults().filter(r => A.mode !== "cards" || canMulti(r.card) || A.addedNow.has(r.card.name) || !d.cards.some(k => k.card.name === r.card.name));
+  const hl = A.mode === "cards" && !A.q.trim() && A.hl ? HIGHLIGHTS.find(h => h.k === A.hl) : null;
+  const visible = sortedResults().filter(r => A.mode !== "cards" || canMulti(r.card) || A.addedNow.has(r.card.name) || !d.cards.some(k => k.card.name === r.card.name)).filter(r => !hl || hl.test(r));
   let body;
   if (A.error) body = `<div class="notice">${esc(A.error)}</div>`;
   else if (A.loading && !A.results.length) body = `<div class="results">${'<div class="skel"></div>'.repeat(12)}</div>`;
+  else if (!visible.length && hl){
+    const all = A.results.filter(hl.test).length;
+    body = `<div class="notice">${all ? `You already have all ${all} of EDHREC’s ${hl.chip.toLowerCase()} for this deck in your deck or pool.` : hl.k === "gc" ? "None of the EDHREC picks for this deck are Game Changers. Nice for a casual table." : `EDHREC has no ${hl.chip.toLowerCase()} for this deck right now.`}</div>`;
+  }
   else if (!visible.length) body = `<div class="notice">${A.q.trim() || A.mode !== "cards" ? "No cards match that search." : `EDHREC has no more ${PLURAL[A.bucket].toLowerCase()} to suggest for this deck. Try searching above.`}</div>`;
   else body = `<div class="results">${visible.slice(0, A.q.trim() || A.mode !== "cards" ? 999 : 60).map(r => resultHTML(r)).join("")}</div>` + (A.more ? `<div class="more"><button class="btn" id="moreBtn">${A.loading ? "Loading…" : "Show more"}</button></div>` : "");
   $("#addBody").innerHTML = body;
+}
+/* EDHREC's special lists (and the official Game Changers list) shown as labels on the picks, with filter chips.
+   They are not card types, so they don't become sections in the pool or deck. */
+const HIGHLIGHTS = [
+  {k: "top", label: "Top card", chip: "Top cards", icon: "★", tip: "One of the most played cards with this commander on EDHREC", test: r => r.lists && r.lists.includes("topcards")},
+  {k: "lift", label: "High synergy", chip: "High synergy", icon: "⚡", tip: "EDHREC's High Lift list: played far more with this commander than elsewhere", test: r => r.lists && r.lists.includes("highliftcards")},
+  {k: "new", label: "New", chip: "New cards", icon: "✦", tip: "A recently released card that's catching on with this commander", test: r => r.lists && r.lists.includes("newcards")},
+  {k: "ramp", label: "Mana rock", chip: "Mana rocks", icon: "⬢", tip: "EDHREC's Mana Artifacts list: artifacts that make mana", test: r => r.lists && r.lists.includes("manaartifacts")},
+  {k: "uland", label: "Utility land", chip: "Utility lands", icon: "⛰", tip: "EDHREC's Utility Lands list: lands that do more than make mana", test: r => r.lists && r.lists.includes("utilitylands")},
+  {k: "gc", label: "Game Changer", chip: "Game Changers", icon: "◆", tip: "On the official Game Changers list: one of the strongest Commander cards. Even one moves a deck up a power bracket.", test: r => isGC(r.card)}
+];
+function hlBadges(r){
+  if (A.mode !== "cards") return "";
+  const hs = HIGHLIGHTS.filter(h => h.test(r));
+  return hs.length ? `<span class="hl-tags">${hs.map(h => `<span class="hl hl-${h.k}" title="${esc(h.tip)}">${h.icon} ${h.label}</span>`).join("")}</span>` : "";
 }
 function resultHTML(r){
   const d = cur(), c = r.card, i = A.results.indexOf(r);
@@ -2538,7 +2585,7 @@ function resultHTML(r){
     if (have && !canMulti(c)) acts = `<button class="btn done" disabled>✓ In ${have.zone === "deck" ? "deck" : "pool"}</button>`;
     else acts = `<button class="btn ${deckFirst ? "" : "primary"}" data-addto="options" data-i="${i}">+ Pool</button><button class="btn ${deckFirst ? "primary" : ""}" data-addto="deck" data-i="${i}">+ Deck</button>`;
   }
-  return `<div class="rt"><button class="rt-img" data-zoom="${i}" data-img="${esc(c.large)}" title="${HOVER.matches ? "" : "Open " + esc(c.name)}"><img src="${esc(c.img)}" alt="${esc(c.name)}" loading="lazy">${tag}</button>
+  return `<div class="rt"><button class="rt-img" data-zoom="${i}" data-img="${esc(c.large)}" title="${HOVER.matches ? "" : "Open " + esc(c.name)}"><img src="${esc(c.img)}" alt="${esc(c.name)}" loading="lazy">${hlBadges(r)}${tag}</button>
     <div class="rt-meta"><b>${esc(c.name)}</b><span class="price${isPricey(c) ? " pricey" : ""}">${priceText(c)}</span>${meta}</div><div class="rt-acts">${acts}</div></div>`;
 }
 async function loadAdd(append = false){
@@ -2601,7 +2648,8 @@ $("#addModal").addEventListener("click", e => {
   if (b.hasAttribute("data-close")) return hideScrim("#addScrim");
   if (b.dataset.unfocus){ toggleFocus(b.dataset.unfocus); loadAdd(); return; }
   if (b.id === "clearQ"){ A.q = ""; $("#addQ").value = ""; loadAdd(); if (HOVER.matches) $("#addQ").focus(); return; }
-  if (b.dataset.bucket){ A.bucket = b.dataset.bucket; loadAdd(); return; }
+  if (b.dataset.bucket){ A.bucket = b.dataset.bucket; A.hl = null; loadAdd(); return; }
+  if (b.dataset.hl){ const on = A.hl === b.dataset.hl; A.hl = on ? null : b.dataset.hl; if (A.bucket !== "Any"){ A.bucket = "Any"; loadAdd(); } else renderAddBody(); return; }
   if (b.id === "moreBtn"){ A.page++; loadAdd(true); return; }
   if (b.dataset.zoom != null){ const r = A.results[+b.dataset.zoom]; openDetail({kind: "add", card: r.card, rec: r}, b); return; }
   if (b.dataset.pick != null){ setCommander(A.results[+b.dataset.pick].card); return; }
@@ -2851,7 +2899,7 @@ function renderDetail(){
       <div class="flow" id="flow" tabindex="0" aria-label="Every artwork of this card. Drag, swipe, scroll or use the arrow keys. Click a card to jump to it.">
         <div class="flow-stage" id="flowStage"></div>
         <div class="fl-over" id="flOver"><canvas id="artCanvas" width="1344" height="1872"></canvas>
-          ${V.editable ? `<input class="name-over" id="artName" maxlength="40" autocomplete="off" spellcheck="false" placeholder="${esc(c.name.split(" // ")[0])}" value="${esc(V.name)}" title="Click to rename this card" aria-label="Name on the card"><button class="name-pen" id="namePen" title="Rename this card">${I.pencil}</button>` : ""}</div>
+          ${V.editable ? `<input class="name-over" id="artName" maxlength="40" autocomplete="off" spellcheck="false" placeholder="${esc(c.name.split(" // ")[0])}" value="${esc(V.name)}" title="Click to rename this card" aria-label="Name on the card"><button class="name-pen" id="namePen" title="Rename this card">${I.pencil}<span>Edit name</span></button>` : ""}</div>
       </div>
       <div class="flow-foot"><div class="flow-cap" id="flowCap"></div>${c.back ? `<button class="btn sm" id="dFlip">${I.flip}Flip</button>` : ""}<input type="range" class="flow-scrub" id="flowScrub" min="0" max="0" value="0" aria-label="Jump to artwork" hidden></div>
       <div class="dv-box">
@@ -3001,7 +3049,7 @@ function layoutFlow(){
       : `${V.rebase ? `<b class="rebase-cap">New base:</b> ` : ""}<b>${esc(p.set || "This version")}</b>${p.artist ? ` · art by ${esc(p.artist)}` : ""}`;
     const yr = e.t === "p" && p.year ? ` (${p.year})` : "";
     const ap = printPrice(p);
-    cap.innerHTML = `${what}${yr}${ap ? ` · <span class="art-price" title="Price of this exact artwork. The cheapest printing is what counts for the deck.">this art ${fmtMoney(ap.v, ap.sym)}</span>` : ""} · ${V.fi + 1} of ${list.length}${V.artQ && V.artQ.trim() ? ` matching “${esc(V.artQ.trim())}”` : ""}${V.morePrints ? " (loading more artworks…)" : V.prints.length < 2 ? " (loading other artworks…)" : ""}`;
+    cap.innerHTML = `${what}${yr}${ap ? ` · <span class="art-price" title="Price of this exact artwork. The cheapest printing is what counts for the deck.">this art ${fmtMoney(ap.v, ap.sym)}</span>` : ""} · ${V.fi + 1} of ${list.length}${V.artQ && V.artQ.trim() ? ` matching “${esc(V.artQ.trim())}”` : ""}${V.morePrints ? " (loading more artworks…)" : !V.printsDone ? " (loading other artworks…)" : V.printsFailed ? " (couldn’t load other artworks right now)" : list.length < 2 && !(V.artQ && V.artQ.trim()) ? " (the only artwork of this card)" : ""}`;
   }
   updateOverlay();
 }
@@ -3045,15 +3093,17 @@ async function loadPrints(){
     // for tokens, only the same token (same stats and text), in every artwork
     const list = (j ? j.data : []).map(toCard).filter(p => p.img && (!isTok || sameToken(p, V.card)));
     savePrices();
-    if (!list.length) return;
+    if (!list.length) throw "none";
     // keep the exact printings this card and its customization use (same art, other set: keep yours)
     for (const keep of [V.card, ...V.custs.map(s => s.custBase)].filter(Boolean)){
       const i = list.findIndex(p => p.id === keep.id || (keep.ill && p.ill === keep.ill));
       if (i < 0) list.unshift(plainPrint(keep)); else if (list[i].id !== keep.id) list[i] = plainPrint(keep);
     }
     V.prints = list;
-    renderFlow(); renderDetailParts();
-  } catch {}
+  } catch (e){ if (e !== "none" && V && V.token === tok) V.printsFailed = true; }
+  if (!V || V.token !== tok) return;
+  V.printsDone = true;
+  renderFlow(); renderDetailParts();
 }
 async function loadMorePrints(url, page, tok, isTok){
   if (!V || V.token !== tok || page > 8) return;
