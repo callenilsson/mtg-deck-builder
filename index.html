@@ -395,6 +395,8 @@ body.ro .box.tokens .pill-btn{display:none}
 .sh{display:none}
 @container (max-width:132px){.lg{display:none}.sh{display:inline}.ct-stats{font-size:10px}}
 .acts{display:flex;gap:3px}
+.acts .act-slot{flex:1}
+.acts .del{margin-left:6px}
 .acts button{flex:1;height:28px;border-radius:7px;border:1px solid var(--line-soft);background:var(--surface-2);display:grid;place-items:center;color:var(--muted);padding:0;min-width:0}
 .acts button:hover{color:var(--fg);border-color:var(--gold-line)}
 .acts button.on{color:var(--gold);border-color:var(--gold-line);background:var(--gold-soft)}
@@ -885,7 +887,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117002746";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117003015";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -909,7 +911,7 @@ const EASE = "cubic-bezier(.2,.8,.2,1)";
 const I = {
   lock:'<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
   unlock:'<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>',
-  focus:'<svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M10.5 7.5v6M7.5 10.5h6"/></svg>',
+  focus:'<svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/><path d="M12 7.2a6 6 0 0 1 0 9.6a6 6 0 0 1 0-9.6z" fill="currentColor" fill-opacity=".35" stroke="none"/></svg>',
   close:'<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   grip:'<svg class="i" viewBox="0 0 24 24" style="stroke-width:2.6"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/></svg>',
   trash:'<svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
@@ -1486,9 +1488,9 @@ function renderHeader(){
   $("#cmds").innerHTML = cm;
   // combine row: always shows the empty slot, so it's clear there's room for more
   const foc = d.cards.filter(c => c.focus);
-  $("#combo").innerHTML = `<div class="combo-lbl"><span class="eyebrow">Combine picks with</span><small>${foc.length ? "EDHREC picks blend these cards with your commander" : "Press " + "the magnifier under a card to blend its EDHREC picks in"}</small></div>
+  $("#combo").innerHTML = `<div class="combo-lbl"><span class="eyebrow">Suggestions also use</span><small>${foc.length ? "Add cards suggests cards that work with these and your commander" : "Press the two circles under a card to find cards that work with it"}</small></div>
     ${foc.map(c => `<button class="mini" data-open="${c.uid}" data-img="${esc(largeOf(c.card))}" title="${esc(c.card.name)}"><img src="${esc(imgOf(c.card))}" alt="${esc(c.card.name)}"><span class="x" data-unfocus="${c.uid}" title="Stop combining">×</span></button>`).join("")}
-    <button class="mini empty" id="comboAdd" title="Combine another card">+</button>`;
+    <button class="mini empty" id="comboAdd" title="Use another card for suggestions">+</button>`;
   renderStats();
   renderRail(d);
 }
@@ -1749,13 +1751,14 @@ function tileHTML(c, over, d){
       <img src="${esc(imgOf(c.card))}" ${srcsetAttr(c.card)} alt="${esc(c.card.name)}" loading="lazy" draggable="false" onerror="this.remove()">
       ${canMulti(c.card) ? qtyHTML(c) : ""}
       ${isPricey(c.card) ? `<span class="pricey-tag" title="Expensive: ${esc(priceText(c.card))}">💎 ${esc(priceText(c.card))}</span>` : ""}
-      <div class="ct-badges">${c.locked ? `<i title="Locked">${I.lock}</i>` : ""}${c.focus ? `<i title="Combined in recommendations">${I.focus}</i>` : ""}</div>
+      <div class="ct-badges">${c.locked ? `<i title="Locked">${I.lock}</i>` : ""}${c.focus ? `<i title="Used for suggestions">${I.focus}</i>` : ""}</div>
     </div>
     ${tileStatsHTML(c, d)}
-    <div class="acts">${lock}
-      <button data-act="edit" title="Edit art and name">${I.brush}</button>
-      <button data-act="focus" class="${c.focus ? "on" : ""}" title="${c.focus ? "Stop combining in recommendations" : "Combine with commander in recommendations"}">${I.focus}</button>
-      <button class="del" data-act="remove" title="Remove card" ${c.locked ? "disabled" : ""}>${I.trash}</button>
+    <div class="acts">
+      <button data-act="edit" title="Edit: art, name and versions">${I.brush}</button>
+      <button data-act="focus" class="${c.focus ? "on" : ""}" title="${c.focus ? "In your suggestions: click to stop using this card for suggestions" : "Add to suggestions: find cards that work with this one"}">${I.focus}</button>
+      ${lock || `<span class="act-slot" aria-hidden="true"></span>`}
+      <button class="del" data-act="remove" title="Delete card" ${c.locked ? "disabled" : ""}>${I.trash}</button>
     </div></div>`;
 }
 function boxHTML(d, zone, t){
@@ -1916,7 +1919,7 @@ function renderTools(d){
 /* ---------------- Card actions ---------------- */
 function findCard(u){ const d = cur(); return d && d.cards.find(c => c.uid === u); }
 function toggleLock(u){ const c = findCard(u); if (!c || guard()) return; animateBoard(() => { c.locked = !c.locked; touch(cur()); renderBoard(); renderHeader(); }); }
-function toggleFocus(u){ const c = findCard(u); if (!c || guard()) return; c.focus = !c.focus; touch(cur()); renderBoard(); renderHeader(); toast(c.focus ? `Recommendations now combine ${c.card.name}` : `${c.card.name} no longer combined`); }
+function toggleFocus(u){ const c = findCard(u); if (!c || guard()) return; c.focus = !c.focus; touch(cur()); renderBoard(); renderHeader(); toast(c.focus ? `Suggestions now also use ${c.card.name}` : `${c.card.name} no longer used for suggestions`); }
 function moveOther(u){ const c = findCard(u); if (c) moveZone(u, c.zone === "deck" ? "options" : "deck"); }
 function moveZone(u, zone){
   const d = cur(), c = findCard(u); if (!c || c.zone === zone || guard(d)) return;
@@ -3847,7 +3850,7 @@ $("#cmds").addEventListener("click", e => {
 $("#combo").addEventListener("click", e => {
   const x = e.target.closest("[data-unfocus]"); if (x){ e.stopPropagation(); toggleFocus(x.dataset.unfocus); return; }
   if (e.target.closest("#comboAdd")){
-    toast("Press the magnifier under any card to combine it");
+    toast("Press the two circles under any card to use it for suggestions");
     document.body.classList.remove("pulse-focus"); void document.body.offsetWidth; document.body.classList.add("pulse-focus");
     setTimeout(() => document.body.classList.remove("pulse-focus"), 2300); return;
   }
