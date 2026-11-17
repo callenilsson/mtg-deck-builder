@@ -255,10 +255,11 @@ body.compact #top.mini{width:76px;padding:8px 6px;overflow-y:auto;scrollbar-widt
 body.compact #top.mini #rail{gap:6px}
 body.compact #top.mini .r-types,body.compact #top.mini .r-meta{display:none}
 body.compact #top.mini .r-thumb img{width:52px}
+body.compact #app:not(.side-closed) #top:not(.mini){left:min(var(--sideW,272px),86vw)}
 body.compact #top:not(.mini){position:fixed;left:0;top:0;bottom:0;z-index:60;width:min(var(--topW,340px),92vw);box-shadow:24px 0 60px rgba(0,0,0,.6)}
 body.compact #sidebar{position:fixed;left:0;top:0;bottom:0;z-index:70;box-shadow:20px 0 50px rgba(0,0,0,.5);width:min(var(--sideW,272px),86vw)}
 body.compact #app.side-closed #sidebar{margin-left:calc(-1 * min(var(--sideW,272px),86vw) - 30px);width:min(var(--sideW,272px),86vw)}
-body.compact #sideScrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:65}
+body.compact #sideScrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55}
 body.compact #app.side-closed #sideScrim{display:none}
 body.compact .pane-grip{display:none!important}
 body.compact #openSide,body.compact #railMenu{display:inline-grid!important}
@@ -577,7 +578,17 @@ button.vrow:hover{background:var(--surface-2)}
   #top .top-actions .label-s{display:inline!important}
   #top .top-actions .fold-btn{flex:0 0 auto;position:static}
   #top.mini .top-actions{display:none}
-  #top.mini .r-acts{display:none}
+  /* folded strip: commander, count and the actions as icons */
+  #top.mini .r-meta,#top.mini .r-types{display:none}
+  #top.mini .r-acts{display:flex;flex-direction:row;gap:5px;margin:0 0 0 auto;padding:0;border:0;width:auto}
+  #top.mini .r-act{width:34px;height:34px;border-radius:9px}
+  #top.mini .r-act .i{width:16px;height:16px}
+  #top.mini #rail{gap:6px;flex-wrap:nowrap;min-width:0}
+  #top.mini .r-tot b{font-size:18px}
+  #top.mini .r-tot span{font-size:11px}
+  @media (max-width:380px){ #top.mini .r-tot span{display:none} #top.mini #rail{gap:4px} #top.mini .r-acts{gap:4px} }
+  /* the full panel opens as a sheet over the cards */
+  #top:not(.mini){position:fixed;left:0;right:0;top:0;z-index:60;max-height:min(86vh,720px);overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.65);border-bottom:1px solid var(--gold-line)}
 }
 /* narrow screens: the toolbar wraps into rows that fill the width (no sideways scrolling) */
 @media (max-width:820px) and (min-height:501px), (max-width:820px) and (orientation:portrait){ #tools{--tools-narrow:1} }
@@ -1235,8 +1246,8 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 
     <div id="tools" hidden>
       <button class="tool fs-btn" id="fsBtn" hidden></button>
-      <div class="tool size" title="Card size on this screen. Double-click the number to reset."><span class="tl">Card size</span><span class="tl-ico z-ico" aria-hidden="true"></span><button class="pm" data-zstep="-10" aria-label="Smaller cards">−</button><output id="zoomVal">100%</output><button class="pm" data-zstep="10" aria-label="Bigger cards">+</button></div>
-      <div class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click the number to reset."><span class="tl">Interface</span><span class="tl-ico a-ico" aria-hidden="true">Aa</span><button class="pm" data-ustep="-10" aria-label="Smaller interface">−</button><output id="uiZoomVal">100%</output><button class="pm" data-ustep="10" aria-label="Bigger interface">+</button></div>
+      <div class="tool size" title="Card size on this screen. Double-click the number to reset."><span class="tl">Card size</span><span class="tl-ico z-ico" aria-hidden="true"></span><button class="pm" data-zstep="-5" aria-label="Smaller cards">−</button><output id="zoomVal">100%</output><button class="pm" data-zstep="5" aria-label="Bigger cards">+</button></div>
+      <div class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click the number to reset."><span class="tl">Interface</span><span class="tl-ico a-ico" aria-hidden="true">Aa</span><button class="pm" data-ustep="-5" aria-label="Smaller interface">−</button><output id="uiZoomVal">100%</output><button class="pm" data-ustep="5" aria-label="Bigger interface">+</button></div>
       <label class="tool"><span class="tl">Sort</span><select id="sortSel">
         <option value="manual">Your order</option><option value="incl">% of decks (EDHREC)</option><option value="syn">Synergy (EDHREC)</option>
         <option value="price">Price, high to low</option><option value="cheap">Price, low to high</option><option value="cmc">Mana value</option>
@@ -1285,7 +1296,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117191702";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117192422";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1842,7 +1853,7 @@ function render(){
   $(".top-actions").style.visibility = ready ? "" : "hidden";
   $("#total").style.visibility = d ? "" : "hidden";
   $(".name-wrap").hidden = !d;
-  $("#top").classList.toggle("mini", (isCompact() ? !CMP_OPEN : !!UI.cmdMini) && ready);
+  $("#top").classList.toggle("mini", (isCompact() || isPhone() ? !CMP_OPEN : !!UI.cmdMini) && ready);
   const ro = roDeck(d);
   document.body.classList.toggle("ro", ro);
   $("#deckName").readOnly = ro;
@@ -5108,7 +5119,7 @@ $("#profile").addEventListener("click", e => {
 $("#closeSide").innerHTML = I.panelL; $("#railExpand").innerHTML = I.panelR;
 $("#railExpand").onclick = () => { S.sidebarOpen = true; S.sideTouched = true; save(false); render(); };
 $("#closeSide").onclick = () => { S.sidebarOpen = false; save(false); render(); };
-$("#openSide").onclick = () => { S.sidebarOpen = !S.sidebarOpen; S.sideTouched = true; save(false); render(); };
+$("#openSide").onclick = () => { S.sidebarOpen = !S.sidebarOpen; S.sideTouched = true; if (S.sidebarOpen && isPhone()) CMP_OPEN = false; save(false); render(); };
 $("#sideScrim").onclick = () => { S.sidebarOpen = false; render(); };
 $("#deckList").addEventListener("click", e => {
   const dm = e.target.closest("[data-deckmenu]"); if (dm){ e.stopPropagation(); openDeckMenu(dm); return; }
@@ -5185,7 +5196,8 @@ $("#welcome").addEventListener("click", e => {
   if (e.target.closest("#welcomeSlot")) cur() ? openCommanderPicker(true) : newDeck();
 });
 $("#addAny").onclick = () => openAdd("Any", "options");
-function setMini(on){ if (isCompact()) CMP_OPEN = !on; else { UI.cmdMini = on; saveUI(); } $("#top").classList.toggle("mini", on); applyZoom(); }
+function setMini(on){ if (isCompact() || isPhone()) CMP_OPEN = !on; else { UI.cmdMini = on; saveUI(); }
+  if (!on && isPhone() && S.sidebarOpen){ S.sidebarOpen = false; save(false); render(); } $("#top").classList.toggle("mini", on); applyZoom(); }
 $("#foldTop").onclick = () => setMini(true);
 $("#rail").addEventListener("click", e => {
   if (e.target.closest("#railOpen")){ setMini(false); return; }
@@ -5193,8 +5205,8 @@ $("#rail").addEventListener("click", e => {
   if (ra){ const k = ra.dataset.ract;
     if (k === "add") $("#addAny").click(); else if (k === "hand") openHand(); else if (k === "stats") openStats(); else if (k === "print") openPdf(); else if (k === "fs") toggleFull();
     return; }
-  if (e.target.closest("#railMenu")){ S.sidebarOpen = !S.sidebarOpen; S.sideTouched = true; save(false); render(); return; }
-  const th = e.target.closest("[data-cmd]"); if (th) openDetail({kind: "commander"}, th);
+  if (e.target.closest("#railMenu")){ S.sidebarOpen = !S.sidebarOpen; S.sideTouched = true; if (S.sidebarOpen && isPhone()) CMP_OPEN = false; save(false); render(); return; }
+  const th = e.target.closest("[data-cmd]"); if (th){ if (isPhone() || isCompact()) setMini(false); else openDetail({kind: "commander"}, th); }
 });
 addEventListener("resize", () => { const d = cur(); if (d && d.commander) renderRail(d); });
 
