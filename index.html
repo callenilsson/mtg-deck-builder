@@ -301,7 +301,11 @@ body.ro .name-wrap svg{display:none}
 .sumline.good{color:var(--ok)}
 .viz{margin-top:10px;padding-top:8px;border-top:1px solid var(--line-soft);max-width:380px;display:grid;gap:3px}
 .viz-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:2px}
-.viz-h .eyebrow{font-size:10px}
+.viz-h .eyebrow{font-size:10px;display:inline-flex;align-items:center;gap:6px}
+.info-q{width:16px;height:16px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--muted);font:700 10px/1 system-ui,sans-serif;padding:0;display:inline-grid;place-items:center;letter-spacing:0;cursor:pointer}
+.info-q:hover,.info-q.on{border-color:var(--gold-line);color:var(--gold);background:var(--gold-soft)}
+.info-text{margin:2px 0 6px;padding:8px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line-soft);font-size:11.5px;line-height:1.45;color:var(--muted);text-transform:none;letter-spacing:0}
+.info-text b{color:var(--fg);font-weight:600}
 .viz-h small{font-size:10.5px;color:var(--faint)}
 .vrow{display:grid;grid-template-columns:78px 1fr auto;align-items:center;gap:8px;padding:2px 4px;margin:0 -4px;border:0;border-radius:6px;background:none;color:var(--fg);font-size:12px;text-align:left}
 button.vrow:hover{background:var(--surface-2)}
@@ -312,6 +316,13 @@ button.vrow:hover{background:var(--surface-2)}
 .role.ok .vbar i{background:var(--ok)}
 .vn{font-size:11.5px;color:var(--muted);white-space:nowrap}
 .vn b{color:var(--fg)}
+.cb2-row{display:grid;grid-template-columns:78px 1fr;align-items:center;gap:8px;font-size:12px}
+.cb2-bar{display:flex;height:16px;border-radius:5px;overflow:hidden;gap:2px;background:var(--surface-3)}
+.cb2-bar i{display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden;font:700 10px/1 system-ui,sans-serif;font-style:normal;color:#111;white-space:nowrap}
+.cb2-bar i span{overflow:hidden;text-overflow:clip;padding:0 3px}
+.mc-W{background:#efe8c4}.mc-U{background:#7fb6e6}.mc-B{background:#a99aa6}.mc-R{background:#e57a5d}.mc-G{background:#6dbb7c}
+.cb2-hint{margin:3px 0 0;font-size:11.5px;color:#f1b4a6;line-height:1.35}
+.cb2-hint.ok{color:var(--ok)}
 .cb{grid-template-columns:18px 1fr auto}
 .cb .ms{font-size:13px}
 .cb-bars{display:grid;gap:2px}
@@ -361,7 +372,7 @@ button.vrow:hover{background:var(--surface-2)}
 /* ---------- Board ---------- */
 #board{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,var(--sp,50%)) 10px minmax(0,1fr)}
 .panel{display:flex;flex-direction:column;min-height:0;min-width:0}
-.panel-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px 60px;overscroll-behavior:contain}
+.panel-scroll{overflow-anchor:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px 60px;overscroll-behavior:contain}
 .panel-head{position:sticky;top:0;z-index:6;height:42px;margin:0 -14px;padding:0 14px;display:flex;align-items:center;gap:10px;background:rgba(13,14,20,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line-soft)}
 .panel-head h2{margin:0;font-family:var(--display);font-size:15px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .ph-meta,.box-right,.box-count{white-space:nowrap}
@@ -968,8 +979,8 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
     <div class="pane-grip" id="topGrip" title="Drag to resize. Double-click to reset." aria-hidden="true"></div>
 
     <div id="tools" hidden>
-      <label class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><span class="z-ico"></span><input type="range" id="zoom" min="30" max="400" step="5" value="100" aria-label="Card size"><span class="z-ico big"></span><output id="zoomVal">100%</output></label>
-      <label class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click to reset."><span class="tl">Interface</span><span class="a-ico sm">A</span><input type="range" id="uiZoom" min="60" max="200" step="5" value="100" aria-label="Interface size"><span class="a-ico">A</span><output id="uiZoomVal">100%</output></label>
+      <label class="tool size" title="Card size on this screen. Double-click to reset."><span class="tl">Card size</span><span class="z-ico"></span><input type="range" id="zoom" min="20" max="400" step="5" value="100" aria-label="Card size"><span class="z-ico big"></span><output id="zoomVal">100%</output></label>
+      <label class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click to reset."><span class="tl">Interface</span><span class="a-ico sm">A</span><input type="range" id="uiZoom" min="40" max="200" step="5" value="100" aria-label="Interface size"><span class="a-ico">A</span><output id="uiZoomVal">100%</output></label>
       <label class="tool"><span class="tl">Sort</span><select id="sortSel">
         <option value="manual">Your order</option><option value="incl">% of decks (EDHREC)</option><option value="syn">Synergy (EDHREC)</option>
         <option value="price">Price, high to low</option><option value="cheap">Price, low to high</option><option value="cmc">Mana value</option>
@@ -1016,7 +1027,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117020101";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117020744";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1739,11 +1750,25 @@ async function loadGameChangers(){
 }
 const isGC = c => !!(GC && c && (GC.has(c.name) || GC.has(String(c.name).split(" // ")[0])));
 /* Mana curve of the spells in the deck (lands not counted): how many cost 0, 1, 2 … 7 or more. */
+/* A small "?" beside each stats title: tap to read how that part works (works on phones, unlike hover text). */
+const INFO_OPEN = new Set();
+const INFO = {
+  types: sg => `<b>Deck</b>: cards of each type in your deck. <b>🔒</b>: locked final picks. <b>Limit</b>: how many of each type you're aiming for; with your commander they should add up to 100.
+    <b>EDHREC</b>: what similar decks run. The app finds the EDHREC theme whose cards best match yours${sg ? ` (now: ${esc(sg.short)})` : ""}, takes that theme's average type counts, adjusts lands to your mana curve, and keeps the total at 100. The small +1 / −1 is the difference from your limit. <b>Use EDHREC numbers</b> copies them into your limits.`,
+  power: () => `The colored numbers count how many cards in the deck have each color in their color identity. <b>Game Changers</b> is the official list of the strongest Commander cards (from Scryfall). Even one moves a deck up a power bracket, so it's a quick “too strong for our table?” check. Click it to see which.`,
+  curve: () => `Every spell in the deck (lands not counted), grouped by mana value: the total mana it costs. The big number is the average. Most Commander decks land around 3; lower means a faster deck.`,
+  roles: () => `Read from each card's rules text, so it's an estimate. <b>Ramp</b>: makes mana or gets lands out (mana rocks, mana creatures, land search, Treasure, extra land drops). <b>Card draw</b>: draws you cards. <b>Removal</b>: destroys, exiles, damages, shrinks, fights, bounces or counters one thing. <b>Board wipes</b>: hit everything at once. A card can count for more than one.
+    The goals (about 10 ramp, 10 draw, 8 removal, 2 wipes) are the common Commander guideline; the bar turns green when you reach one. Click a row to see those cards.`,
+  balance: () => `<b>Spells need</b>: the share of each color among the colored mana symbols in your spells' costs ({B}{B}{G} is 2 black and 1 green). <b>Lands make</b>: the share of each color among the mana your lands can make (a dual land counts for both colors, basics by their type). When a color's land share is clearly lower than what your spells need, you get a hint which basic to swap.`,
+  ctypes: () => `Shown when 8 or more creatures share a type, so typal decks can see their count at a glance. Changelings are every creature type, so they count for each. Click a type to see those cards.`
+};
+function infoBtn(k){ return `<button class="info-q ${INFO_OPEN.has(k) ? "on" : ""}" data-info="${k}" title="How is this worked out?" aria-expanded="${INFO_OPEN.has(k)}">?</button>`; }
+function infoText(k, arg){ return INFO_OPEN.has(k) ? `<p class="info-text">${INFO[k](arg)}</p>` : ""; }
 function curveHTML(deck, avg){
   const b = Array(8).fill(0);
   for (const c of deck) if (c.bucket !== "Land") b[Math.min(7, Math.floor(c.card.cmc || 0))] += qOf(c);
   const max = Math.max(1, ...b);
-  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Mana curve</span><small>spells by mana value</small></div><div class="curve" title="Mana curve: how many spells cost 0, 1, 2 … 7+ mana. Average ${avg.toFixed(2)} (lands not counted). A lower, left-leaning curve means a faster deck.">
+  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Mana curve ${infoBtn("curve")}</span><small>spells by mana value</small></div>${infoText("curve")}<div class="curve" title="Mana curve: how many spells cost 0, 1, 2 … 7+ mana. Average ${avg.toFixed(2)} (lands not counted). A lower, left-leaning curve means a faster deck.">
     <div class="cv-bars">${b.map((n, i) => `<div class="cv-col"><span class="cv-n">${n || ""}</span><i style="height:${Math.round(n / max * 100)}%"></i><span class="cv-l">${i === 7 ? "7+" : i}</span></div>`).join("")}</div>
     <div class="cv-avg"><b>${avg.toFixed(1)}</b><small>average</small></div></div></div>`;
 }
@@ -1775,7 +1800,7 @@ function rolesOf(card){
 function rolesHTML(deck){
   const n = {}; ROLES.forEach(x => n[x.k] = 0);
   for (const c of deck) for (const k of rolesOf(c.card)) n[k] += qOf(c);
-  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Deck roles</span><small title="Estimated from each card's rules text. Goals are the usual Commander guideline.">from card text</small></div>
+  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Deck roles ${infoBtn("roles")}</span><small>estimated from card text</small></div>${infoText("roles")}
     ${ROLES.map(x => { const v = n[x.k], ok = v >= x.goal, w = Math.min(100, v / x.goal * 100);
       return `<button class="vrow role ${ok ? "ok" : ""} ${UI.role === x.k ? "on" : ""}" data-role="${x.k}" title="${esc(x.tip)}. Goal about ${x.goal}. Click to show only these cards.">
         <span class="vl">${x.label}</span><span class="vbar"><i style="width:${w}%"></i></span><span class="vn"><b>${v}</b>/${x.goal}</span></button>`; }).join("")}</div>`;
@@ -1801,11 +1826,16 @@ function colorBalanceHTML(d, deck){
     }
   }
   const tn = Object.values(need).reduce((a, b) => a + b, 0) || 1, ts = Object.values(src).reduce((a, b) => a + b, 0) || 1;
-  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Color balance</span><small>spells need · lands make</small></div>
-    ${ci.map(c => { const np = need[c] / tn * 100, sp = src[c] / ts * 100, short = np - sp >= 12;
-      return `<div class="vrow cb ${short ? "short" : ""}" title="${COLOR_NAME[c]}: ${Math.round(np)}% of the colored mana symbols in your spells, ${src[c]} land${src[c] === 1 ? "" : "s"} make it (${Math.round(sp)}% of your color sources)${short ? ". Consider more " + COLOR_NAME[c] + " sources." : ""}">
-        <i class="ms ms-${c.toLowerCase()} ms-cost"></i><span class="cb-bars"><span class="vbar need"><i style="width:${np}%"></i></span><span class="vbar make"><i style="width:${sp}%"></i></span></span>
-        <span class="vn"><b>${Math.round(np)}%</b> · ${src[c]} land${src[c] === 1 ? "" : "s"}${short ? ` <em>more ${BASIC_OF[c]}s?</em>` : ""}</span></div>`; }).join("")}</div>`;
+  const np = c => need[c] / tn * 100, sp = c => src[c] / ts * 100;
+  const bar = (label, pct, tip) => `<div class="cb2-row"><span class="vl">${label}</span><span class="cb2-bar" title="${tip}">${ci.map(c => pct(c) >= .5 ? `<i class="mc-${c}" style="flex:${pct(c).toFixed(2)}"><span>${c} ${Math.round(pct(c))}%</span></i>` : "").join("")}</span></div>`;
+  const short = ci.filter(c => np(c) - sp(c) >= 12).sort((a, b) => (np(b) - sp(b)) - (np(a) - sp(a)));
+  const most = ci.filter(c => !short.includes(c)).sort((a, b) => (sp(b) - np(b)) - (sp(a) - np(a)))[0];
+  const hint = short.length ? `<p class="cb2-hint">⚠ <b>${COLOR_NAME[short[0]][0].toUpperCase() + COLOR_NAME[short[0]].slice(1)}</b> is short: spells need ${Math.round(np(short[0]))}%, lands make ${Math.round(sp(short[0]))}%.${most ? ` Swap a ${BASIC_OF[most]} for a ${BASIC_OF[short[0]]}?` : ""}</p>`
+    : `<p class="cb2-hint ok">✓ Your lands match the colors your spells need.</p>`;
+  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Color balance ${infoBtn("balance")}</span><small>spells vs lands</small></div>${infoText("balance")}
+    ${bar("Spells need", np, "Share of the colored mana symbols in your spells' costs")}
+    ${bar("Lands make", sp, "Share of your lands' colored mana (a dual land counts for each color it makes)")}
+    ${hint}</div>`;
 }
 /* ---- Creature types: only shown when the deck is clearly about a type ---- */
 function typesHTML(deck){
@@ -1818,8 +1848,8 @@ function typesHTML(deck){
   const top = [...cnt.entries()].sort((a, b) => b[1] - a[1]);
   if (!top.length || top[0][1] + ch < 8) return "";
   const show = top.slice(0, 3), max = show[0][1] + ch, more = top.length - show.length;
-  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Creature types</span>${ch ? `<small title="Changelings are every creature type, so they count for each">✦ incl. ${ch} changeling${ch > 1 ? "s" : ""}</small>` : ""}</div>
-    ${show.map(([s, n]) => `<button class="vrow ctype ${UI.ctype === s ? "on" : ""}" data-ctype="${esc(s)}" title="${n + ch} ${esc(s)}${ch ? ` (with ${ch} changeling${ch > 1 ? "s" : ""})` : ""}. Click to show only these.">
+  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Creature types ${infoBtn("ctypes")}</span>${ch ? `<small title="Changelings are every creature type, so they count for each">✦ incl. ${ch} changeling${ch > 1 ? "s" : ""}</small>` : ""}</div>
+    ${infoText("ctypes")}${show.map(([s, n]) => `<button class="vrow ctype ${UI.ctype === s ? "on" : ""}" data-ctype="${esc(s)}" title="${n + ch} ${esc(s)}${ch ? ` (with ${ch} changeling${ch > 1 ? "s" : ""})` : ""}. Click to show only these.">
       <span class="vl">${esc(s)}</span><span class="vbar"><i style="width:${(n + ch) / max * 100}%"></i></span><span class="vn"><b>${n + ch}</b></span></button>`).join("")}
     ${more ? `<small class="viz-more">+ ${more} more type${more > 1 ? "s" : ""}</small>` : ""}</div>`;
 }
@@ -1866,10 +1896,10 @@ function renderStats(){
   const limitBtns = (sum === 100 ? "" : `<span class="sumline bad">${sumTxt}</span>`)
     + (sg && !same ? `<button class="pill-btn" id="useSugg" title="Set your limits to EDHREC's numbers">Use EDHREC numbers</button>` : "")
     + (needBasics > 0 ? `<button class="pill-btn" id="addBasics" title="Add basic lands, split by the colors your spells need">+ ${needBasics} basic land${needBasics > 1 ? "s" : ""}</button>` : "");
-  $("#stats").innerHTML = `<div class="viz first"><div class="viz-h"><span class="eyebrow">Card types</span></div>
+  $("#stats").innerHTML = `<div class="viz first"><div class="viz-h"><span class="eyebrow">Card types ${infoBtn("types")}</span></div>${infoText("types", sg)}
     <table class="stbl"><thead><tr><th></th><th class="l sname">Type</th><th title="Cards in your deck">Deck</th><th title="Locked final picks">${I.lock.replace('class="i"', 'class="i" style="width:11px;height:11px"')}</th><th title="Your limit">Limit</th><th class="l" title="EDHREC's average for decks like yours${sg ? `. ${esc(sg.short)}${sg.why ? `. ${esc(sg.why)}` : ""}` : ""}">EDHREC</th></tr></thead><tbody>${rows}${tokRow}</tbody></table>
     ${limitBtns ? `<div class="stats-foot">${limitBtns}</div>` : ""}</div>
-    <div class="viz"><div class="viz-h"><span class="eyebrow">Colors & power</span></div><div class="stats-foot"><div class="colors">${colors}</div>${gcBtn}</div></div>
+    <div class="viz"><div class="viz-h"><span class="eyebrow">Colors & power ${infoBtn("power")}</span></div>${infoText("power")}<div class="stats-foot"><div class="colors">${colors}</div>${gcBtn}</div></div>
     ${spellsQ ? curveHTML(deck, avgMV) : ""}
     ${deck.length ? rolesHTML(deck) + colorBalanceHTML(d, deck) + typesHTML(deck) : ""}`;
 }
@@ -2535,11 +2565,17 @@ const PANE = {side: {v: "--sideW", key: "sideW", def: 272, min: 220, max: 440, e
               top: {v: "--topW", key: "topW", def: 316, min: 280, max: 560, el: () => $("#top")}};
 function applyPanes(){ for (const p of Object.values(PANE)) document.documentElement.style.setProperty(p.v, (UI[p.key] || p.def) + "px"); }
 for (const [k, p] of Object.entries(PANE)){
-  const g = $(k === "side" ? "#sideGrip" : "#topGrip"); let on = false, want = 0, raf = 0;
-  g.addEventListener("pointerdown", e => { on = true; g.setPointerCapture(e.pointerId); g.classList.add("on"); document.body.classList.add("pane-resizing"); e.preventDefault(); });
+  const g = $(k === "side" ? "#sideGrip" : "#topGrip"); let on = false, want = 0, raf = 0, grab = null;
+  g.addEventListener("pointerdown", e => {
+    const el = p.el(), r = el.getBoundingClientRect();
+    // the panel's width on screen vs in its own units (the interface scale zooms it)
+    const w = UI[p.key] || p.def;
+    grab = {x: e.clientX, w, scale: r.width / w || 1};
+    on = true; g.setPointerCapture(e.pointerId); g.classList.add("on"); document.body.classList.add("pane-resizing"); e.preventDefault();
+  });
   g.addEventListener("pointermove", e => {
-    if (!on) return;
-    want = Math.round(Math.max(p.min, Math.min(p.max, e.clientX - p.el().getBoundingClientRect().left)));
+    if (!on || !grab) return;
+    want = Math.round(Math.max(p.min, Math.min(p.max, grab.w + (e.clientX - grab.x) / grab.scale)));
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; splitFlip(() => { UI[p.key] = want; applyPanes(); }); });
   });
   const end = () => { if (!on) return; on = false; g.classList.remove("on"); document.body.classList.remove("pane-resizing"); saveUI(); const d = cur(); if (d && d.commander) renderRail(d); };
@@ -2621,6 +2657,7 @@ document.addEventListener("pointerdown", e => {
 }, true);
 document.addEventListener("click", e => { if (performance.now() < swallowClickUntil){ swallowClickUntil = 0; e.preventDefault(); e.stopPropagation(); } }, true);
 $("#stats").addEventListener("click", e => {
+  const iq = e.target.closest("[data-info]"); if (iq){ const k = iq.dataset.info; INFO_OPEN.has(k) ? INFO_OPEN.delete(k) : INFO_OPEN.add(k); renderStats(); return; }
   const ro = e.target.closest("[data-role]"); if (ro){ UI.role = UI.role === ro.dataset.role ? "" : ro.dataset.role; renderTools(cur()); animateBoard(() => renderBoard()); renderStats(); if (UI.role) toast(`Showing ${ROLES.find(x => x.k === UI.role).label.toLowerCase()} cards. Click again to show all.`); return; }
   const ct = e.target.closest("[data-ctype]"); if (ct){ UI.ctype = UI.ctype === ct.dataset.ctype ? "" : ct.dataset.ctype; renderTools(cur()); animateBoard(() => renderBoard()); renderStats(); return; }
   if (e.target.closest("#gcBtn")){ const d = cur(); const g = [...cmdrs(d), ...d.cards.filter(c => c.zone === "deck").map(c => c.card)].filter(isGC).map(c => c.name); toast(g.length ? `Game Changers: ${g.join(", ")}` : "No Game Changers in this deck"); return; }
@@ -2641,6 +2678,16 @@ $("#stats").addEventListener("change", e => {
 });
 
 /* ---------------- Toolbar ---------------- */
+/* Resizing cards or the interface: keep the card at the top of each list where it was, so the view doesn't jump. */
+function keepAnchors(fn){
+  const anchors = [...document.querySelectorAll(".panel-scroll")].map(sc => {
+    const r = sc.getBoundingClientRect(); if (!r.height || !sc.scrollTop) return null;
+    const el = [...sc.querySelectorAll(".cw[data-uid], .cw[data-tok]")].find(e => e.getBoundingClientRect().bottom > r.top + 8);
+    return el && {sc, el, off: el.getBoundingClientRect().top - r.top};
+  }).filter(Boolean);
+  fn();
+  for (const a of anchors){ if (!a.el.isConnected) continue; const r = a.sc.getBoundingClientRect(); a.sc.scrollTop += (a.el.getBoundingClientRect().top - r.top) - a.off; }
+}
 function applyZoom(){
   const z = (+UI.zoom || 100) / 100, board = $("#board");
   board.style.removeProperty("--tile");
@@ -2651,17 +2698,23 @@ function applyZoom(){
   document.querySelectorAll("img[sizes]").forEach(im => im.sizes = sz);
   $("#zoom").value = UI.zoom; $("#zoomVal").textContent = Math.round(z * 100) + "%";
 }
-$("#zoom").addEventListener("input", e => { UI.zoom = +e.target.value; applyZoom(); saveUI(); });
-$("#zoom").closest("label").addEventListener("dblclick", () => { UI.zoom = 100; applyZoom(); saveUI(); });
+let zoomRaf = 0;
+$("#zoom").addEventListener("input", e => {
+  UI.zoom = +e.target.value; $("#zoomVal").textContent = UI.zoom + "%";
+  if (!zoomRaf) zoomRaf = requestAnimationFrame(() => { zoomRaf = 0; keepAnchors(applyZoom); });
+});
+$("#zoom").addEventListener("change", () => saveUI());
+$("#zoom").closest("label").addEventListener("dblclick", () => { UI.zoom = 100; keepAnchors(applyZoom); saveUI(); });
 addEventListener("resize", applyZoom);
 function applyUiZoom(){
-  const z = Math.max(.6, Math.min(2, (+UI.uiz || 100) / 100));
+  const z = Math.max(.4, Math.min(2, (+UI.uiz || 100) / 100));
   document.documentElement.style.setProperty("--uiz", z);
   $("#uiZoom").value = Math.round(z * 100); $("#uiZoomVal").textContent = Math.round(z * 100) + "%";
   if (V) layoutFlow();
 }
-$("#uiZoom").addEventListener("input", e => { UI.uiz = +e.target.value; applyUiZoom(); saveUI(); });
-$("#uiZoom").closest("label").addEventListener("dblclick", () => { UI.uiz = 100; applyUiZoom(); saveUI(); });
+$("#uiZoom").addEventListener("input", e => { $("#uiZoomVal").textContent = e.target.value + "%"; });
+$("#uiZoom").addEventListener("change", e => { UI.uiz = +e.target.value; keepAnchors(applyUiZoom); saveUI(); });
+$("#uiZoom").closest("label").addEventListener("dblclick", () => { UI.uiz = 100; keepAnchors(applyUiZoom); saveUI(); });
 $("#sortSel").addEventListener("change", e => { UI.sort = e.target.value; saveUI(); animateBoard(() => renderBoard()); if (UI.sort !== "manual") toast("Dragging a card switches back to “Your order”. Locked cards always come first."); });
 let filtT;
 $("#filterQ").addEventListener("input", e => { UI.filter = e.target.value; clearTimeout(filtT); filtT = setTimeout(renderBoard, 150); });
