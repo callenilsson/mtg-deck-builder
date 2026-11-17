@@ -304,6 +304,12 @@ body.ro .name-wrap svg{display:none}
 .viz-h .eyebrow{font-size:10px;display:inline-flex;align-items:center;gap:6px}
 .info-q{width:16px;height:16px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--muted);font:700 10px/1 system-ui,sans-serif;padding:0;display:inline-grid;place-items:center;letter-spacing:0;cursor:pointer}
 .info-q:hover,.info-q.on{border-color:var(--gold-line);color:var(--gold);background:var(--gold-soft)}
+#infoPop{position:fixed;z-index:1200;padding:10px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--gold-line);box-shadow:0 16px 40px rgba(0,0,0,.6);font-size:12px;line-height:1.5;color:var(--muted);animation:popIn .14s ease-out}
+#infoPop[hidden]{display:none}
+#infoPop b{color:var(--fg);font-weight:600}
+#infoPop::before{content:"";position:absolute;top:-6px;left:calc(var(--ax) - 6px);width:10px;height:10px;background:var(--surface);border-left:1px solid var(--gold-line);border-top:1px solid var(--gold-line);transform:rotate(45deg)}
+#infoPop.above::before{top:auto;bottom:-6px;transform:rotate(225deg)}
+@keyframes popIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
 .info-text{margin:2px 0 6px;padding:8px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line-soft);font-size:11.5px;line-height:1.45;color:var(--muted);text-transform:none;letter-spacing:0}
 .info-text b{color:var(--fg);font-weight:600}
 #total .info-text b{font:600 11.5px/1.45 var(--body,system-ui),sans-serif;letter-spacing:0;color:var(--fg)}
@@ -1032,7 +1038,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117021002";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117021140";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -1769,8 +1775,34 @@ const INFO = {
   build: () => `Pick cards you want to <b>build around</b> with the two-circles button under them. <b>Add cards</b> then also suggests cards that EDHREC players run together with those cards, mixed in with your commander's suggestions. Remove one with its × here, or in Add cards.`,
   ctypes: () => `Shown when 8 or more creatures share a type, so typal decks can see their count at a glance. Changelings are every creature type, so they count for each. Click a type to see those cards.`
 };
-function infoBtn(k){ return `<button class="info-q ${INFO_OPEN.has(k) ? "on" : ""}" data-info="${k}" title="How is this worked out?" aria-expanded="${INFO_OPEN.has(k)}">?</button>`; }
-function infoText(k, arg){ return INFO_OPEN.has(k) ? `<p class="info-text">${INFO[k](arg)}</p>` : ""; }
+function infoBtn(k){ return `<button class="info-q" data-info="${k}" aria-label="How is this worked out?">?</button>`; }
+function infoText(){ return ""; }
+/* the explanation floats in a bubble above everything (nothing below moves) */
+let infoPin = false, infoFor = null;
+function infoArg(k){ if (k !== "types") return undefined; const d = cur(); const key = d && suggestKey(d); return key && SUGG[key] && !SUGG[key].loading ? SUGG[key] : null; }
+function showInfo(btn, pin){
+  const k = btn.dataset.info; let pop = document.getElementById("infoPop");
+  if (!pop){ pop = document.createElement("div"); pop.id = "infoPop"; pop.setAttribute("role", "tooltip"); document.body.appendChild(pop); }
+  pop.innerHTML = INFO[k](infoArg(k)); pop.hidden = false; infoFor = btn; infoPin = !!pin;
+  document.querySelectorAll(".info-q.on").forEach(b => b.classList.remove("on")); btn.classList.add("on");
+  const r = btn.getBoundingClientRect(), w = Math.min(300, innerWidth - 16);
+  pop.style.width = w + "px";
+  const left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+  const h = pop.offsetHeight, below = r.bottom + 8 + h <= innerHeight - 8;
+  pop.style.left = left + "px"; pop.style.top = (below ? r.bottom + 8 : Math.max(8, r.top - 8 - h)) + "px";
+  pop.style.setProperty("--ax", (r.left + r.width / 2 - left) + "px"); pop.classList.toggle("above", !below);
+}
+function hideInfo(){ const pop = document.getElementById("infoPop"); if (pop) pop.hidden = true; infoPin = false; infoFor = null; document.querySelectorAll(".info-q.on").forEach(b => b.classList.remove("on")); }
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-info]");
+  if (b){ e.preventDefault(); e.stopPropagation(); if (infoFor === b && infoPin) hideInfo(); else showInfo(b, true); return; }
+  if (!e.target.closest("#infoPop")) hideInfo();
+}, true);
+document.addEventListener("pointerover", e => { if (e.pointerType !== "mouse") return; const b = e.target.closest("[data-info]"); if (b && !infoPin) showInfo(b, false); });
+document.addEventListener("pointerout", e => { if (e.pointerType !== "mouse") return; const b = e.target.closest("[data-info]"); if (b && !infoPin && !(e.relatedTarget && b.contains(e.relatedTarget))) hideInfo(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") hideInfo(); });
+document.addEventListener("scroll", () => { if (infoFor) hideInfo(); }, true);
+addEventListener("resize", hideInfo);
 function curveHTML(deck, avg){
   const b = Array(8).fill(0);
   for (const c of deck) if (c.bucket !== "Land") b[Math.min(7, Math.floor(c.card.cmc || 0))] += qOf(c);
@@ -2664,7 +2696,6 @@ document.addEventListener("pointerdown", e => {
 }, true);
 document.addEventListener("click", e => { if (performance.now() < swallowClickUntil){ swallowClickUntil = 0; e.preventDefault(); e.stopPropagation(); } }, true);
 $("#stats").addEventListener("click", e => {
-  const iq = e.target.closest("[data-info]"); if (iq){ const k = iq.dataset.info; INFO_OPEN.has(k) ? INFO_OPEN.delete(k) : INFO_OPEN.add(k); renderStats(); return; }
   const ro = e.target.closest("[data-role]"); if (ro){ UI.role = UI.role === ro.dataset.role ? "" : ro.dataset.role; renderTools(cur()); animateBoard(() => renderBoard()); renderStats(); if (UI.role) toast(`Showing ${ROLES.find(x => x.k === UI.role).label.toLowerCase()} cards. Click again to show all.`); return; }
   const ct = e.target.closest("[data-ctype]"); if (ct){ UI.ctype = UI.ctype === ct.dataset.ctype ? "" : ct.dataset.ctype; renderTools(cur()); animateBoard(() => renderBoard()); renderStats(); return; }
   if (e.target.closest("#gcBtn")){ const d = cur(); const g = [...cmdrs(d), ...d.cards.filter(c => c.zone === "deck").map(c => c.card)].filter(isGC).map(c => c.name); toast(g.length ? `Game Changers: ${g.join(", ")}` : "No Game Changers in this deck"); return; }
@@ -4528,7 +4559,6 @@ $("#cmds").addEventListener("click", e => {
   if (k === "addPartner") openPartnerPicker(); else openDetail({kind: k}, b);
 });
 $("#combo").addEventListener("click", e => {
-  const iq = e.target.closest("[data-info]"); if (iq){ e.preventDefault(); const k = iq.dataset.info; INFO_OPEN.has(k) ? INFO_OPEN.delete(k) : INFO_OPEN.add(k); renderHeader(); return; }
   const x = e.target.closest("[data-unfocus]"); if (x){ e.stopPropagation(); toggleFocus(x.dataset.unfocus); return; }
   if (e.target.closest("#comboAdd")){
     toast("Press the two circles under any card to build around it");
@@ -4564,9 +4594,6 @@ $("#saveFile").onclick = saveFile;
 $("#importBtn").onclick = () => $("#importFile").click();
 $("#importFile").onchange = e => { const f = e.target.files[0]; if (f) importFile(f); e.target.value = ""; };
 
-$("#total").addEventListener("click", e => {
-  const iq = e.target.closest("[data-info]"); if (iq){ e.preventDefault(); const k = iq.dataset.info; INFO_OPEN.has(k) ? INFO_OPEN.delete(k) : INFO_OPEN.add(k); renderHeader(); }
-});
 $("#total").addEventListener("change", e => {
   if (e.target.id === "curSel"){ UI.cur = e.target.value; saveUI(); renderAll(); return; }
   if (e.target.id !== "priceyIn") return;
