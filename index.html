@@ -468,6 +468,9 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .scrim:not([hidden])>.modal{animation:rise .22s cubic-bezier(.2,.8,.2,1)}
 #detailScrim:not([hidden])>.modal{animation:none}
 #detailScrim{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(5,6,10,.84)}
+/* anchored to the top: when the text and artworks fill in below, the cover flow stays put */
+#detailScrim{place-items:start center}
+#detailScrim>.modal{margin-top:min(4vh,32px)}
 .fly{will-change:transform,opacity;backface-visibility:hidden}
 
 @keyframes fade{from{opacity:0}}
@@ -548,6 +551,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .fl{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;border:0;padding:0;background:none;transition:transform .3s cubic-bezier(.2,.8,.2,1),filter .3s;cursor:pointer}
 .fl .face{width:100%;height:100%;object-fit:cover;border-radius:4.6%/3.3%;display:block;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6);opacity:0;transition:opacity .35s ease}
 .fl .face.ld{opacity:1}
+.flow-scrub[hidden]{display:block!important;visibility:hidden}
 .fl .refl{transition:opacity .35s ease}
 .fl .refl:not(.ld){opacity:0!important}
 /* our own mirrored reflection: always there, in every browser */
@@ -948,7 +952,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117012305";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261117012542";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -2854,10 +2858,24 @@ function animateOpen(srcEl){
   const hideTarget = on => { const c = $("#flowStage .fl.center"), o = $("#flOver"); if (c) c.style.visibility = on ? "hidden" : ""; if (o) o.style.visibility = on ? "hidden" : ""; };
   hideTarget(true);
   srcEl.style.visibility = "hidden";
-  const done = () => {
+  const handOver = () => {
     srcEl.style.visibility = "";
     if (V && V.token === tok){ fly.querySelector(".refl")?.remove(); V.flying = false; hideTarget(false); fadeAway(fly, () => { if (V && V.token === tok) upgradeCenter(); }); }
     else fly.remove();
+  };
+  const done = () => {
+    const c = V && V.token === tok && $("#flowStage .fl.center");
+    const now = fly.getBoundingClientRect(), to = c && c.getBoundingClientRect();
+    if (to && to.width && (Math.abs(now.left - to.left) > 1 || Math.abs(now.top - to.top) > 1 || Math.abs(now.width - to.width) > 1)){
+      const base = fly.getBoundingClientRect();
+      fly.getAnimations().forEach(x => x.cancel());
+      const b0 = fly.getBoundingClientRect();
+      const cx = r => r.left + r.width / 2, cy = r => r.top + r.height / 2;   // the flying card scales around its centre
+      const from = `translate(${cx(base) - cx(b0)}px,${cy(base) - cy(b0)}px) scale(${base.width / b0.width})`;
+      const dest = `translate(${cx(to) - cx(b0)}px,${cy(to) - cy(b0)}px) scale(${to.width / b0.width})`;
+      const fix = fly.animate([{transform: from}, {transform: dest}], {duration: 140, easing: "cubic-bezier(.2,.8,.2,1)", fill: "forwards"});
+      fix.onfinish = fix.oncancel = handOver;
+    } else handOver();
   };
   const target = $("#flowStage .fl.center");
   if (!target){ done(); return; }
