@@ -33,13 +33,3 @@ document.querySelectorAll(".panel").forEach(panel => {
     sc.scrollTo({top: Math.max(0, y), behavior: REDUCED.matches ? "auto" : "smooth"});
   });
 });
-function renderTools(d){
-  const counts = new Map();
-  for (const c of d.cards) if (/Creature/.test(c.card.type.split("//")[0])) for (const s of subtypes(c.card)) counts.set(s, (counts.get(s) || 0) + 1);
-  const opts = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  const html = `<option value="">All creature types</option>` + opts.map(([s, n]) => `<option value="${esc(s)}" ${UI.ctype === s ? "selected" : ""}>${esc(s)} (${n})</option>`).join("");
-  if ($("#ctypeSel").dataset.h !== html){ $("#ctypeSel").innerHTML = html; $("#ctypeSel").dataset.h = html; }
-  $("#ctypeSel").value = UI.ctype;
-  $("#sortSel").value = UI.sort;
-  $("#filterBox").classList.toggle("on", !!(UI.filter.trim() || UI.ctype || UI.role));
-}

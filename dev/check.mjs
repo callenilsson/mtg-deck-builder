@@ -37,7 +37,14 @@ function eagerIds(node){
       if (/FunctionExpression|ArrowFunctionExpression/.test(n.callee.type)) c(n.callee.body, st); else c(n.callee, st);
       // a handler given to addEventListener only runs on a later event, after every file has loaded
       const later = n.callee.type === "MemberExpression" && /^(add|remove)EventListener$/.test(n.callee.property.name);
-      n.arguments.forEach(a => { if (!(later && a.type === "Identifier")) c(a, st); });
+      // setTimeout(fn, 1000+) runs well after every file has loaded
+      const delayed = n.callee.type === "Identifier" && /^set(Timeout|Interval)$/.test(n.callee.name) && n.arguments[1] && n.arguments[1].type === "Literal" && n.arguments[1].value >= 1000;
+      n.arguments.forEach((a, i) => { if (!((later || (delayed && i === 0)) && a.type === "Identifier")) c(a, st); });
+    },
+    // el.onclick = fn only stores the handler
+    AssignmentExpression(n, st, c){
+      const handler = n.left.type === "MemberExpression" && !n.left.computed && /^on[a-z]+$/.test(n.left.property.name) && n.right.type === "Identifier";
+      c(n.left, st); if (!handler) c(n.right, st);
     },
     MemberExpression(n, st, c){ c(n.object, st); if (n.computed) c(n.property, st); },
     Property(n, st, c){ if (n.computed) c(n.key, st); c(n.value, st); },

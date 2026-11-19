@@ -1,5 +1,5 @@
 "use strict";
-/* ---------------- Custom images (kept in IndexedDB, embedded when saving the file) ---------------- */
+/* Pictures: custom art kept in IndexedDB, card image URLs, image loading (with CORS for canvas use). */
 const IMG = new Map();
 const idb = (() => {
   let p;
@@ -33,4 +33,12 @@ async function storeImages(images){
   let n = 0;
   for (const [k, v] of Object.entries(images || {})) if (!IMG.has(k) && typeof v === "string" && v.startsWith("data:image/")){ IMG.set(k, v); await idb.set(k, v); n++; }
   return n;
+}
+function loadImage(src){
+  return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error("Couldn’t load that image.")); im.src = src; });
+}
+async function corsImage(url){
+  if (url.startsWith("data:")) return loadImage(url);
+  const r = await fetch(url); if (!r.ok) throw new Error("Couldn’t load the card image.");
+  return loadImage(URL.createObjectURL(await r.blob()));
 }

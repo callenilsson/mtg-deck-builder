@@ -1,5 +1,4 @@
 "use strict";
-/* ---------------- Confirm & report ---------------- */
 let C = null;
 function confirmTwice(steps, onYes){ C = {steps, i: 0, onYes}; showScrim("#confirmScrim"); renderConfirm(); }
 function renderConfirm(){

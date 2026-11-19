@@ -1,5 +1,5 @@
 "use strict";
-/* ---------------- State & versioned merging ---------------- */
+/* Deck state (S), versioned merging, loading and saving, the active deck. */
 let S = {decks:{}, active:null, sidebarOpen: innerWidth >= 1280, lastFileSave:0, lastChange:0};
 function ensureVer(d){ if (!d.ver) d.ver = uid(); if (!Array.isArray(d.past)) d.past = []; return d; }
 function displayName(d){ return d.name || (d.commander ? cmdKey(d) : "Untitled deck"); }
@@ -107,3 +107,4 @@ function addCard(card, zone, keep){
   touch(d); renderAll();
   return item.uid;
 }
+window.addEventListener("storage", e => { if (e.key === KEY && !CLOUD()){ try { S.decks = JSON.parse(e.newValue).decks; render(); } catch {} } });

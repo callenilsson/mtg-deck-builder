@@ -1,5 +1,15 @@
 "use strict";
-/* ---------------- Toolbar ---------------- */
+/* Toolbar: card size and interface size, sort, filter, move all. */
+function renderTools(d){
+  const counts = new Map();
+  for (const c of d.cards) if (/Creature/.test(c.card.type.split("//")[0])) for (const s of subtypes(c.card)) counts.set(s, (counts.get(s) || 0) + 1);
+  const opts = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const html = `<option value="">All creature types</option>` + opts.map(([s, n]) => `<option value="${esc(s)}" ${UI.ctype === s ? "selected" : ""}>${esc(s)} (${n})</option>`).join("");
+  if ($("#ctypeSel").dataset.h !== html){ $("#ctypeSel").innerHTML = html; $("#ctypeSel").dataset.h = html; }
+  $("#ctypeSel").value = UI.ctype;
+  $("#sortSel").value = UI.sort;
+  $("#filterBox").classList.toggle("on", !!(UI.filter.trim() || UI.ctype || UI.role));
+}
 /* Resizing cards or the interface: keep the card at the top of each list where it was, so the view doesn't jump. */
 function keepAnchors(fn){
   const anchors = [...document.querySelectorAll(".panel-scroll")].map(sc => {
@@ -37,7 +47,6 @@ function applyZoom(){
   updateZoomMax();
 }
 let zoomRaf = 0;
-
 $("#zoomVal").addEventListener("dblclick", () => { UI.zoom = 100; keepAnchors(applyZoom); saveUI(); });
 (() => {
   const board = $("#board"); let pinch = null, raf = 0, saveT = 0;
@@ -48,7 +57,6 @@ $("#zoomVal").addEventListener("dblclick", () => { UI.zoom = 100; keepAnchors(ap
   board.addEventListener("touchend", e => { if (e.touches.length < 2 && pinch){ pinch = null; UI.zoom = Math.round(UI.zoom / 5) * 5; keepAnchors(applyZoom); saveUI(); } });
   board.addEventListener("wheel", e => { if (!e.ctrlKey) return; e.preventDefault(); setZoom((+UI.zoom || 100) * Math.exp(-e.deltaY * .004)); }, {passive: false});
 })();
-
 $("#zoom").addEventListener("input", e => {
   UI.zoom = +e.target.value; $("#zoomVal").textContent = UI.zoom + "%";
   if (!zoomRaf) zoomRaf = requestAnimationFrame(() => { zoomRaf = 0; keepAnchors(applyZoom); });
@@ -68,7 +76,6 @@ function applyUiZoom(){
   document.querySelectorAll("[data-ustep]").forEach(b => b.disabled = +b.dataset.ustep < 0 ? z <= .4 : z >= 2);
   if (V) layoutFlow();
 }
-
 $("#uiZoomVal").addEventListener("dblclick", () => { UI.uiz = 100; keepAnchors(applyUiZoom); saveUI(); });
 $("#sortSel").addEventListener("change", e => { UI.sort = e.target.value; saveUI(); animateBoard(() => renderBoard()); if (UI.sort !== "manual") toast("Dragging a card switches back to “Your order”. Locked cards always come first."); });
 let filtT;

@@ -1,5 +1,5 @@
 "use strict";
-/* ---------------- Render ---------------- */
+/* render(): draws everything for the active deck. */
 function renderAll(){ renderBoard(); renderHeader(); renderSidebar(); }
 function normalizeStacks(d){
   if (!d || !isMine(d)) return false;

@@ -66,7 +66,6 @@ function animateOpen(srcEl){
   };
   a.oncancel = () => { srcEl.style.visibility = ""; fly.remove(); };
 }
-
 /* Closing: the card (with its new art or name) flies back to its place. */
 function closeFly(v){
   if (!v || REDUCED.matches) return null;

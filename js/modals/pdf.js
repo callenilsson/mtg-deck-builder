@@ -1,5 +1,4 @@
 "use strict";
-/* ---------------- PDF: A4 preview first, cards at exactly 63 × 88 mm ---------------- */
 function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Couldn’t load the PDF tools. Check your connection.")); document.head.appendChild(s); }); }
 async function toDataURL(url){
   if (url.startsWith("data:")) return url;
@@ -92,3 +91,4 @@ $("#pdfModal").addEventListener("click", e => {
   if (e.target.closest("[data-close]") && !pdfBusy) hideScrim("#pdfScrim");
   if (e.target.closest("#makePdf")) makePdf();
 });
+$("#pdfBtn").onclick = openPdf;

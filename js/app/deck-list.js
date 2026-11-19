@@ -1,4 +1,5 @@
 "use strict";
+/* The deck list (left menu): folders per person, deck menu (⋯), the folded rail, profile, and their events. */
 /* One ⋯ per deck in the list (like databases in a data browser): Rename, Duplicate, Delete, or Copy for others' decks. */
 function closeDeckMenu(){ const m = document.getElementById("deckRowMenu"); if (m) m.remove(); document.querySelectorAll(".deck-item.menu-open").forEach(e => e.classList.remove("menu-open")); }
 function openDeckMenu(btn){
@@ -104,64 +105,55 @@ function renderProfile(){
   box.innerHTML = `${personAvatar(me || {name: "?"}, "lg")}<div class="pf-text"><b>${esc((me && me.name) || "Signed in")}</b><small class="pf-status ${DS.status}"><i></i>${st}</small></div>
     <button class="icon-btn" id="${DS.file ? "profSync" : "profDrive"}" title="${DS.file ? "Sync now" : "Set up the shared library"}">${DS.file ? I.flip : I.right}</button>`;
 }
-function deckTotals(d){
-  const deck = d.cards.filter(c => c.zone === "deck");
-  const value = sumPrice([...cmdrs(d), ...cardsQ(deck)]);
-  return {n: inDeckCount(d), locked: sumQ(deck.filter(c => c.locked)), value};
+$("#profile").addEventListener("click", e => {
+  if (e.target.closest("#profConnect")) driveConnect();
+  else if (e.target.closest("#profSync")){ DS.rev = null; driveSync(false); }
+  else if (e.target.closest("#profDrive")) $("#driveBox").scrollIntoView({behavior: "smooth", block: "center"});
+});
+$("#closeSide").innerHTML = I.panelL;
+ $("#railExpand").innerHTML = I.panelR;
+$("#railExpand").onclick = () => { S.sidebarOpen = true; S.sideTouched = true; if (isPhone()) CMP_OPEN = false; save(false); render(); applyZoom(); };
+$("#railDecks").addEventListener("click", e => {
+  if (e.target.closest("[data-newdeck]")){ newDeck(); return; }
+  const b = e.target.closest("[data-deck]"); if (!b) return;
+  S.active = b.dataset.deck; save(false); render();
+});
+$("#closeSide").onclick = () => { S.sidebarOpen = false; save(false); render(); };
+$("#openSide").onclick = () => { S.sidebarOpen = !S.sidebarOpen; S.sideTouched = true; if (S.sidebarOpen && isPhone()) CMP_OPEN = false; save(false); render(); };
+$("#sideScrim").onclick = () => { S.sidebarOpen = false; render(); };
+$("#deckList").addEventListener("click", e => {
+  const dm = e.target.closest("[data-deckmenu]"); if (dm){ e.stopPropagation(); openDeckMenu(dm); return; }
+  if (e.target.closest("[data-newdeck]")){ newDeck(); return; }
+  const fh = e.target.closest("[data-folder]");
+  if (fh){ UI.openPeople = UI.openPeople || {}; const k = fh.dataset.folder, mineF = !!fh.dataset.mine; UI.openPeople[k] = !folderOpen(k, mineF); saveUI(); renderSidebar(); return; }
+  if (e.target.closest("#foldAll")){
+    const me = meNow(), myId = me ? me.id : "me", ids = [...document.querySelectorAll("#deckList [data-folder]")].map(b => b.dataset.folder);
+    const anyOpen = ids.some(id => folderOpen(id, id === myId));
+    UI.openPeople = UI.openPeople || {}; ids.forEach(id => UI.openPeople[id] = !anyOpen); saveUI(); renderSidebar(); return;
+  }
+  if (e.target.closest(".deck-rename")) return;
+  const it = e.target.closest("[data-deck]"); if (!it) return;
+  S.active = it.dataset.deck; if (innerWidth <= 820) S.sidebarOpen = false; save(false); render();
+});
+function renameInList(id){
+  if (guard(S.decks[id])) return;
+  const d = S.decks[id]; const b = document.querySelector(`.deck-item[data-deck="${id}"] .deck-meta b`); if (!d || !b) return;
+  const inp = document.createElement("input"); inp.className = "deck-rename"; inp.value = d.name || displayName(d); inp.setAttribute("aria-label", "Deck name");
+  b.replaceWith(inp); inp.focus(); inp.select();
+  let done = false;
+  const finish = ok => { if (done) return; done = true; if (ok){ const v = inp.value.trim(); if (v && v !== d.name){ d.name = v; touch(d); } } renderSidebar(); renderHeader(); };
+  inp.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Enter") finish(true); if (e.key === "Escape") finish(false); });
+  inp.addEventListener("blur", () => finish(true));
 }
-function renderHeader(){
-  const d = cur();
-  if (!d) return;
-  if (document.activeElement !== $("#deckName")) $("#deckName").value = d.name || "";
-  const {n, locked, value} = deckTotals(d);
-  const tot = $("#total");
-  tot.innerHTML = `<b>${n}<span>/100</span></b><small>${n > 100 ? `${n - 100} too many` : n === 100 ? "Complete" : "in deck"}</small>
-    ${d.commander ? `<div class="tot-sub"><span title="Locked final picks in the deck">${I.lock}<b>${locked}</b> locked</span><span title="Deck value, commander included (${value.n} of ${n} cards have a price)"><b>${fmtMoney(value.tot, value.sym)}</b> value</span></div>
-    <label class="pricey-row" title="Cards whose cheapest printing costs this much or more get a purple outline. A quick hint for cards that may be too strong for a casual table."><span class="pr-lbl">💎 Expensive above ${infoBtn("pricey")}</span><input id="priceyIn" type="number" min="0" step="0.5" inputmode="decimal" value="${priceyTh(d)}" ${roDeck(d) ? "disabled" : ""} aria-label="Expensive card threshold"><select id="curSel" class="cur-sel" title="Price currency: € from Cardmarket, $ from TCGplayer" aria-label="Currency"><option value="eur" ${UI.cur === "usd" ? "" : "selected"}>€</option><option value="usd" ${UI.cur === "usd" ? "selected" : ""}>$</option></select>${(() => { const k = [...cmdrs(d), ...d.cards.map(c => c.card)].filter(isPricey).length; return `<span class="pr-count" title="${k} expensive card${k === 1 ? "" : "s"} in this deck and pool">${k}</span>`; })()}</label>${infoText("pricey")}` : ""}`;
-  tot.classList.toggle("full", n === 100); tot.classList.toggle("over", n > 100);
-  if (!d.commander) return;
-  // commanders
-  const slot = (c, kind, label) => `<div class="cmd-col"><button class="cmd-slot" data-cmd="${kind}" title="${esc(c.name)}"><img src="${esc(imgOf(c))}" ${srcsetAttr(c)} alt="${esc(c.name)}">${kind === "partner" ? `<span class="cmd-lbl">${label}</span>` : ""}</button>
-    <div class="acts"><button data-cact="edit" data-kind="${kind}" title="Edit art and name">${I.brush}</button><button data-cact="change" data-kind="${kind}" title="Change ${kind === "partner" ? "partner" : "commander"}">${I.swap}</button>${kind === "partner" ? `<button class="del" data-cact="remove" title="Remove partner">${I.trash}</button>` : ""}</div></div>`;
-  let cm = slot(d.commander, "commander", d.partner ? "Commander" : "Commander");
-  if (d.partner) cm += slot(d.partner, "partner", "Partner");
-  else if (partnerQuery(d.commander)) cm += `<button class="cmd-slot partner empty" data-cmd="addPartner" title="This commander can have a partner"><span><span class="card-plus-ico">+</span>Partner</span></button>`;
-  $("#cmds").innerHTML = cm;
-  // combine row: always shows the empty slot, so it's clear there's room for more
-  const foc = d.cards.filter(c => c.focus);
-  $("#combo").innerHTML = `<div class="combo-lbl" title="Add cards suggests cards that work with your commander${foc.length ? " and with these cards" : ". Press the two circles under any card to build around it too"}"><span class="eyebrow">${I.focus} Build around ${infoBtn("build")}</span><small>${foc.length ? "Add cards also suggests cards for these" : `Press ${I.focus} under a card`}</small>${infoText("build")}</div>
-    ${foc.map(c => `<button class="mini" data-open="${c.uid}" data-img="${esc(largeOf(c.card))}" title="${esc(c.card.name)}"><img src="${esc(imgOf(c.card))}" alt="${esc(c.card.name)}"><span class="x" data-unfocus="${c.uid}" title="Stop building around this card">×</span></button>`).join("")}
-    <button class="mini empty" id="comboAdd" title="Build around another card">+</button>`;
-  renderStats();
-  renderRail(d);
+function duplicateDeck(id){
+  const src = S.decks[id]; if (!src) return;
+  const d = JSON.parse(JSON.stringify(src));
+  d.id = uid(); d.ver = uid(); d.past = []; d.created = d.updated = Date.now();
+  d.name = isMine(src) ? displayName(src) + " (copy)" : `${displayName(src)} (from ${ownerName(src).split(" ")[0]})`;
+  d.owner = meNow() || undefined; delete d.by;
+  d.cards.forEach(c => { c.locked = c.locked && isMine(src); });
+  d.cards.forEach(c => c.uid = uid());
+  S.decks[d.id] = d; S.active = d.id; save(); render();
+  toast(`Copied to your decks: ${d.name}`);
 }
-// compact: phones (any way up), unfolded foldables and small touch tablets: both side menus start folded into thin rails
-const COMPACT_Q = matchMedia("(max-width: 820px), (pointer: coarse) and (orientation: landscape) and (max-height: 500px), (pointer: coarse) and (min-width: 821px) and (max-width: 1100px)");
-const LAND_Q = matchMedia("(orientation: landscape) and (max-height: 500px)");
-const isCompact = () => COMPACT_Q.matches;
-const isPhone = () => innerWidth <= 820 && !LAND_Q.matches;
-let CMP_OPEN = false;      // compact mode: is the full commander panel open (it starts folded into the rail)
-function applyCompact(){ document.body.classList.toggle("compact", isCompact()); }
-applyCompact();
-for (const q of [COMPACT_Q, LAND_Q]) q.addEventListener("change", () => { applyCompact(); CMP_OPEN = false; if (isCompact() || innerWidth < 1280) S.sidebarOpen = false; render(); applyZoom(); });
-function renderRail(d){
-  const {n, locked, value} = deckTotals(d);
-  const deck = d.cards.filter(c => c.zone === "deck");
-  const chips = d.typeOrder.filter(t => (d.limits[t] ?? 0) > 0 || deck.some(c => c.bucket === t)).map(t => {
-    const k = sumQ(deck.filter(c => c.bucket === t)), lim = d.limits[t] ?? 0;
-    return `<span class="r-chip ${k > lim ? "over" : k === lim && lim ? "met" : ""}" title="${PLURAL[t]}: ${k} of ${lim}"><i class="ms ${MS[t]}"></i>${k}/${lim}</span>`;
-  }).join("");
-  $("#rail").innerHTML = `<button class="icon-btn r-open panel-btn" id="railOpen" title="Show commander and stats">${I.panelR}</button><button class="icon-btn" id="railMenu" title="Show or hide your decks">${I.menu}</button>
-    <button class="r-thumb" data-cmd="commander" title="${esc(d.commander.name)}"><img src="${esc(imgOf(d.commander))}" alt=""></button>
-    <div class="r-tot ${n === 100 ? "full" : n > 100 ? "over" : ""}" title="Cards in deck"><b>${n}</b><span>/100</span></div>
-    <div class="r-meta" title="Locked final picks">${I.lock}${locked}</div>
-    <div class="r-meta" title="Deck value">${fmtMoney(value.tot, value.sym)}</div>
-    <div class="r-types">${chips}</div>
-    <div class="r-acts">
-      <button class="r-act gold" data-ract="add" title="Add cards"><span class="card-plus-ico">+</span><small>Add</small></button>
-      <button class="r-act" data-ract="hand" title="Test hand"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="9" height="13" rx="1.5" transform="rotate(-12 7.5 12.5)"/><rect x="9" y="4" width="9" height="13" rx="1.5"/><path d="M13.5 8.5v4M11.5 10.5h4"/></svg><small>Test</small></button>
-      <button class="r-act" data-ract="stats" title="Deck stats and odds"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><small>Stats</small></button>
-      <button class="r-act" data-ract="print" title="Print"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg><small>Print</small></button>
-    </div>`;
-  $("#foldTop").innerHTML = I.panelL;
-}
+$("#deckList").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.dataset.deck) e.target.click(); });

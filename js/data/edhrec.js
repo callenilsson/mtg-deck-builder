@@ -1,5 +1,5 @@
 "use strict";
-/* ---------------- Commanders (one, or two partners) ---------------- */
+/* EDHREC: commander pages, inclusion % and synergy, recommendations. */
 function cmdrs(d){ return [d.commander, d.partner].filter(Boolean); }
 function deckCI(d){ const s = new Set(); cmdrs(d).forEach(c => (c.ci || []).forEach(x => s.add(x))); return COLORS.filter(x => s.has(x)); }
 function cmdKey(d){ return cmdrs(d).map(c => c.name).join(" + "); }
@@ -16,8 +16,6 @@ function partnerQuery(cmd){
   if (/\bPartner\b/.test(t)) return `is:commander keyword:partner -o:"partner with"`;
   return null;
 }
-
-/* ---------------- EDHREC ---------------- */
 const edhCache = {}, recCache = {};
 function edh(path){
   if (!edhCache[path]) edhCache[path] = fetch(`https://json.edhrec.com/pages/${path}.json`)

@@ -1,5 +1,4 @@
 "use strict";
-/* ---- Deck roles, estimated from the rules text (no lookups): ramp, card draw, removal, board wipes ---- */
 const ROLES = [
   {k: "ramp", label: "Ramp", goal: 10, tip: "Mana rocks, mana creatures, land search, Treasure, extra land drops"},
   {k: "draw", label: "Card draw", goal: 10, tip: "Cards that draw you cards"},

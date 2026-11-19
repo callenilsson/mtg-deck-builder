@@ -1,5 +1,5 @@
 "use strict";
-/* ---------------- Card data (Scryfall) ---------------- */
+/* Scryfall: card data, rate-limited requests with retries, search and batch lookups. */
 function toCard(sc){
   const f = sc.card_faces || [];
   const front = sc.image_uris || (f[0] && f[0].image_uris) || {};

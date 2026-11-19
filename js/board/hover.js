@@ -1,5 +1,4 @@
 "use strict";
-/* ---------------- Hover preview (mouse only; not on the board, where the size slider does the job) ---------------- */
 const prev = $("#hoverPrev");
 let prevSrc = null;
 document.addEventListener("pointermove", e => {

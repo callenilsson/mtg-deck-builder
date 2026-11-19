@@ -1,7 +1,5 @@
 "use strict";
-/* ---------------- Header shrinks to one line while you scroll the cards ---------------- */
-
-/* ---------------- Board clicks: buttons act at once; single click = card view; double click = move ---------------- */
+/* Board clicks: buttons act at once, a click opens the card view, a double click moves the card; folding type boxes. */
 let clickT = null, clickU = null;
 function setFolded(key, on){
   UI.collapsed = UI.collapsed || {};
@@ -56,24 +54,3 @@ document.addEventListener("pointerdown", e => {
   if (tok) moveToken(u); else moveOther(u);
 }, true);
 document.addEventListener("click", e => { if (performance.now() < swallowClickUntil){ swallowClickUntil = 0; e.preventDefault(); e.stopPropagation(); } }, true);
-$("#stats").addEventListener("click", e => {
-  if (e.target.closest("#cbAll")){ CB_ALL = !CB_ALL; renderStats(); return; }
-  const op = e.target.closest(".cb-item[data-open]"); if (op){ openDetail({kind: "item", uid: op.dataset.open}, null); return; }
-  const ro = e.target.closest("[data-role]"); if (ro){ UI.role = UI.role === ro.dataset.role ? "" : ro.dataset.role; renderTools(cur()); animateBoard(() => renderBoard()); renderStats(); if (UI.role) toast(`Showing ${ROLES.find(x => x.k === UI.role).label.toLowerCase()} cards. Click again to show all.`); return; }
-  const ct = e.target.closest("[data-ctype]"); if (ct){ UI.ctype = UI.ctype === ct.dataset.ctype ? "" : ct.dataset.ctype; renderTools(cur()); animateBoard(() => renderBoard()); renderStats(); return; }
-  if (e.target.closest("#gcBtn")){ const d = cur(); const g = [...cmdrs(d), ...d.cards.filter(c => c.zone === "deck").map(c => c.card)].filter(isGC).map(c => c.name); toast(g.length ? `Game Changers: ${g.join(", ")}` : "No Game Changers in this deck"); return; }
-  if (e.target.closest("#useSugg")){
-    if (guard()) return;
-    const d = cur(), sg = SUGG[suggestKey(d)]; if (!sg || !sg.counts) return;
-    d.limits = {...sg.counts}; touch(d); renderBoard(); renderStats();
-    toast("Limits updated to EDHREC’s numbers");
-  }
-  const ab = e.target.closest("#addBasics");
-  if (ab){ const n = parseInt(ab.textContent.replace(/\D+/g, ""), 10) || 0; if (n) addBasics(n); }
-});
-$("#stats").addEventListener("change", e => {
-  const inp = e.target.closest("[data-lim]"); if (!inp) return;
-  if (guard()){ renderStats(); return; }
-  const d = cur(); d.limits[inp.dataset.lim] = Math.max(0, Math.min(99, parseInt(inp.value, 10) || 0));
-  touch(d); renderBoard(); renderStats();
-});

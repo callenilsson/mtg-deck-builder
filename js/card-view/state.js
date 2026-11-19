@@ -1,23 +1,5 @@
 "use strict";
-/* ---------------- Card view ----------------
-   One view for everything about a card: the cover flow of every artwork on top (the centered card IS the card),
-   rules text, EDHREC numbers and price below, then actions and your own art. Rename by clicking the name on the card.
-   Changes to art and name are kept when you close the view. */
-const FRAMES = {
-  "2015": {box: [56, 104, 616, 518], name: [52, 50, 92]},
-  "2003": {box: [57, 107, 616, 520], name: [54, 52, 96]},
-  "1997": {box: [80, 89, 600, 510], name: [62, 42, 84]},
-  "1993": {box: [80, 89, 600, 510], name: [62, 42, 84]}
-};
-const frameOf = c => FRAMES[c.frame] || FRAMES["2015"];
-function loadImage(src){
-  return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error("Couldn’t load that image.")); im.src = src; });
-}
-async function corsImage(url){
-  if (url.startsWith("data:")) return loadImage(url);
-  const r = await fetch(url); if (!r.ok) throw new Error("Couldn’t load the card image.");
-  return loadImage(URL.createObjectURL(await r.blob()));
-}
+/* Card view state (V): what is open, its printings and your customized versions. */
 let V = null, vTok = 0;
 /* ---------------- Card view state ----------------
    The cover flow holds every official printing, plus your customization as its own card ("✦ Yours"), placed just before the

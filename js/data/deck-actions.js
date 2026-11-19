@@ -1,5 +1,5 @@
 "use strict";
-/* ---------------- Card actions ---------------- */
+/* Changing cards in a deck: lock, build around, move between pool and deck, copies, remove. */
 function findCard(u){ const d = cur(); return d && d.cards.find(c => c.uid === u); }
 function toggleLock(u){ const c = findCard(u); if (!c || guard()) return; animateBoard(() => { c.locked = !c.locked; touch(cur()); renderBoard(); renderHeader(); }); }
 function toggleFocus(u){ const c = findCard(u); if (!c || guard()) return; c.focus = !c.focus; touch(cur()); renderBoard(); renderHeader(); toast(c.focus ? `Building around ${c.card.name}: Add cards now also suggests cards for it` : `No longer building around ${c.card.name}`); }
@@ -28,4 +28,11 @@ function removeCard(u, ask = true){
   const go = () => { animateBoard(() => { d.cards.splice(d.cards.indexOf(c), 1); touch(d); renderAll(); }); toast(`${c.card.name} removed`); };
   if (!ask) return go();
   confirmTwice([{title: `Remove ${esc(c.card.name)}?`, text: `It leaves the ${c.zone === "deck" ? "deck" : "card pool"}. You can add it again later from Add cards.`, yes: "Remove card"}], go);
+}
+function changeQty(u, delta){
+  const d = cur(); if (guard(d)) return;
+  const c = findCard(u) || (d.tokens || []).find(k => k.uid === u); if (!c) return;
+  const n = qOf(c) + delta;
+  if (n < 1){ if (d.cards.includes(c)) removeCard(u); else removeToken(u); return; }
+  c.qty = n; touch(d); renderBoard(); renderHeader();
 }

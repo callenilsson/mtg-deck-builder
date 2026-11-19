@@ -11,27 +11,27 @@ https://callenilsson.github.io/mtg-deck-builder/ (GitHub Pages serves `main` as-
 - Rule: code that *runs while a file loads* (top-level calls, IIFEs, `setTimeout(fn)`) may only use names
   from that file or earlier ones. Startup calls belong in `js/app/main.js` (loaded last).
   `node dev/check.mjs .` verifies this (deploy runs it).
-- Inline handlers in generated HTML (e.g. `onload="flLoaded(this)"`) rely on functions being global.
+- Each feature file holds its own state, drawing and event wiring; `app/main.js` only starts the app.
+  Every file starts with a one-line comment saying what it is.
+- `node dev/inventory.mjs .` lists every top-level function/const/statement per file (find where a name lives).
+- Listeners on the same element+event run in registration (= load) order: card-view/swipe.js must stay
+  before card-view/art-gestures.js and card-view/events.js.
 
-## Where things are
-| Area | Files |
+## Where things are (js/, in load order)
+| Folder | Files |
 |---|---|
-| Helpers, constants, toast, mana symbols | js/core/util.js |
-| Ownership / read-only guard; custom images (IndexedDB) | js/core/prefs.js, js/core/images.js |
-| Scryfall requests (rate limit), prices, EDHREC | js/data/scryfall.js, prices.js, edhrec.js |
-| Deck state, versioned merging, load/save | js/data/decks.js |
-| Google Drive library (sign-in, Picker, sync) | js/data/drive.js |
-| JSON backup / import | js/data/files.js |
-| render(), deck list sidebar + rail | js/app/render.js, js/app/deck-list.js |
-| Board: tiles/sort/filter, tokens, drag, clicks, FLIP, touch scroll bars | js/board/* |
-| Stats: info bubbles, curve, roles, odds, color balance, types | js/stats/* |
-| Test hand + 1,000-game simulation | js/stats/test-hand.js |
-| Panels/splitter/resizing, toolbar & zoom, get-the-app (install.js), stats window, scrims | js/layout/* |
-| Add-cards window, confirm/report, PDF print | js/modals/* |
-| Card view: state (V), open/close flights, cover flow, art editor, save | js/card-view/* |
-| Event wiring, update check, startup | js/app/main.js |
+| core/ (no app state) | constants, icons (`I`), dom (`$`, esc, toast), cards (mana, qty helpers), prefs (`UI`), identity (who/owner, `guard`), screen (`isPhone`, compact), images (IndexedDB art, image loading) |
+| data/ | scryfall (`sf`, rate limit), prices, edhrec, game-changers, decks (`S`, merge, load/save, `cur`), deck-actions (lock, move, qty, remove), files (JSON backup/import) |
+| app/ | render (`render()`), deck-list (left menu + rail), header (commander panel + its rail), welcome (no deck / sign-in), install (Home Screen), update (new version, Reload), main (startup) |
+| stats/ | info-bubbles (`?`), roles, math (hypergeometric), opening, colors (castability), panel (types table, curve, creature types, phone stats window) |
+| board/ | flip, scroll-bars, suggestions, sorting, tiles, tokens, board (`renderBoard`), jump, hover, drag, clicks |
+| layout/ | panels (divider, menu widths), toolbar (card/interface size, sort, filter), scrims (windows open/close) |
+| modals/ | add-cards (open/render), add-cards-search (load/events/commander), confirm, pdf |
+| card-view/ | state (`V`), flights (open/close animation), panel (window + details), coverflow (3D cards, dealing), prints (artworks), versions (customizations), swipe, canvas (drawing), art-gestures, events (buttons/keys), save |
+| drive/ | auth (token, Picker, `dfetch`), sync (pull/push/poll), panel (Drive box) |
+| test-hand/ | simulate (rules, 1,000 games), window |
 
-Styles follow the same names (card-view.css, test-hand.css, commander-panel.css, …).
+Styles: css/ files named by area (card-view.css, test-hand.css, commander-panel.css, toolbar.css, …).
 
 ## Work loop
 - Test headless: `dev/test.sh <outdir> W H [mobile]` runs `<outdir>/steps.json` (steps: js, wait, shot,

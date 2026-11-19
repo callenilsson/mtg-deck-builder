@@ -1,5 +1,5 @@
 "use strict";
-/* ---------------- Board animation: cards glide to their new place (FLIP) ---------------- */
+/* Board animation: cards glide to their new places (FLIP). */
 function snapshot(){
   const m = new Map(), vh = innerHeight;
   document.querySelectorAll("#board .cw[data-uid]").forEach(el => {

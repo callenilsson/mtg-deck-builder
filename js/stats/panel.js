@@ -1,5 +1,13 @@
 "use strict";
-/* ---- Creature types: only shown when the deck is clearly about a type ---- */
+/* The stats area: card types table, mana curve, creature types, and the stats window on phones. */
+function curveHTML(deck, avg){
+  const b = Array(8).fill(0);
+  for (const c of deck) if (c.bucket !== "Land") b[Math.min(7, Math.floor(c.card.cmc || 0))] += qOf(c);
+  const max = Math.max(1, ...b);
+  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Mana curve ${infoBtn("curve")}</span><small>spells by mana value</small></div>${infoText("curve")}<div class="curve" title="Mana curve: how many spells cost 0, 1, 2 … 7+ mana. Average ${avg.toFixed(2)} (lands not counted). A lower, left-leaning curve means a faster deck.">
+    <div class="cv-bars">${b.map((n, i) => `<div class="cv-col"><span class="cv-n">${n || ""}</span><i style="height:${Math.round(n / max * 100)}%"></i><span class="cv-l">${i === 7 ? "7+" : i}</span></div>`).join("")}</div>
+    <div class="cv-avg"><b>${avg.toFixed(1)}</b><small>average</small></div></div></div>`;
+}
 function typesHTML(deck){
   const cnt = new Map(); let ch = 0;
   for (const c of deck){
@@ -66,3 +74,33 @@ function renderStats(){
     ${deck.length ? openingHTML(d, deck) : ""}
     ${deck.length ? rolesHTML(deck) + colorBalanceHTML(d, deck) + typesHTML(deck) : ""}`;
 }
+$("#stats").addEventListener("click", e => {
+  if (e.target.closest("#cbAll")){ CB_ALL = !CB_ALL; renderStats(); return; }
+  const op = e.target.closest(".cb-item[data-open]"); if (op){ openDetail({kind: "item", uid: op.dataset.open}, null); return; }
+  const ro = e.target.closest("[data-role]"); if (ro){ UI.role = UI.role === ro.dataset.role ? "" : ro.dataset.role; renderTools(cur()); animateBoard(() => renderBoard()); renderStats(); if (UI.role) toast(`Showing ${ROLES.find(x => x.k === UI.role).label.toLowerCase()} cards. Click again to show all.`); return; }
+  const ct = e.target.closest("[data-ctype]"); if (ct){ UI.ctype = UI.ctype === ct.dataset.ctype ? "" : ct.dataset.ctype; renderTools(cur()); animateBoard(() => renderBoard()); renderStats(); return; }
+  if (e.target.closest("#gcBtn")){ const d = cur(); const g = [...cmdrs(d), ...d.cards.filter(c => c.zone === "deck").map(c => c.card)].filter(isGC).map(c => c.name); toast(g.length ? `Game Changers: ${g.join(", ")}` : "No Game Changers in this deck"); return; }
+  if (e.target.closest("#useSugg")){
+    if (guard()) return;
+    const d = cur(), sg = SUGG[suggestKey(d)]; if (!sg || !sg.counts) return;
+    d.limits = {...sg.counts}; touch(d); renderBoard(); renderStats();
+    toast("Limits updated to EDHREC’s numbers");
+  }
+  const ab = e.target.closest("#addBasics");
+  if (ab){ const n = parseInt(ab.textContent.replace(/\D+/g, ""), 10) || 0; if (n) addBasics(n); }
+});
+$("#stats").addEventListener("change", e => {
+  const inp = e.target.closest("[data-lim]"); if (!inp) return;
+  if (guard()){ renderStats(); return; }
+  const d = cur(); d.limits[inp.dataset.lim] = Math.max(0, Math.min(99, parseInt(inp.value, 10) || 0));
+  touch(d); renderBoard(); renderStats();
+});
+let statsSpot = null;
+function openStats(){
+  const st = $("#stats"); if (!st) return;
+  if (!statsSpot){ statsSpot = document.createComment("stats"); st.before(statsSpot); }
+  $("#statsHost").appendChild(st); showScrim("#statsScrim");
+}
+function closeStats(){ const st = $("#stats"); if (statsSpot && st && st.parentElement !== statsSpot.parentElement) statsSpot.after(st); $("#statsScrim").hidden = true; hideInfo(); }
+$("#statsBtn").onclick = openStats;
+$("#statsModal").addEventListener("click", e => { if (e.target.closest("[data-close]")) closeStats(); else if (e.target.closest("[data-open]")) closeStats(); });

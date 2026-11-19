@@ -18,7 +18,6 @@ window.addEventListener("pointermove", e => {
   if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 5) startDrag(press.kind, press.el, e.clientX, e.clientY);
 });
 window.addEventListener("pointerup", e => { if (e.pointerType === "touch") return; press = null; if (drag) endDrag(true); });
-
 let tp = null;
 document.addEventListener("touchstart", e => {
   if (e.touches.length > 1){ cancelTouch(); return; }
@@ -40,7 +39,6 @@ document.addEventListener("touchend", e => { cancelTouch(); if (drag){ e.prevent
 document.addEventListener("touchcancel", () => { cancelTouch(); if (drag) endDrag(false); });
 function cancelTouch(){ if (tp){ clearTimeout(tp.timer); tp = null; } }
 document.addEventListener("contextmenu", e => { if (e.target.closest("#board .ct") || drag) e.preventDefault(); });
-
 function startDrag(kind, el, x, y){
   press = null; if (!el) return;
   if (roDeck(cur())){ guard(); return; }

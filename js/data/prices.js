@@ -1,5 +1,5 @@
 "use strict";
-/* ---------------- Prices (Scryfall: € from Cardmarket, $ from TCGplayer), cached 3 days ---------------- */
+/* Prices: cheapest printing per card (cached 3 days), this-artwork price, expensive threshold, deck value. */
 let PRICES = {};
 try { PRICES = JSON.parse(localStorage.getItem(PKEY) || "{}"); } catch {}
 let pricesT;

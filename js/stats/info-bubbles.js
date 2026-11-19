@@ -1,16 +1,5 @@
 "use strict";
-/* Game Changers: the official Commander list of the strongest cards (they push a deck into a higher bracket).
-   One small request per visit, kept in memory only. */
-let GC = null, gcBusy = false;
-async function loadGameChangers(){
-  if (GC || gcBusy) return; gcBusy = true;
-  try {
-    const names = new Set(); let url = `/cards/search?q=${encodeURIComponent("is:gamechanger")}&unique=oracle`;
-    while (url){ const j = await sf(url); (j && j.data || []).forEach(c => names.add(c.name)); url = j && j.has_more ? j.next_page.replace("https://api.scryfall.com", "") : null; }
-    GC = names; renderStats(); if (!$("#addScrim").hidden && A.mode === "cards") renderAddBody();
-  } catch {} gcBusy = false;
-}
-const isGC = c => !!(GC && c && (GC.has(c.name) || GC.has(String(c.name).split(" // ")[0])));
+/* The "?" buttons: explanation bubbles for every stat. */
 /* Mana curve of the spells in the deck (lands not counted): how many cost 0, 1, 2 … 7 or more. */
 /* A small "?" beside each stats title: tap to read how that part works (works on phones, unlike hover text). */
 const INFO_OPEN = new Set();
@@ -100,11 +89,3 @@ document.addEventListener("pointerout", e => { if (e.pointerType !== "mouse") re
 document.addEventListener("keydown", e => { if (e.key === "Escape") hideInfo(); });
 document.addEventListener("scroll", () => { if (infoFor) hideInfo(); }, true);
 addEventListener("resize", hideInfo);
-function curveHTML(deck, avg){
-  const b = Array(8).fill(0);
-  for (const c of deck) if (c.bucket !== "Land") b[Math.min(7, Math.floor(c.card.cmc || 0))] += qOf(c);
-  const max = Math.max(1, ...b);
-  return `<div class="viz"><div class="viz-h"><span class="eyebrow">Mana curve ${infoBtn("curve")}</span><small>spells by mana value</small></div>${infoText("curve")}<div class="curve" title="Mana curve: how many spells cost 0, 1, 2 … 7+ mana. Average ${avg.toFixed(2)} (lands not counted). A lower, left-leaning curve means a faster deck.">
-    <div class="cv-bars">${b.map((n, i) => `<div class="cv-col"><span class="cv-n">${n || ""}</span><i style="height:${Math.round(n / max * 100)}%"></i><span class="cv-l">${i === 7 ? "7+" : i}</span></div>`).join("")}</div>
-    <div class="cv-avg"><b>${avg.toFixed(1)}</b><small>average</small></div></div></div>`;
-}

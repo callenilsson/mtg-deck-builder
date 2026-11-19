@@ -1,5 +1,5 @@
 "use strict";
-/* ---------------- Save / import ---------------- */
+/* JSON backup of all decks, and importing one (old .html saves too). */
 function download(name, text, type){
   const url = URL.createObjectURL(new Blob([text], {type}));
   const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
@@ -30,3 +30,6 @@ async function importFile(file){
   save(); render();
   showReport("Import finished", parts.length ? parts : ["You already had everything in this file. Nothing changed."]);
 }
+$("#saveFile").onclick = saveFile;
+$("#importBtn").onclick = () => $("#importFile").click();
+$("#importFile").onchange = e => { const f = e.target.files[0]; if (f) importFile(f); e.target.value = ""; };

@@ -1,4 +1,5 @@
 "use strict";
+/* Tokens: one tile per artwork with a count, and the tokens your cards make. */
 /* Tokens: not part of the 100, no limits, no EDHREC. One tile per artwork with a count, like basic lands. */
 const tokZone = k => k.zone || "deck";
 /* The same token across printings: same name and power/toughness, and the same rules text once wording
@@ -70,20 +71,4 @@ async function deckTokens(d){
   for (const r of out){ const g = merged.find(m => sameToken(m.card, r.card)); if (g){ g.pairs = [...new Set([...g.pairs, ...r.pairs])]; g.arts = (g.arts || 1) + 1; } else merged.push({...r, arts: 1}); }
   tokenCache[key] = merged.sort((a, b) => a.card.name.localeCompare(b.card.name));
   return tokenCache[key];
-}
-let CAST = null;
-function renderBoard(){
-  const d = cur(); if (!d || !d.commander) return;
-  CAST = castCtx(d);      // shared mana counts for the "often late" marks
-  $("#optBoxes").innerHTML = (d.typeOrder.map(t => boxHTML(d, "options", t)).join("") || `<div class="empty-note">No cards match the filter.</div>`) + tokenBoxHTML(d, "options");
-  $("#deckBoxes").innerHTML = (d.typeOrder.map(t => boxHTML(d, "deck", t)).join("") || `<div class="empty-note">No cards match the filter.</div>`) + tokenBoxHTML(d, "deck");
-  const pool = d.cards.filter(c => c.zone === "options"), deck = d.cards.filter(c => c.zone === "deck");
-  const pv = sumPrice(cardsQ(pool)), dv = sumPrice([...cmdrs(d), ...cardsQ(deck)]);   // deck value includes the commander, same as the commander panel
-  const pc = list => sumQ(list.filter(c => isPricey(c.card))), po = pc(pool), pd = pc(deck);
-  const sym = UI.cur === "usd" ? "$" : "€";
-  $("#optMeta").innerHTML = `${sumQ(pool)} cards · ${fmtMoney(pv.tot, pv.sym)}${po ? ` · <span class="ph-pricey" title="${po} cards at ${sym}${priceyTh(d)} or more">💎 ${po}</span>` : ""}`;
-  $("#deckMeta").innerHTML = `${sumQ(deck)} cards · ${fmtMoney(dv.tot, dv.sym)}${pd ? ` · <span class="ph-pricey" title="${pd} cards at ${sym}${priceyTh(d)} or more">💎 ${pd}</span>` : ""}`;
-  renderJump();
-  renderTools(d);
-  updateZoomMax();
 }

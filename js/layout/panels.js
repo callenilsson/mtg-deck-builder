@@ -1,5 +1,5 @@
 "use strict";
-/* ---------------- Resizable divider between card pool and deck ---------------- */
+/* Resizing: divider between card pool and deck, and the widths of the deck list and commander panel. */
 /* When the divider moves and a row gains or loses a column, the visible cards glide to their new spots instead of jumping. */
 function splitFlip(apply){
   if (REDUCED.matches){ apply(); return; }
