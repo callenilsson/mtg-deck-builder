@@ -142,6 +142,7 @@ setInterval(() => checkForUpdate(false), 10 * 60 * 1000);
 
 applyZoom(); applySplit(); applyUiZoom();
 initScrollBars();
+installNudge();
 setTimeout(syncFull, 0);
 load();
 render();

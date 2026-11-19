@@ -4,7 +4,7 @@
 set -e
 REPO=$(cd "$(dirname "$0")/.." && pwd); OUT=$1; shift
 DECKS='/data/data/com.termux/files/home/storage/shared/Download/command-zone-2026-11-14 (2).html'
-mkdir -p "$OUT"; rm -rf "$OUT/site"; mkdir "$OUT/site"; cp -r "$REPO/index.html" "$REPO/css" "$REPO/js" "$OUT/site/"
+mkdir -p "$OUT"; rm -rf "$OUT/site"; mkdir "$OUT/site"; cp -r "$REPO/index.html" "$REPO/css" "$REPO/js" "$REPO"/*.png "$REPO/manifest.webmanifest" "$OUT/site/"
 python -I - "$DECKS" "$OUT/site/index.html" <<'PY'
 import re, sys
 pat = re.compile(r'(<script id="embedded-decks" type="application/json">)(.*?)(</script>)', re.S)

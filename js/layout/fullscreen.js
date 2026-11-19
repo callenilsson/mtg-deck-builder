@@ -36,3 +36,18 @@ function syncFull(){
 }
 document.addEventListener("fullscreenchange", syncFull); document.addEventListener("webkitfullscreenchange", syncFull);
 $("#fsBtn").addEventListener("click", toggleFull);
+/* iPhone has no automatic "install this app" popup like Android, so Safari users get a small one-time
+   suggestion instead. Shown once per device (dismissing it is remembered); never inside the Home Screen app. */
+const IOS_SAFARI = IOS && /Safari\//.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS|GSA\/|FBAN|FBAV|Instagram/.test(navigator.userAgent);
+function installNudge(force){
+  if (!force && (!IOS_SAFARI || STANDALONE || UI.installNudged)) return;
+  setTimeout(() => {
+    if (document.getElementById("installBar")) return;
+    const bar = document.createElement("div"); bar.id = "installBar"; bar.setAttribute("role", "status");
+    bar.innerHTML = `<img src="icon-180.png" alt=""><span><b>Get the app</b><small>Opens full screen</small></span>
+      <button class="btn primary sm" data-ib="how">Show me</button><button class="icon-btn" data-ib="no" title="Not now" aria-label="Not now">×</button>`;
+    document.body.appendChild(bar);
+    const done = () => { UI.installNudged = true; saveUI(); bar.classList.add("out"); setTimeout(() => bar.remove(), 250); };
+    bar.addEventListener("click", e => { const b = e.target.closest("[data-ib]"); if (!b) return; done(); if (b.dataset.ib === "how") iosFullHelp(); });
+  }, force ? 0 : 4000);
+}
