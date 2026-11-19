@@ -1,0 +1,26 @@
+/* MTG Deck Builder v4 — forest theme.
+   Layout: deck list (left, collapsible) · header (commanders, combine cards, stats table, totals; shrinks to one line while you scroll)
+   · toolbar (card size, sort, filter, move all) · two resizable panels: card pool and deck. */
+:root{
+  --bg:#0d0e14; --surface:#151722; --surface-2:#1c1f2d; --surface-3:#252939;
+  --line:#2b2f43; --line-soft:#212436;
+  --fg:#ece7da; --muted:#9a9cb3; --faint:#6b6e86;
+  --gold:#d9ab4f; --gold-soft:rgba(217,171,79,.14); --gold-line:rgba(217,171,79,.45);
+  --leaf:#a9c4ea; --ok:#55c48f; --danger:#ef5a5f; --danger-soft:rgba(239,90,95,.14);
+  --display:"Cinzel","Trajan Pro",Georgia,serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --radius-card:4.6%;
+  --tile:180px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+select{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+img{max-width:100%}
+svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#app{display:flex;height:100%;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}

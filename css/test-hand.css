@@ -1,0 +1,59 @@
+.handm .modal-head h2{display:flex;align-items:center;gap:8px}
+.sim{margin:10px 16px 0;padding:10px 12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--gold-line)}
+.sim-h{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.sim-h b{color:var(--fg)}
+.sim-h .icon-btn{margin-left:auto;width:26px;height:26px}
+.sim-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.sim-grid div{display:grid;gap:1px}
+.sim-grid b{font-family:var(--display);font-size:20px;color:var(--fg)}
+.sim-grid b.good{color:var(--ok)}.sim-grid b.bad{color:#f1a08f}
+.sim-grid span{font-size:11.5px;color:var(--muted)}
+.zone-split{display:flex;gap:12px;align-items:stretch}
+.cz{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px}
+.cz small{font-size:11px;color:var(--muted)}
+.cz-done{font-size:11.5px;color:var(--ok);margin:30px 0;max-width:90px;text-align:center}
+.bfz{flex:1;min-width:0}
+.bf.over{background:rgba(85,196,143,.14);border-color:var(--ok)}
+.hc.sm.cmd{outline:2px solid var(--gold);outline-offset:1px}
+.hand-row .hc{touch-action:pan-x}
+.hc img{-webkit-user-drag:none;user-select:none}
+.hc-ghost{position:fixed;z-index:1300;pointer-events:none;box-shadow:0 18px 40px rgba(0,0,0,.6);transition:none}
+.ht-free{margin-left:auto;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);font-size:12px}
+.ht-free.on{border-color:var(--gold-line);background:var(--gold-soft);color:var(--gold)}
+.handm{width:min(980px,100%);max-height:100%;display:flex;flex-direction:column}
+.hand-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:10px 16px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line-soft)}
+.ht-turn b{color:var(--fg);font-size:15px}
+.ht-chip{padding:2px 9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:12px;color:var(--fg)}
+.ht-chip.done{color:var(--ok);border-color:rgba(85,196,143,.4)}
+.ht-chip b{color:var(--gold)}
+.ht-dim{font-size:12px;color:var(--faint)}
+.hv{font-weight:600;font-size:12.5px}.hv.good{color:var(--ok)}.hv.bad{color:#f1a08f}
+.hand-note{margin:10px 16px 0;padding:7px 10px;border-radius:8px;background:var(--gold-soft);border:1px solid var(--gold-line);font-size:12.5px}
+.handm .zone{padding:8px 16px 0;min-height:0;min-width:0}
+.handm>*{min-width:0;flex:none}
+.handm{overflow-y:auto;overscroll-behavior:contain}
+.handm .hand-acts{position:sticky;bottom:0;z-index:3;background:var(--surface);margin-top:8px}
+.handm .modal-head{position:sticky;top:0;z-index:3;background:var(--surface)}
+@media (max-width:560px){ .sim-grid b{font-size:17px} .sim{padding:8px 10px} .handm .bf{min-height:70px} }
+.zone-h{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.zone-h span{color:var(--muted);letter-spacing:0;margin-left:4px}
+.bf{min-height:90px;padding:8px;border-radius:10px;background:rgba(85,196,143,.05);border:1px dashed var(--line);overflow:auto;max-height:34vh}
+.bf-row{display:flex;flex-wrap:wrap;gap:5px}
+.bf-row+.bf-row{margin-top:6px}
+.zone-empty{margin:24px 0;text-align:center;font-size:12.5px;color:var(--faint)}
+.hand-row{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;scroll-snap-type:x proximity}
+.hc{flex:none;width:clamp(78px,11vw,118px);padding:0;border:0;background:none;border-radius:4.6%/3.3%;overflow:hidden;aspect-ratio:63/88;box-shadow:0 5px 14px rgba(0,0,0,.5);transition:transform .15s,opacity .15s;scroll-snap-align:start}
+.hc img{width:100%;height:100%;object-fit:cover;display:block}
+.hc.sm{width:clamp(48px,6vw,66px);box-shadow:0 3px 8px rgba(0,0,0,.45);cursor:default}
+.hc.sm.mana{outline:2px solid rgba(85,196,143,.6);outline-offset:1px}
+.hc.sm.sick{opacity:.6}
+.hc.can:hover{transform:translateY(-6px)}
+.hc.cant{opacity:.45}
+.hc.new{animation:dealIn .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes dealIn{from{opacity:0;transform:translateY(-30px) rotate(-4deg)}to{opacity:1;transform:none}}
+.picking .hc{outline:2px dashed var(--gold-line);outline-offset:2px;opacity:1}
+.picking .hc:hover{transform:translateY(6px);opacity:.75}
+.hand-acts{display:flex;gap:8px;align-items:center;padding:10px 16px;border-top:1px solid var(--line-soft);margin-top:8px}
+.ha-gap{flex:1}
+.hand-acts{flex-wrap:wrap}
+@media (max-width:560px){ .hand-acts .ha-gap{display:none} .hand-acts .btn{flex:1 1 auto;justify-content:center} .hand-acts #hNext{flex-basis:100%;order:-1;height:44px} }

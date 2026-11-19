@@ -1,0 +1,95 @@
+/* ---------- Toolbar ---------- */
+#tools{flex:none;display:flex;align-items:center;gap:8px 14px;padding:8px max(18px,env(safe-area-inset-right,0px)) 8px max(18px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:#11131c;flex-wrap:wrap}
+.tool{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);white-space:nowrap}
+.tool .tl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.tool select{font-size:13px}
+.tool.size{background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:999px;padding:4px 12px 4px 12px;color:var(--gold);cursor:pointer}
+.tool.size .tl{color:var(--gold)}
+.z-ico{width:9px;height:12px;border:1.6px solid currentColor;border-radius:2px;flex:none}
+.z-ico.big{width:13px;height:18px}
+#tools{flex-wrap:wrap}
+#tools>*{min-width:0;max-width:100%}
+#tools .tool{overflow:hidden}
+#tools select,#tools input:not([type=range]){min-width:0}
+#tools .tool.filter input{flex:1 1 40px;width:auto}
+#tools .tool.filter select{flex:0 1 auto;max-width:55%;text-overflow:ellipsis}
+#tools .tool.size{min-width:0}
+.tool.size input{flex:0 1 120px;min-width:50px;accent-color:var(--gold);margin:0;cursor:pointer}
+.pm{width:26px;height:26px;border-radius:50%;border:1px solid var(--gold-line);background:rgba(0,0,0,.2);color:var(--gold);font-size:16px;font-weight:700;line-height:1;display:grid;place-items:center;padding:0;flex:none;cursor:pointer}
+.pm:hover{background:rgba(217,171,79,.22)}
+.pm:disabled{opacity:.35;cursor:default}
+.tool.size output{min-width:42px;text-align:center}
+.tl-ico{display:none}
+.h-grip{display:none}
+@media (max-width:820px) and (min-height:501px), (max-width:820px) and (orientation:portrait){
+  #top:not(.mini){max-height:var(--topH,50vh)!important}
+  #top:not(.mini) ~ .h-grip,#top:not(.mini) + .h-grip{display:grid}
+  .h-grip{place-items:center;height:18px;margin-top:-4px;touch-action:none;cursor:row-resize;background:linear-gradient(180deg,rgba(0,0,0,.25),transparent);position:relative;z-index:5}
+  .h-grip i{width:44px;height:5px;border-radius:3px;background:var(--gold-line)}
+}
+.label-s{display:none}
+@media (max-width:820px) and (min-height:501px), (max-width:820px) and (orientation:portrait){
+  #top .name-row{flex-wrap:wrap;row-gap:6px}
+  #top .name-wrap{flex:1 1 0;min-width:0}
+  #top .top-actions{flex:1 1 100%;order:3;display:flex;gap:5px}
+  #top .top-actions > .btn,#top .top-actions > .card-plus-btn{flex:1 1 0;min-width:0;justify-content:center;gap:5px;height:36px;padding:0 6px;font-size:12.5px;overflow:hidden;white-space:nowrap}
+  #top .top-actions .label,#top .top-actions .label-wide{display:inline!important}
+  #top .top-actions .label-wide,#top .top-actions #drawHandTop .label{display:none!important}
+  #top .top-actions .label-s{display:inline!important}
+  /* the open / close button sits in the same spot, top right, folded or not */
+  #top .top-actions .fold-btn{position:absolute;top:8px;right:8px;width:36px;height:36px}
+  #top:not(.mini) .name-row{padding-right:44px}
+  #top.mini .top-actions{display:none}
+  /* folded strip: commander, count and the actions as icons */
+  #top.mini .r-meta,#top.mini .r-types{display:none}
+  #top.mini .r-acts{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;gap:5px;margin:0 0 0 auto;padding:0;border:0;width:auto;max-width:100%}
+  #top.mini #railOpen{order:99;width:36px;height:36px;flex:none}
+  #top.mini .r-act{width:44px;height:46px;border-radius:9px}
+  #top.mini .r-act .i{width:16px;height:16px}
+  #top.mini #rail{gap:6px;flex-wrap:nowrap;min-width:0}
+  #top.mini .r-tot b{font-size:18px}
+  #top.mini .r-tot span{font-size:11px}
+  @media (max-width:380px){ #top.mini .r-tot span{display:none} #top.mini #rail{gap:4px} #top.mini .r-acts{gap:4px} }
+  #top:not(.mini){border-bottom:1px solid var(--gold-line)}
+}
+/* narrow screens: the toolbar wraps into rows that fill the width (no sideways scrolling) */
+@media (max-width:820px) and (min-height:501px), (max-width:820px) and (orientation:portrait){ #tools{--tools-narrow:1} }
+@media (max-width:820px) and (min-height:501px), (max-width:820px) and (orientation:portrait), (orientation:landscape) and (max-height:500px){
+  #tools>*{flex:1 1 auto;min-width:0}
+  #tools .tools-gap{display:none}
+  #tools .tl{display:none}
+  #tools .tl-ico{display:inline-grid;place-items:center;flex:none;color:var(--gold)}
+  #tools .tl-ico.a-ico{font-size:12px}
+  #tools .tool.fs-btn{flex:0 0 auto;padding:5px 9px}
+  #tools .tool.size{flex:1 1 auto;justify-content:center;padding:3px 8px;gap:6px;min-width:0}
+  #tools .tool.size:not(.ui){flex:3 1 200px}
+  #tools .tool.size input{flex:1 1 40px;width:auto;min-width:36px}
+  #tools label.tool{flex:1 1 130px}
+  #tools label.tool select{flex:1;min-width:0;width:100%}
+  #tools .tool.filter{flex:1 1 140px}
+  #tools .tool.filter{overflow:hidden}
+  #tools .tool.filter input{min-width:0;flex:1 1 40px;width:auto}
+  #tools .tool.filter select{flex:0 1 auto;min-width:72px;max-width:52%;text-overflow:ellipsis}
+  #tools label.tool select{min-width:80px}
+  #tools .tool.moves{flex:1 1 150px;display:flex;gap:4px}
+  #tools .tool.moves .btn{flex:1;justify-content:center;padding:6px 8px;font-size:12.5px}
+}
+body.compact #tools>*{flex:1 1 auto;min-width:0}
+body.compact #tools .tools-gap{display:none}
+body.compact #tools .tl{display:none}
+body.compact #tools .tl-ico{display:inline-grid;place-items:center;flex:none;color:var(--gold)}
+body.compact #tools .tool.fs-btn{flex:0 0 auto}
+body.compact #tools .tool.size{flex:1 1 auto;justify-content:center;min-width:0}
+body.compact #tools .tool.size:not(.ui){flex:3 1 200px}
+body.compact #tools .tool.size input{flex:1 1 40px;width:auto;min-width:36px}
+body.compact #tools .tool.filter{flex:2 1 170px}
+body.compact #tools .tool.moves{flex:1 1 220px;display:flex;gap:6px}
+body.compact #tools .tool.moves .btn{flex:1;justify-content:center}
+.tool.size output{min-width:38px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.tool.filter{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:0 4px 0 9px}
+.tool.filter:focus-within{border-color:var(--gold-line)}
+.tool.filter input{width:120px;background:none;border:0;outline:none;padding:6px 0;font-size:13px}
+.tool.filter select{border:0;background:var(--surface-3);max-width:140px;font-size:12.5px;padding:3px 6px}
+.tool.filter.on{border-color:var(--gold)}
+.tool.moves .btn{padding:5px 10px;font-size:12.5px}
+.tools-gap{flex:1}

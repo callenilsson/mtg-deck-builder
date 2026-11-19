@@ -1,0 +1,80 @@
+/* ---------- folded commander panel (rail) ---------- */
+#rail{display:none;gap:10px;align-items:center}
+#top.mini>*:not(#rail){display:none!important}
+#top.mini #rail{display:flex}
+.r-thumb{padding:0;border:0;background:none;border-radius:5px;overflow:hidden;flex:none;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.r-thumb img{display:block;width:62px;aspect-ratio:63/88;object-fit:cover}
+.r-tot{font-variant-numeric:tabular-nums;white-space:nowrap}
+.r-tot b{font-family:var(--display);font-size:22px}
+.r-tot span{color:var(--faint);font-size:12px}
+.r-tot.full b{color:var(--ok)}.r-tot.over b{color:var(--danger)}
+.r-meta{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.r-meta svg.i{width:12px;height:12px;color:var(--gold)}
+.r-types{display:flex;gap:4px}
+.r-chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:2px 7px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line-soft);white-space:nowrap;font-variant-numeric:tabular-nums}
+.r-chip .ms{color:var(--muted);font-size:11px}
+.r-chip.over{color:var(--danger);border-color:rgba(239,90,95,.4)}
+.r-chip.met{color:var(--ok)}
+.r-open{color:var(--gold)}
+/* ---------- computers: the commander panel is a vertical column on the left ---------- */
+@media (min-width:821px), (orientation:landscape) and (max-height:500px){
+  #main{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  #top{grid-column:1;grid-row:1/3;display:flex;flex-direction:column;align-items:stretch;gap:14px;width:var(--topW,316px);padding:14px 16px 24px;overflow-y:auto;border-bottom:0;border-right:1px solid var(--line);background:linear-gradient(180deg,#171a27,#11131b)}
+  #top.mini{width:92px;padding:12px 8px;align-items:center}
+  #top{align-self:stretch;height:100%;min-height:0;max-height:100%}
+  #rail{flex-direction:column}
+  #rail .r-types{flex-direction:column;align-items:stretch}
+  #rail .r-chip{justify-content:space-between}
+  #tools{grid-column:2;grid-row:1}
+  #board,#welcome{grid-column:2;grid-row:2;min-height:0}
+  .name-row{order:1;flex-wrap:wrap;gap:8px}
+  .name-wrap{flex:1 1 200px;max-width:none}
+  #deckName{font-size:17px}
+  .name-row{padding-right:40px}
+  .top-actions{width:100%;flex-wrap:wrap;gap:6px}
+  .name-row{flex-wrap:wrap}
+  .name-wrap{flex:1 1 120px}
+  .top-actions .btn{flex:1 1 0;justify-content:center;height:40px;padding:0 10px;gap:6px;font-size:14px}
+  .top-actions .btn svg.i{width:17px;height:17px}
+  .top-actions .card-plus-btn{flex:1 1 100%;min-width:0;justify-content:center;height:40px;padding:0 12px 0 10px;font-size:14px;gap:7px}
+
+  .top-actions .card-plus-ico{width:17px;height:23px;font-size:14px}
+  .top-actions .fold-btn{position:absolute;top:14px;right:10px}
+  .cmds{order:2;justify-content:center}
+  .cmds{gap:8px}
+  .cmds .cmd-col{width:min(var(--tile,180px),284px)}
+  .cmds .cmd-slot{width:100%}
+  .cmds .cmd-slot.partner.empty{width:92px;flex:none}
+  #total{order:4;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"num sub" "lbl sub" "pr pr" "inf inf";align-items:center;column-gap:12px;min-width:0;padding:10px 14px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px}
+  #total b{grid-area:num}
+  #total small{grid-area:lbl}
+  #total .tot-sub{grid-area:sub;justify-self:end;margin:0}
+  #total .pricey-row{grid-area:pr;justify-self:stretch;margin-top:8px}
+  #total .pricey-row{flex-wrap:nowrap;min-width:0}
+  #total .info-text{grid-area:inf;margin:8px 0 0}
+  #total .info-text b{grid-area:auto;font:600 11.5px/1.45 system-ui,sans-serif;letter-spacing:0;color:var(--fg)}
+  #total .pricey-row input{width:44px;flex:none}
+  #total .pricey-row select{flex:none}
+  .combo{order:3;flex-wrap:nowrap;align-items:center;margin-top:-2px}
+  .combo .combo-lbl{flex:1;max-width:none}
+  .combo .mini{width:34px}
+  .combo .mini.empty{font-size:16px}
+  .combo-lbl{max-width:none;flex-basis:100%}
+  #stats{order:5;border-left:0;padding-left:0;border-top:1px solid var(--line-soft);padding-top:12px}
+  .stbl{width:100%;font-size:12px}
+  .stbl td,.stbl th{padding:0 4px}
+  .stbl input{width:36px}
+  .stats-foot{max-width:none}
+}
+/* ---------- phones: folded panel is one compact row ---------- */
+@media (max-width:820px) and (min-height:501px), (max-width:820px) and (orientation:portrait){
+  #top.mini{display:block;padding:6px 10px;width:100%;align-self:stretch;height:auto;overflow:hidden}
+  #top.mini #rail{flex-wrap:wrap;row-gap:6px}
+  #top.mini #rail{width:100%}
+  #rail .r-thumb img{width:30px}
+  #rail .r-types{overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+  #rail .r-types::-webkit-scrollbar{display:none}
+  #rail .r-tot b{font-size:18px}
+  #rail #railMenu{width:30px;height:30px}
+  .top-actions .fold-btn{width:32px;height:32px}
+}

@@ -1,0 +1,18 @@
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);font-weight:500;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
+.btn:hover{border-color:var(--gold-line);background:var(--surface-3)}
+.btn:active{transform:translateY(1px)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.primary{background:var(--gold);color:#1b1407;border-color:var(--gold);font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--danger)}
+.btn.danger:hover{border-color:var(--danger);background:var(--danger-soft)}
+.btn.danger.solid{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn.on{color:var(--gold);border-color:var(--gold-line);background:var(--gold-soft)}
+.btn:disabled{opacity:.45;cursor:default}
+.icon-btn{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:9px;border:1px solid transparent;background:none;color:var(--muted);flex:none}
+.icon-btn:hover{color:var(--fg);background:var(--surface-2);border-color:var(--line)}
+.icon-btn.on{color:var(--gold)}
+.card-plus-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:10px;border:1px solid var(--gold-line);background:var(--gold-soft);color:var(--gold);font-weight:600;white-space:nowrap}
+.card-plus-btn:hover{background:rgba(217,171,79,.24)}
+.card-plus-ico{width:20px;height:27px;border:1.8px solid currentColor;border-radius:3px;display:grid;place-items:center;font-size:16px;line-height:1;font-weight:700;flex:none}

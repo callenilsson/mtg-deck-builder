@@ -1,4 +1,1 @@
-# never commit decks or backups
-*.json
-backups/
-command-zone-*.html
+node_modules/
