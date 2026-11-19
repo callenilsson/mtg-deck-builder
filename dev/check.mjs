@@ -33,7 +33,12 @@ function eagerIds(node){
   walk.recursive(node, null, {
     Identifier(n){ ids.add(n.name); },
     FunctionExpression(){}, ArrowFunctionExpression(){}, FunctionDeclaration(){},
-    CallExpression(n, st, c){ if (/FunctionExpression|ArrowFunctionExpression/.test(n.callee.type)) c(n.callee.body, st); else c(n.callee, st); n.arguments.forEach(a => c(a, st)); },
+    CallExpression(n, st, c){
+      if (/FunctionExpression|ArrowFunctionExpression/.test(n.callee.type)) c(n.callee.body, st); else c(n.callee, st);
+      // a handler given to addEventListener only runs on a later event, after every file has loaded
+      const later = n.callee.type === "MemberExpression" && /^(add|remove)EventListener$/.test(n.callee.property.name);
+      n.arguments.forEach(a => { if (!(later && a.type === "Identifier")) c(a, st); });
+    },
     MemberExpression(n, st, c){ c(n.object, st); if (n.computed) c(n.property, st); },
     Property(n, st, c){ if (n.computed) c(n.key, st); c(n.value, st); },
     PropertyDefinition(){},
