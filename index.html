@@ -928,6 +928,12 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
 .fl.ph .ph-face{width:100%;height:100%;border-radius:4.6%/3.3%;background:linear-gradient(160deg,#2a3150,#1c2135 55%,#161a2a);box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 0 1px rgba(150,170,230,.14)}
 .fl.ph .ph-face::before{content:"";position:absolute;inset:7% 9% 50% 9%;border-radius:3px;background:rgba(150,170,230,.07)}
 .detail.packing,.detail.packing .dv-scroll,.detail.packing .flow{overflow:visible!important}
+/* each artwork waits on its own placeholder, then flies into its slot when its picture has downloaded */
+.fl .art{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.fl > .ph-face{position:absolute;left:0;top:0;width:100%;height:100%;border-radius:4.6%/3.3%;background:linear-gradient(160deg,#2a3150,#1c2135 55%,#161a2a);box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 0 1px rgba(150,170,230,.14);transition:opacity .35s ease .18s}
+.fl > .ph-face::before{content:"";position:absolute;inset:7% 9% 50% 9%;border-radius:3px;background:rgba(150,170,230,.07)}
+.fl:not(.wait) > .ph-face{opacity:0}
+.fl.wait .face,.fl.wait .refl{transition:none}
 .fl-over{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;transform:translateX(-50%);pointer-events:none;z-index:150}
 .fl-over canvas{width:100%;height:100%;border-radius:4.6%/3.3%;display:none;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6)}
 .fl-over.custom canvas{display:block}
@@ -1336,7 +1342,7 @@ body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!imp
    MTG Deck Builder — EDH deck builder on top of EDHREC + Scryfall
    ============================================================ */
 const PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-const BUILD = "20261117232606";   // replaced with a unique build number by deploy.sh on every publish
+const BUILD = "20261119200525";   // replaced with a unique build number by deploy.sh on every publish
 const KEY = "commandzone.v1";
 const UIKEY = "command-zone-ui";
 const PKEY = "command-zone-prices";
@@ -3662,7 +3668,7 @@ function packFly(src, center, dur){
   });
 }
 function fanOut(){ }
-function setFlImg(el, src){ if (!el) return; el.querySelectorAll("img").forEach(im => { if (im.getAttribute("src") !== src){ im.src = src; } im.classList.add("ld"); }); }
+function setFlImg(el, src){ if (!el) return; el.classList.remove("wait"); el.querySelectorAll("img").forEach(im => { if (im.getAttribute("src") !== src){ im.src = src; } im.classList.add("ld"); }); }
 function animateOpen(srcEl){
   const img = srcEl && (srcEl.tagName === "IMG" ? srcEl : srcEl.querySelector("img"));
   if (!img || REDUCED.matches || !V) return;
@@ -3846,9 +3852,44 @@ function flHTML(e, i){
   }
   const src = V.back && e.p.back && i === V.fi ? e.p.back.large : e.p.img, lazy = Math.abs(i - V.fi) < 6 ? "eager" : "lazy";
   const ld = V.loaded && V.loaded.has(src) ? " ld" : "";
-  return `<button class="fl${V.seen && !V.seen.has(e.p.id) ? " fresh" : ""}" data-fi="${i}" data-pid="${e.p.id}" aria-label="${esc(e.p.set)}"><img class="face${ld}" src="${esc(src)}" alt="" loading="${lazy}" draggable="false" onload="flLoaded(this)"><img class="refl${ld}" src="${esc(src)}" alt="" loading="${lazy}" draggable="false" onload="flLoaded(this)"></button>`;
+  return `<button class="fl${V.seen && !V.seen.has(e.p.id) ? " fresh" : ""}${ld ? "" : " wait"}" data-fi="${i}" data-pid="${e.p.id}" aria-label="${esc(e.p.set)}">${ld ? "" : `<span class="ph-face"></span>`}<span class="art"><img class="face${ld}" src="${esc(src)}" alt="" loading="${lazy}" draggable="false" onload="flLoaded(this)"><img class="refl${ld}" src="${esc(src)}" alt="" loading="${lazy}" draggable="false" onload="flLoaded(this)"></span></button>`;
 }
-function flLoaded(im){ im.classList.add("ld"); if (V){ (V.loaded = V.loaded || new Set()).add(im.getAttribute("src")); } }
+function flLoaded(im){
+  if (V) (V.loaded = V.loaded || new Set()).add(im.getAttribute("src"));
+  const el = im.closest(".fl");
+  if (!el || !el.classList.contains("wait")){ im.classList.add("ld"); return; }
+  if (im.classList.contains("face")) queueReveal(el);       // the reflection comes along with its card
+}
+/* Artworks show up as they finish downloading, one at a time with a short gap between them, so it looks like
+   cards being dealt into place rather than popping in all at once. */
+let revQ = [], revT = 0, revLast = 0;
+function revealNow(el, anim){
+  if (!el.isConnected || !el.classList.contains("wait")) return;
+  el.querySelectorAll("img").forEach(i => i.classList.add("ld"));
+  void el.offsetWidth;                                   // the picture is fully there before its own fade switches back on
+  el.classList.remove("wait");
+  const a = anim && el.querySelector(".art");
+  if (a) a.animate([{transform: "translate3d(0,42px,0) scale(.88)", opacity: 0}, {opacity: 1, offset: .4}, {transform: "none", opacity: 1}],
+    {duration: 520, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards"});
+}
+function queueReveal(el){
+  if (REDUCED.matches || !V || el.style.display === "none" || el.classList.contains("center")){ revealNow(el, false); return; }
+  if (!revQ.includes(el)) revQ.push(el);
+  pumpReveal();
+}
+function pumpReveal(){
+  if (revT) return;
+  revQ = revQ.filter(e => e.isConnected && e.classList.contains("wait"));
+  if (!revQ.length) return;
+  const gap = Math.max(50, 95 - revQ.length * 4), now = performance.now(), wait = revLast + gap - now;
+  if (wait > 0 || (V && V.flying)){ revT = setTimeout(() => { revT = 0; pumpReveal(); }, Math.max(wait, 40)); return; }
+  const pos = V ? (V.pos != null ? V.pos : V.fi) : 0, d = e => Math.abs(+e.dataset.fi - pos);
+  revQ.sort((x, y) => d(x) - d(y));                       // of the ones ready, the nearest to the middle goes first
+  const el = revQ.shift();
+  revealNow(el, el.style.display !== "none" && !el.classList.contains("center"));
+  revLast = now;
+  if (revQ.length) pumpReveal();
+}
 function renderFlow(popCustom){
   const st = $("#flowStage"); if (!st || !V) return;
   syncSel();
@@ -3863,8 +3904,8 @@ function renderFlow(popCustom){
   // artworks that just arrived fade in where the placeholders were (the placeholders fade out)
   if (oldPh.length && !REDUCED.matches){
     oldPh.forEach(e => { st.appendChild(e); e.style.pointerEvents = "none"; const a = e.animate([{opacity: 1}, {opacity: 0}], {duration: 380, easing: "ease-out", fill: "forwards"}); a.onfinish = () => e.remove(); });
-    [...st.querySelectorAll(".fl.fresh")].forEach(el => el.animate([{opacity: 0}, {opacity: 1}], {duration: 380, easing: "ease-out", fill: "backwards"}));
-  } else if (V.seen && !REDUCED.matches) [...st.querySelectorAll(".fl.fresh")].forEach(el => el.animate([{opacity: 0}, {opacity: 1}], {duration: 300, easing: "ease-out", fill: "backwards"}));
+    [...st.querySelectorAll(".fl.fresh:not(.wait)")].forEach(el => el.animate([{opacity: 0}, {opacity: 1}], {duration: 380, easing: "ease-out", fill: "backwards"}));
+  } else if (V.seen && !REDUCED.matches) [...st.querySelectorAll(".fl.fresh:not(.wait)")].forEach(el => el.animate([{opacity: 0}, {opacity: 1}], {duration: 300, easing: "ease-out", fill: "backwards"}));
   V.seen = new Set(V.prints.map(p => p.id));
   if (popCustom && !REDUCED.matches){
     const el = st.querySelector(`.custom-entry[data-cid="${V.cid}"]`);
@@ -3976,6 +4017,8 @@ async function loadPrints(){
       if (i < 0) list.unshift(plainPrint(keep)); else if (list[i].id !== keep.id) list[i] = plainPrint(keep);
     }
     V.prints = list;
+    const at = Math.max(0, list.findIndex(p => p.id === V.card.id));
+    V.pre = list.slice(Math.max(0, at - 9), at + 10).map(p => { const im = new Image(); im.src = p.img; return im; });
   } catch (e){ if (e !== "none" && V && V.token === tok) V.printsFailed = true; }
   if (!V || V.token !== tok) return;
   V.printsDone = true;
