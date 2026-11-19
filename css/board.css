@@ -1,6 +1,6 @@
 /* ---------- Board ---------- */
 #board{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,var(--sp,50%)) 10px minmax(0,1fr)}
-.panel{display:flex;flex-direction:column;min-height:0;min-width:0}
+.panel{display:flex;flex-direction:column;min-height:0;min-width:0;position:relative}
 .panel-scroll{overflow-anchor:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px 60px;overscroll-behavior:contain}
 .panel-head{position:sticky;top:0;z-index:6;height:42px;margin:0 -14px;padding:0 14px;display:flex;align-items:center;gap:10px;background:rgba(13,14,20,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line-soft)}
 .panel-head h2{margin:0;font-family:var(--display);font-size:15px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
@@ -145,3 +145,9 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!i
 body.is-dragging .panel-scroll{touch-action:none}
 body.splitting,body.splitting *{cursor:col-resize!important;user-select:none!important}
 #hoverPrev{position:fixed;z-index:900;width:300px;aspect-ratio:63/88;border-radius:14px;pointer-events:none;box-shadow:0 20px 50px rgba(0,0,0,.7);background:var(--surface-3);top:0;left:0}
+/* where you are in the list (touch screens): a quiet line that brightens while you scroll */
+.sbar{position:absolute;right:2px;width:3px;pointer-events:none;z-index:7;border-radius:3px;background:rgba(255,255,255,.04)}
+.sbar[hidden]{display:none}
+.sbar i{display:block;width:100%;border-radius:3px;background:rgba(217,171,79,.38);transition:background .25s}
+.sbar.on i{background:rgba(217,171,79,.85)}
+@media (pointer:coarse){ .panel-scroll{scrollbar-width:none} .panel-scroll::-webkit-scrollbar{display:none} }

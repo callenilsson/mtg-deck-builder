@@ -23,7 +23,7 @@ https://callenilsson.github.io/mtg-deck-builder/ (GitHub Pages serves `main` as-
 | Google Drive library (sign-in, Picker, sync) | js/data/drive.js |
 | JSON backup / import | js/data/files.js |
 | render(), deck list sidebar + rail | js/app/render.js, js/app/deck-list.js |
-| Board: tiles/sort/filter, tokens, drag, clicks, FLIP | js/board/* |
+| Board: tiles/sort/filter, tokens, drag, clicks, FLIP, touch scroll bars | js/board/* |
 | Stats: info bubbles, curve, roles, odds, color balance, types | js/stats/* |
 | Test hand + 1,000-game simulation | js/stats/test-hand.js |
 | Panels/splitter/resizing, toolbar & zoom, full screen, stats window, scrims | js/layout/* |

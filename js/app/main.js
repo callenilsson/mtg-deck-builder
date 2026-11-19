@@ -141,6 +141,7 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 setInterval(() => checkForUpdate(false), 10 * 60 * 1000);
 
 applyZoom(); applySplit(); applyUiZoom();
+initScrollBars();
 setTimeout(syncFull, 0);
 load();
 render();
