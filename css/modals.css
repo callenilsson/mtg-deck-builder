@@ -12,7 +12,10 @@
 .scrim{position:fixed;inset:0;background:rgba(5,6,10,.72);backdrop-filter:blur(3px);z-index:200;display:grid;place-items:center;padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 .scrim:not([hidden]){animation:fade .16s ease-out}
 .scrim:not([hidden])>.modal{animation:rise .22s cubic-bezier(.2,.8,.2,1)}
-#detailScrim:not([hidden])>.modal{animation:none}
+#detailScrim:not([hidden])>.modal{animation:fade .22s ease-out}
+#detailScrim:not([hidden]) .dv-box{animation:rise .34s .04s cubic-bezier(.2,.8,.2,1) backwards}
+/* closing: the window fades out while the card flies home */
+#detailScrim.closing{pointer-events:none}
 #detailScrim{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(5,6,10,.84)}
 /* anchored to the top: when the text and artworks fill in below, the cover flow stays put */
 #detailScrim{place-items:start center}

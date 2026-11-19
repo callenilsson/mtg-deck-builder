@@ -16,8 +16,6 @@
 .flow{--flw:250px;position:relative;height:calc(var(--flw) * 1.397 * 1.2 + 34px);perspective:1100px;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#20243a,#0b0c12 72%);--old-bg:radial-gradient(ellipse at 50% 28%,#20243a,#0b0c12 72%);outline:none;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}
 .flow:focus-visible{box-shadow:inset 0 0 0 2px var(--gold)}
 .flow-stage{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
-.flow-stage.instant .fl{transition:none!important}
-.flow-stage.dealing .fl:not(.center){opacity:0}
 /* while a finger or a glide moves the cards, they follow it directly */
 .flow.live .fl{transition:none!important}
 .flow.live .fl-over{opacity:0;transition:none}
@@ -39,16 +37,9 @@
 .fl::after{content:"";position:absolute;left:0;top:0;width:100%;height:100%;border-radius:4.6%/3.3%;background:rgba(6,7,12,.5);pointer-events:none;transition:opacity .3s ease}
 .fl.center::after{opacity:0}
 .flow.live .fl::after{transition:none}
-/* placeholders while the artworks load: quiet blue-grey cards */
-.fl.ph .ph-face{width:100%;height:100%;border-radius:4.6%/3.3%;background:linear-gradient(160deg,#2a3150,#1c2135 55%,#161a2a);box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 0 1px rgba(150,170,230,.14)}
-.fl.ph .ph-face::before{content:"";position:absolute;inset:7% 9% 50% 9%;border-radius:3px;background:rgba(150,170,230,.07)}
-.detail.packing,.detail.packing .dv-scroll,.detail.packing .flow{overflow:visible!important}
-/* each artwork waits on its own placeholder, then flies into its slot when its picture has downloaded */
-.fl .art{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
-.fl > .ph-face{position:absolute;left:0;top:0;width:100%;height:100%;border-radius:4.6%/3.3%;background:linear-gradient(160deg,#2a3150,#1c2135 55%,#161a2a);box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 0 1px rgba(150,170,230,.14);transition:opacity .35s ease .18s}
-.fl > .ph-face::before{content:"";position:absolute;inset:7% 9% 50% 9%;border-radius:3px;background:rgba(150,170,230,.07)}
-.fl:not(.wait) > .ph-face{opacity:0}
-.fl.wait .face,.fl.wait .refl{transition:none}
+/* a new card waits, unseen, until its picture is ready; then it is dealt out from behind the middle card */
+.fl.hold{visibility:hidden}
+.fl.gone{pointer-events:none}
 .fl-over{position:absolute;left:50%;top:22px;width:var(--flw);aspect-ratio:63/88;transform:translateX(-50%);pointer-events:none;z-index:150}
 .fl-over canvas{width:100%;height:100%;border-radius:4.6%/3.3%;display:none;pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.6)}
 .fl-over.custom canvas{display:block}

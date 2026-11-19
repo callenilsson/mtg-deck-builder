@@ -24,7 +24,7 @@ async function closeDetail(discard, opts = {}){
   if (v && !discard && v.rebase){ V = v; finishRebase(); }
   const f = opts.anim === false ? null : closeFly(v);
   stopGlide(); V = null; flowDrag = null; artDrag = null; clearTimeout(flowT); clearTimeout(snapT);
-  $("#detailScrim").hidden = true;
+  fadeOutDetail(v);
   if (v && !discard && v.editable && v.dirty) await commitView(v);
   if (f) landFly(f, v);
 }

@@ -8,7 +8,7 @@ function bezierEase(x1, y1, x2, y2){
   return u => { let lo = 0, hi = 1; for (let i = 0; i < 30; i++){ const m = (lo + hi) / 2; if (bx(m) < u) lo = m; else hi = m; } return by((lo + hi) / 2); };
 }
 const FLY_EASE = bezierEase(.32, 0, .18, 1);
-const flightMs = dist => Math.round(Math.max(220, Math.min(520, 200 + dist * .32)));
+const flightMs = dist => Math.round(Math.max(240, Math.min(440, 210 + dist * .26)));
 function sFlight(fly, r0, r1, dur){
   Object.assign(fly.style, {left: r1.left + "px", top: r1.top + "px", width: r1.width + "px", height: r1.height + "px", transformOrigin: "50% 50%"});
   const dx = (r0.left + r0.width / 2) - (r1.left + r1.width / 2), dy = (r0.top + r0.height / 2) - (r1.top + r1.height / 2);
@@ -24,85 +24,49 @@ function sFlight(fly, r0, r1, dur){
   }
   return fly.animate(frames, {duration: dur || flightMs(dist), easing: "linear"});
 }
-/* Hand over from the flying copy to the real card without a visible swap: reveal the card underneath, then fade the copy. */
-function fadeAway(fly, after){
-  const a = fly.animate([{opacity: 1}, {opacity: 0}], {duration: 120, easing: "linear", fill: "forwards"});
-  a.onfinish = a.oncancel = () => { fly.remove(); after && after(); };
-}
-/* The flying card; with refl it carries the same mirrored reflection as the cover flow. */
+/* The flying card, with the same shadow and mirrored reflection as the cover flow's cards. */
 function makeFly(src, r, refl){
   const fly = document.createElement("div"); fly.className = "fly";
   fly.innerHTML = `<img class="face" src="${esc(src)}" alt="">${refl ? `<img class="refl" src="${esc(src)}" alt="">` : ""}`;
   Object.assign(fly.style, {left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", transformOrigin: "50% 50%"});
   document.body.appendChild(fly); return fly;
 }
-/* The rest of the cover flow flies in as one pack with the card: every card (or placeholder) starts at the card's spot on
-   the board and follows the same arc, turning into its own tilt and depth on the way, so it lands exactly in place. */
-function packFly(src, center, dur){
-  if (!V || REDUCED.matches || !src || !center || !center.width) return;
-  const st = $("#flowStage"), cw = (V.fm && V.fm.cw) || center.width;
-  const els = [...st.querySelectorAll(".fl")].filter(el => el.style.display !== "none" && !el.classList.contains("center") && el._t);
-  if (!els.length) return;
-  const modal = $("#detailModal"); modal.classList.add("packing");
-  const sx = (src.left + src.width / 2) - (center.left + center.width / 2), sy = (src.top + src.height / 2) - (center.top + center.height / 2);
-  const dist = Math.hypot(sx, sy) || 1, bend = Math.min(80, dist * .14), nx = -sy / dist * bend, ny = sx / dist * bend;
-  const P0 = [sx, sy], P1 = [sx * .66 + nx * .8, sy * .66 + ny * .8], P2 = [sx * .2 + nx * .5, sy * .2 + ny * .5];
-  const bez = (k, u) => { const m = 1 - u; return m * m * m * P0[k] + 3 * m * m * u * P1[k] + 3 * m * u * u * P2[k]; };
-  const s0 = src.width / cw;
-  let left = els.length;
-  els.forEach(el => {
-    const {X, Z, R} = el._t, a = Math.abs(el.dataset.off != null ? +el.dataset.off : +el.dataset.fi - V.fi), N = 30, frames = [];
-    for (let i = 0; i <= N; i++){
-      const u = i / N, e = FLY_EASE(u), q = e * e * (3 - 2 * e);      // the fan-out happens in the second half
-      frames.push({transform: `translate(${bez(0, e).toFixed(2)}px,${bez(1, e).toFixed(2)}px) translate3d(${(-cw / 2 + (X + cw / 2) * q).toFixed(2)}px,0,${(Z * q).toFixed(1)}px) rotateY(${(R * q).toFixed(2)}deg) scale(${(s0 + (1 - s0) * e).toFixed(4)})`, offset: u});
-    }
-    const an = el.animate(frames, {duration: dur + Math.min(a, 6) * 22, delay: Math.min(a, 6) * 18, easing: "linear", fill: "backwards"});
-    an.onfinish = an.oncancel = () => { if (--left === 0) modal.classList.remove("packing"); };
-  });
-}
-function fanOut(){ }
-function setFlImg(el, src){ if (!el) return; el.classList.remove("wait"); el.querySelectorAll("img").forEach(im => { if (im.getAttribute("src") !== src){ im.src = src; } im.classList.add("ld"); }); }
+function setFlImg(el, src){ if (!el) return; el.querySelectorAll("img").forEach(im => { if (im.getAttribute("src") !== src) im.src = src; im.classList.add("ld"); }); }
+/* Opening: the card lifts off the board and glides along one smooth arc into the middle of the cover flow while the
+   window fades in around it. It lands exactly on the real card, which takes over in the same frame (same picture,
+   shadow and reflection, so the swap can't be seen). Then the other artworks are dealt out from behind it. */
 function animateOpen(srcEl){
   const img = srcEl && (srcEl.tagName === "IMG" ? srcEl : srcEl.querySelector("img"));
-  if (!img || REDUCED.matches || !V) return;
-  const tok = V.token, r0 = srcEl.getBoundingClientRect();
-  V.srcRect = {left: r0.left, top: r0.top, width: r0.width, height: r0.height};
-  const src = img.currentSrc || img.src;
+  const target = $("#flowStage .fl.center");
+  if (!img || !target || REDUCED.matches || !V) return;
+  const tok = V.token, r0 = srcEl.getBoundingClientRect(), src = img.currentSrc || img.src;
+  setFlImg(target, src);
+  const face = target.querySelector(".face"), decoded = face.decode ? face.decode().catch(() => {}) : Promise.resolve();
   const fly = makeFly(src, r0, true);
   V.flying = true;
-
-  // the cover flow's card starts with the very same picture, so the hand-over is invisible
-  setFlImg($("#flowStage .fl.center"), src);
-  const hideTarget = on => { const c = $("#flowStage .fl.center"), o = $("#flOver"); if (c) c.style.visibility = on ? "hidden" : ""; if (o) o.style.visibility = on ? "hidden" : ""; };
-  hideTarget(true);
-  srcEl.style.visibility = "hidden";
-  const handOver = () => {
+  const show = on => { const c = $("#flowStage .fl.center"), o = $("#flOver"); [c, o].forEach(x => { if (x) x.style.visibility = on ? "" : "hidden"; }); };
+  show(false); srcEl.style.visibility = "hidden";
+  const land = () => decoded.then(() => {
     srcEl.style.visibility = "";
-    if (V && V.token === tok){ fly.querySelector(".refl")?.remove(); V.flying = false; hideTarget(false); fadeAway(fly, () => { if (V && V.token === tok) upgradeCenter(); }); if (V.pendingFlow){ const anims = [...document.querySelectorAll("#flowStage .fl")].flatMap(e => e.getAnimations()); Promise.all(anims.map(x => x.finished.catch(() => {}))).then(() => { if (V && V.token === tok && V.pendingFlow){ V.pendingFlow = false; renderFlow(); renderDetailParts(); } }); } }
-    else fly.remove();
-  };
-  const done = () => {
-    const c = V && V.token === tok && $("#flowStage .fl.center");
-    const now = fly.getBoundingClientRect(), to = c && c.getBoundingClientRect();
-    if (to && to.width && (Math.abs(now.left - to.left) > 1 || Math.abs(now.top - to.top) > 1 || Math.abs(now.width - to.width) > 1)){
-      const base = fly.getBoundingClientRect();
-      fly.getAnimations().forEach(x => x.cancel());
-      const b0 = fly.getBoundingClientRect();
-      const cx = r => r.left + r.width / 2, cy = r => r.top + r.height / 2;   // the flying card scales around its centre
-      const from = `translate(${cx(base) - cx(b0)}px,${cy(base) - cy(b0)}px) scale(${base.width / b0.width})`;
-      const dest = `translate(${cx(to) - cx(b0)}px,${cy(to) - cy(b0)}px) scale(${to.width / b0.width})`;
-      const fix = fly.animate([{transform: from}, {transform: dest}], {duration: 140, easing: "cubic-bezier(.2,.8,.2,1)", fill: "forwards"});
-      fix.onfinish = fix.oncancel = handOver;
-    } else handOver();
-  };
-  const target = $("#flowStage .fl.center");
-  if (!target){ done(); return; }
-  const tr = target.getBoundingClientRect(), dur = flightMs(Math.hypot((r0.left + r0.width / 2) - (tr.left + tr.width / 2), (r0.top + r0.height / 2) - (tr.top + tr.height / 2)));
-  const a = sFlight(fly, r0, tr, dur);
-  packFly(r0, tr, dur);
-  a.onfinish = a.oncancel = done;
+    if (!V || V.token !== tok){ fly.remove(); return; }
+    V.flying = false; V.flyAnim = null;
+    show(true); fly.remove();                               // same frame: the real card replaces its identical copy
+    upgradeCenter(); dealPump();
+  });
+  const tr = target.getBoundingClientRect();
+  const a = sFlight(fly, r0, tr);
   V.flyAnim = a;
+  a.onfinish = () => {
+    a.oncancel = null;
+    // the window may have settled a little during the flight: finish exactly on the card
+    const c = V && V.token === tok && $("#flowStage .fl.center"), to = c && c.getBoundingClientRect(), now = fly.getBoundingClientRect();
+    if (to && to.width && (Math.abs(now.left - to.left) > 1 || Math.abs(now.top - to.top) > 1 || Math.abs(now.width - to.width) > 1)){
+      const g = glideFly(fly, to); g.onfinish = land; g.oncancel = () => { srcEl.style.visibility = ""; fly.remove(); };
+    } else land();
+  };
+  a.oncancel = () => { srcEl.style.visibility = ""; fly.remove(); };
 }
+
 /* Closing: the card (with its new art or name) flies back to its place. */
 function closeFly(v){
   if (!v || REDUCED.matches) return null;
@@ -110,7 +74,24 @@ function closeFly(v){
   const r = c.getBoundingClientRect(); if (!r.width) return null;
   let src = c.querySelector("img.face").src;
   if ($("#flOver").classList.contains("custom")) try { src = $("#artCanvas").toDataURL("image/jpeg", .85); } catch {}
-  return {fly: makeFly(src, r), r};
+  const f = {fly: makeFly(src, r, true), r};
+  c.style.visibility = "hidden"; $("#flOver").style.visibility = "hidden";   // the copy takes the card's place
+  return f;
+}
+/* Closing the window: it fades while the other artworks tuck back in behind the middle card. */
+let detailCloseA = null;
+function fadeOutDetail(v){
+  const sc = $("#detailScrim");
+  if (REDUCED.matches){ sc.hidden = true; return; }
+  const st = $("#flowStage"), cw = v && v.fm ? v.fm.cw : 0;
+  if (st && cw) [...st.children].forEach(el => {
+    if (el.classList.contains("center") || el.style.display === "none" || !el._t) return;
+    el.animate([{transform: `translate3d(${-cw / 2}px,0,-190px) rotateY(${el._t.R.toFixed(2)}deg)`, opacity: 0}], {duration: 240, easing: "cubic-bezier(.5,0,.75,0)", fill: "forwards"});
+  });
+  sc.classList.add("closing");
+  if (detailCloseA) detailCloseA.cancel();
+  const a = detailCloseA = sc.animate([{opacity: 1}, {opacity: 0}], {duration: 240, easing: "ease-out", fill: "forwards"});
+  a.onfinish = () => { if (detailCloseA !== a) return; detailCloseA = null; sc.hidden = true; sc.classList.remove("closing"); a.cancel(); };
 }
 /* Hide a card's spot with a style rule, so it stays hidden even if the board is redrawn meanwhile. */
 function hideSpot(sel){ let st = document.getElementById("flyHide"); if (!st){ st = document.createElement("style"); st.id = "flyHide"; document.head.appendChild(st); } st.textContent = sel ? `${sel}{visibility:hidden!important}` : ""; }
@@ -136,6 +117,7 @@ function landFly(f, v){
   if (sel) hideSpot(sel); else dest.style.visibility = "hidden";
   const finish = () => { if (sel) hideSpot(null); else if (dest) dest.style.visibility = ""; f.fly.remove(); };
   const a = sFlight(f.fly, f.r, r);
+  f.fly.querySelector(".refl")?.animate([{opacity: .22}, {opacity: 0}], {duration: 160, easing: "ease-out", fill: "forwards"});
   a.onfinish = a.oncancel = () => {
     // the board may have been redrawn or moved during the flight: land exactly on where the card is now
     const d2 = find(), r2 = d2 && d2.getBoundingClientRect(), now = f.fly.getBoundingClientRect();

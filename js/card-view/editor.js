@@ -234,7 +234,7 @@ $("#detailModal").addEventListener("click", async e => {
     if (flowMoved) return;
     let best = null;
     document.querySelectorAll("#flowStage .fl").forEach(el => {
-      if (el.style.visibility === "hidden" || el.style.display === "none") return;
+      if (el.style.visibility === "hidden" || el.style.display === "none" || el.classList.contains("hold") || el.classList.contains("gone")) return;
       const r = el.querySelector("img.face").getBoundingClientRect(), i = +el.dataset.fi;
       if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom && (best == null || Math.abs(i - V.fi) < Math.abs(best - V.fi))) best = i;
     });

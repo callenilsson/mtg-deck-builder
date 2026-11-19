@@ -12,7 +12,7 @@ $("#statsModal").addEventListener("click", e => { if (e.target.closest("[data-cl
 
 
 /* ---------------- Scrims ---------------- */
-function showScrim(sel){ $(sel).hidden = false; }
+function showScrim(sel){ if (sel === "#detailScrim"){ if (detailCloseA){ detailCloseA.cancel(); detailCloseA = null; } $(sel).classList.remove("closing"); } $(sel).hidden = false; }
 let revealAfterAdd = null;
 function revealCard(u){
   const el = document.querySelector(`#board .cw[data-uid="${u}"], #board .cw[data-tok="${u}"]`); if (!el) return;
@@ -21,7 +21,7 @@ function revealCard(u){
   setTimeout(() => el.querySelector(".ct")?.animate([{boxShadow: "0 0 0 0 rgba(217,171,79,.9)"}, {boxShadow: "0 0 0 10px rgba(217,171,79,0)"}], {duration: 900, iterations: 2}), 350);
 }
 function hideScrim(sel){
-  if (sel === "#detailScrim"){ requestClose(); return; }
+  if (sel === "#detailScrim"){ if (!$(sel).classList.contains("closing")) requestClose(); return; }
   if (sel === "#statsScrim"){ closeStats(); return; }
   $(sel).hidden = true;
   if (sel === "#addScrim"){ A.token++; if (revealAfterAdd){ const u = revealAfterAdd; revealAfterAdd = null; setTimeout(() => revealCard(u), 60); } }

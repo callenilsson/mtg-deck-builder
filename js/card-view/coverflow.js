@@ -92,68 +92,89 @@ function renderDetailParts(){
   }
   $("#dvSide").innerHTML = `<div class="dv-acts">${acts}</div>${edit}`;
 }
-function flHTML(e, i){
+/* ---------------- Cover flow cards ----------------
+   Cards are kept, never rebuilt: when the list changes (artworks arrive, "Find art" narrows it, a version is added),
+   existing cards stay where they are and glide to new places. A new card stays hidden until its picture is decoded,
+   then slides out from behind the card in the middle into its place ("dealt"), one after another. */
+function flSrc(e, i){
+  if (e.t === "c"){ const s = slotOf(e.cid), live = V.cid === e.cid; return (live ? V.snap : s.snap) || (live ? V.custBase : s.custBase).img; }
+  return V.back && e.p.back && i === V.fi ? e.p.back.large : e.p.img;
+}
+function flMake(e, i, src){
+  const el = document.createElement("button");
   if (e.t === "c"){
-    const s = slotOf(e.cid), live = V.cid === e.cid, src = (live ? V.snap : s.snap) || (live ? V.custBase : s.custBase).img, n = custNumber(e.cid);
-    return `<button class="fl custom-entry" data-fi="${i}" data-cid="${e.cid}" aria-label="Your version ${n}"><img class="face" src="${esc(src)}" alt="" draggable="false"><img class="refl" src="${esc(src)}" alt="" draggable="false"><span class="yours">✦ Yours${V.custs.length > 1 ? " " + n : ""}</span></button>`;
+    const n = custNumber(e.cid);
+    el.className = "fl custom-entry"; el.dataset.cid = e.cid; el.setAttribute("aria-label", "Your version " + n);
+    el.innerHTML = `<img class="face ld" alt="" draggable="false"><img class="refl ld" alt="" draggable="false"><span class="yours">✦ Yours${V.custs.length > 1 ? " " + n : ""}</span>`;
+  } else {
+    el.className = "fl"; el.dataset.pid = e.p.id; el.setAttribute("aria-label", e.p.set || "Artwork");
+    const lazy = Math.abs(i - V.fi) < 8 ? "eager" : "lazy";
+    el.innerHTML = `<img class="face ld" alt="" loading="${lazy}" draggable="false"><img class="refl ld" alt="" loading="${lazy}" draggable="false">`;
   }
-  const src = V.back && e.p.back && i === V.fi ? e.p.back.large : e.p.img, lazy = Math.abs(i - V.fi) < 6 ? "eager" : "lazy";
-  const ld = V.loaded && V.loaded.has(src) ? " ld" : "";
-  return `<button class="fl${V.seen && !V.seen.has(e.p.id) ? " fresh" : ""}${ld ? "" : " wait"}" data-fi="${i}" data-pid="${e.p.id}" aria-label="${esc(e.p.set)}">${ld ? "" : `<span class="ph-face"></span>`}<span class="art"><img class="face${ld}" src="${esc(src)}" alt="" loading="${lazy}" draggable="false" onload="flLoaded(this)"><img class="refl${ld}" src="${esc(src)}" alt="" loading="${lazy}" draggable="false" onload="flLoaded(this)"></span></button>`;
+  el.dataset.key = entryKey(e);
+  el.style.transition = "none";                            // a new card starts right in its place, without sliding there
+  flSetSrc(el, src);
+  return el;
 }
-function flLoaded(im){
-  if (V) (V.loaded = V.loaded || new Set()).add(im.getAttribute("src"));
-  const el = im.closest(".fl");
-  if (!el || !el.classList.contains("wait")){ im.classList.add("ld"); return; }
-  if (im.classList.contains("face")) queueReveal(el);       // the reflection comes along with its card
+function flSetSrc(el, src){ el.dataset.src = src; el.querySelectorAll("img").forEach(im => { if (im.getAttribute("src") !== src) im.src = src; }); }
+/* hold a card back until its picture can be shown whole, then deal it */
+function flHold(el){
+  el.classList.add("hold");
+  const im = el.querySelector(".face"), tok = V.token;
+  const ready = () => (im.decode ? im.decode() : Promise.resolve()).catch(() => {}).then(() => { if (V && V.token === tok) dealQueue(el); });
+  if (im.complete && im.naturalWidth) ready(); else im.addEventListener("load", ready, {once: true});
 }
-/* Artworks show up as they finish downloading, one at a time with a short gap between them, so it looks like
-   cards being dealt into place rather than popping in all at once. */
-let revQ = [], revT = 0, revLast = 0;
-function revealNow(el, anim){
-  if (!el.isConnected || !el.classList.contains("wait")) return;
-  el.querySelectorAll("img").forEach(i => i.classList.add("ld"));
-  void el.offsetWidth;                                   // the picture is fully there before its own fade switches back on
-  el.classList.remove("wait");
-  const a = anim && el.querySelector(".art");
-  if (a) a.animate([{transform: "translate3d(0,42px,0) scale(.88)", opacity: 0}, {opacity: 1, offset: .4}, {transform: "none", opacity: 1}],
-    {duration: 520, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards"});
+let dealQ = [], dealT = 0, dealLast = 0;
+const DEAL_GAP = 55;
+function dealQueue(el){ if (!dealQ.includes(el)) dealQ.push(el); dealPump(); }
+function dealPump(){
+  if (dealT) return;
+  dealQ = dealQ.filter(e => e.isConnected && e.classList.contains("hold"));
+  if (!dealQ.length || !V) return;
+  const wait = dealLast + DEAL_GAP - performance.now();
+  if (wait > 0 || V.flying){ dealT = setTimeout(() => { dealT = 0; dealPump(); }, Math.max(wait, 30)); return; }
+  const pos = V.pos != null ? V.pos : V.fi, d = e => Math.abs(+e.dataset.fi - pos);
+  dealQ.sort((x, y) => d(x) - d(y));                     // of the cards ready, the nearest to the middle goes first
+  const el = dealQ.shift();
+  dealOne(el); dealLast = performance.now();
+  if (dealQ.length) dealPump();
 }
-function queueReveal(el){
-  if (REDUCED.matches || !V || el.style.display === "none" || el.classList.contains("center")){ revealNow(el, false); return; }
-  if (!revQ.includes(el)) revQ.push(el);
-  pumpReveal();
-}
-function pumpReveal(){
-  if (revT) return;
-  revQ = revQ.filter(e => e.isConnected && e.classList.contains("wait"));
-  if (!revQ.length) return;
-  const gap = Math.max(50, 95 - revQ.length * 4), now = performance.now(), wait = revLast + gap - now;
-  if (wait > 0 || (V && V.flying)){ revT = setTimeout(() => { revT = 0; pumpReveal(); }, Math.max(wait, 40)); return; }
-  const pos = V ? (V.pos != null ? V.pos : V.fi) : 0, d = e => Math.abs(+e.dataset.fi - pos);
-  revQ.sort((x, y) => d(x) - d(y));                       // of the ones ready, the nearest to the middle goes first
-  const el = revQ.shift();
-  revealNow(el, el.style.display !== "none" && !el.classList.contains("center"));
-  revLast = now;
-  if (revQ.length) pumpReveal();
+function dealOne(el){
+  el.classList.remove("hold");
+  if (REDUCED.matches || el.style.display === "none" || !el._t || !V || !V.fm) return;
+  const pos = V.pos != null ? V.pos : V.fi, o = +el.dataset.fi - pos;
+  if (flowDrag || Math.abs(o) > 7 || Math.abs(o) < .5){      // while you swipe (or far away): a quiet fade
+    el.animate([{opacity: 0}, {opacity: 1}], {duration: 220, easing: "ease-out"}); return;
+  }
+  // from tucked behind the middle card, already turned, out to its place. Only the start is given, so the
+  // end is wherever the card belongs right now (it keeps up if the cards move meanwhile).
+  const {R} = el._t, cw = V.fm.cw;
+  el.animate([{transform: `translate3d(${-cw / 2}px,0,-190px) rotateY(${R.toFixed(2)}deg)`, opacity: 0, offset: 0}, {opacity: 1, offset: .18}],
+    {duration: 520, easing: "cubic-bezier(.2,.9,.25,1)"});
 }
 function renderFlow(popCustom){
   const st = $("#flowStage"); if (!st || !V) return;
   syncSel();
-  const list = entries();
-  const oldPh = [...st.querySelectorAll(".fl.ph")].map(e => e.cloneNode(true));
-  st.innerHTML = list.map(flHTML).join("") + (!V.printsDone && !V.rebase && !V.back ? [-3, -2, -1, 1, 2, 3].map(o => `<div class="fl ph" data-off="${o}" aria-hidden="true"><div class="ph-face"></div></div>`).join("") : "");
+  const list = entries(), old = new Map([...st.children].map(el => [el.dataset.key, el])), want = [];
+  list.forEach((e, i) => {
+    const key = entryKey(e), src = flSrc(e, i);
+    let el = old.get(key);
+    if (el){ old.delete(key); if (el.dataset.src !== src) flSetSrc(el, src); }
+    else { el = flMake(e, i, src); if ((i !== V.fi || V.opened) && !(popCustom && e.t === "c" && e.cid === V.cid)) el._new = true; }
+    el.dataset.fi = i; want.push(el);
+  });
+  // cards no longer in the list fade away where they are
+  old.forEach(el => { el.dataset.key = ""; el.classList.add("gone"); if (REDUCED.matches) el.remove(); else { const a = el.animate([{opacity: 1}, {opacity: 0}], {duration: 180, easing: "ease-out", fill: "forwards"}); a.onfinish = () => el.remove(); } });
+  // put them in list order, moving as few as possible
+  want.forEach((el, i) => { const at = st.children[i]; if (at !== el) st.insertBefore(el, at || null); });
   const sc = $("#flowScrub");
   if (sc){ sc.hidden = list.length < 2; sc.max = list.length - 1; sc.value = V.fi; }
-  // place freshly built cards straight into position (no slide-in), so the center card never moves under a landing flight
-  st.classList.add("instant"); layoutFlow(); void st.offsetWidth; st.classList.remove("instant");
-  if (V.flying){ const c = $("#flowStage .fl.center"); if (c) c.style.visibility = "hidden"; }
-  // artworks that just arrived fade in where the placeholders were (the placeholders fade out)
-  if (oldPh.length && !REDUCED.matches){
-    oldPh.forEach(e => { st.appendChild(e); e.style.pointerEvents = "none"; const a = e.animate([{opacity: 1}, {opacity: 0}], {duration: 380, easing: "ease-out", fill: "forwards"}); a.onfinish = () => e.remove(); });
-    [...st.querySelectorAll(".fl.fresh:not(.wait)")].forEach(el => el.animate([{opacity: 0}, {opacity: 1}], {duration: 380, easing: "ease-out", fill: "backwards"}));
-  } else if (V.seen && !REDUCED.matches) [...st.querySelectorAll(".fl.fresh:not(.wait)")].forEach(el => el.animate([{opacity: 0}, {opacity: 1}], {duration: 300, easing: "ease-out", fill: "backwards"}));
-  V.seen = new Set(V.prints.map(p => p.id));
+  layoutFlow();
+  const fresh = want.filter(el => el.style.transition === "none");
+  if (fresh.length){ void st.offsetWidth; fresh.forEach(el => { el.style.transition = ""; }); }
+  want.forEach(el => { if (el._new){ el._new = false; flHold(el); } });
+  if (V.flying){ const c = st.querySelector(".fl.center"); if (c) c.style.visibility = "hidden"; }
+  V.opened = true;
   if (popCustom && !REDUCED.matches){
     const el = st.querySelector(`.custom-entry[data-cid="${V.cid}"]`);
     if (el) el.animate([{opacity: 0, scale: .6}, {opacity: 1, scale: 1.06, offset: .7}, {opacity: 1, scale: 1}], {duration: 380, easing: "cubic-bezier(.2,.8,.2,1)"});
@@ -187,7 +208,8 @@ function placeCards(measure){
   }
   const {cw, gap, first} = V.fm, pos = V.pos != null ? V.pos : V.fi, kids = st.children;
   for (let i = 0; i < kids.length; i++){
-    const el = kids[i], o = el.dataset.off != null ? +el.dataset.off : i - pos, a = Math.abs(o), sg = Math.sign(o);
+    const el = kids[i], o = i - pos, a = Math.abs(o), sg = Math.sign(o);
+    if (el.classList.contains("gone")) continue;            // leaving: fades out where it is
     if (a > 9.5){ if (el.style.display !== "none") el.style.display = "none"; continue; }   // far away: not rendered, images not downloaded
     if (el.style.display) el.style.display = "";
     if (el.style.visibility && !V.flying) el.style.visibility = "";
@@ -196,7 +218,7 @@ function placeCards(measure){
     el._t = {X: x - cw / 2, Z: -140 * k, R: -sg * 62 * k};
     el.style.transform = `translate3d(${(x - cw / 2).toFixed(2)}px,0,${(-140 * k).toFixed(1)}px) rotateY(${(-sg * 62 * k).toFixed(2)}deg)`;
     const z = String(Math.round(1000 - a * 100)); if (el.style.zIndex !== z) el.style.zIndex = z;
-    const c = el.dataset.off == null && i === V.fi; if (el.classList.contains("center") !== c) el.classList.toggle("center", c);
+    const c = i === V.fi; if (el.classList.contains("center") !== c) el.classList.toggle("center", c);
   }
 }
 function layoutFlow(){
@@ -269,7 +291,6 @@ async function loadPrints(){
   } catch (e){ if (e !== "none" && V && V.token === tok) V.printsFailed = true; }
   if (!V || V.token !== tok) return;
   V.printsDone = true;
-  if (V.flying){ V.pendingFlow = true; return; }
   renderFlow(); renderDetailParts();
 }
 async function loadMorePrints(url, page, tok, isTok){
@@ -281,10 +302,10 @@ async function loadMorePrints(url, page, tok, isTok){
     const have = new Set(V.prints.map(p => p.id));
     const add = (j ? j.data : []).map(toCard).filter(p => p.img && !have.has(p.id) && (!isTok || sameToken(p, V.card)));
     savePrices();
-    if (add.length){ V.prints = V.prints.concat(add); if (V.flying) V.pendingFlow = true; else if (!flowDrag) renderFlow(); }
+    if (add.length){ V.prints = V.prints.concat(add); if (!flowDrag) renderFlow(); }
     if (j && j.has_more){ loadMorePrints(url, page + 1, tok, isTok); return; }
   } catch {}
-  if (V && V.token === tok){ V.morePrints = false; if (V.flying) V.pendingFlow = true; else if (!flowDrag) renderFlow(); }
+  if (V && V.token === tok){ V.morePrints = false; if (!flowDrag) renderFlow(); }
 }
 let flowT;
 /* Clicks and keys switch at once; drags and the wheel settle for a moment first. */
