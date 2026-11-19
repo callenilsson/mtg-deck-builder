@@ -6,7 +6,7 @@ $("#profile").addEventListener("click", e => {
   else if (e.target.closest("#profDrive")) $("#driveBox").scrollIntoView({behavior: "smooth", block: "center"});
 });
 $("#closeSide").innerHTML = I.panelL; $("#railExpand").innerHTML = I.panelR;
-$("#railExpand").onclick = () => { S.sidebarOpen = true; S.sideTouched = true; save(false); render(); };
+$("#railExpand").onclick = () => { S.sidebarOpen = true; S.sideTouched = true; if (isPhone()) CMP_OPEN = false; save(false); render(); applyZoom(); };
 $("#railDecks").addEventListener("click", e => {
   if (e.target.closest("[data-newdeck]")){ newDeck(); return; }
   const b = e.target.closest("[data-deck]"); if (!b) return;

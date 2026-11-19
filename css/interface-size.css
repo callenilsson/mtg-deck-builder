@@ -8,5 +8,5 @@
 @container (max-width:118px){ .cw .acts{display:grid;grid-template-columns:1fr 1fr;gap:4px} .cw .acts .act-slot{display:none} .cw .acts .del{margin-left:0} .cw .acts button{min-width:24px} }
 .a-ico{font-family:var(--display);font-weight:700;font-size:15px;line-height:1}
 .a-ico.sm{font-size:10px}
-@media (min-width:821px), (orientation:landscape) and (max-height:500px){ .cmds .cmd-col{width:min(var(--tile,180px),calc(284px * var(--uiz)))} }
+.cmds .cmd-col{width:min(var(--tile,180px),calc(284px * var(--uiz)))}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

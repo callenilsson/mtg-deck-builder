@@ -135,7 +135,8 @@ function renderHeader(){
   renderStats();
   renderRail(d);
 }
-const COMPACT_Q = matchMedia("(pointer: coarse) and (orientation: landscape) and (max-height: 500px), (pointer: coarse) and (min-width: 821px) and (max-width: 1100px)");
+// compact: phones (any way up), unfolded foldables and small touch tablets: both side menus start folded into thin rails
+const COMPACT_Q = matchMedia("(max-width: 820px), (pointer: coarse) and (orientation: landscape) and (max-height: 500px), (pointer: coarse) and (min-width: 821px) and (max-width: 1100px)");
 const LAND_Q = matchMedia("(orientation: landscape) and (max-height: 500px)");
 const isCompact = () => COMPACT_Q.matches;
 const isPhone = () => innerWidth <= 820 && !LAND_Q.matches;
@@ -150,7 +151,7 @@ function renderRail(d){
     const k = sumQ(deck.filter(c => c.bucket === t)), lim = d.limits[t] ?? 0;
     return `<span class="r-chip ${k > lim ? "over" : k === lim && lim ? "met" : ""}" title="${PLURAL[t]}: ${k} of ${lim}"><i class="ms ${MS[t]}"></i>${k}/${lim}</span>`;
   }).join("");
-  $("#rail").innerHTML = `<button class="icon-btn r-open panel-btn" id="railOpen" title="Show commander and stats">${isPhone() ? I.foldD : I.panelR}</button><button class="icon-btn" id="railMenu" title="Show or hide your decks">${I.menu}</button>
+  $("#rail").innerHTML = `<button class="icon-btn r-open panel-btn" id="railOpen" title="Show commander and stats">${I.panelR}</button><button class="icon-btn" id="railMenu" title="Show or hide your decks">${I.menu}</button>
     <button class="r-thumb" data-cmd="commander" title="${esc(d.commander.name)}"><img src="${esc(imgOf(d.commander))}" alt=""></button>
     <div class="r-tot ${n === 100 ? "full" : n > 100 ? "over" : ""}" title="Cards in deck"><b>${n}</b><span>/100</span></div>
     <div class="r-meta" title="Locked final picks">${I.lock}${locked}</div>
@@ -162,5 +163,5 @@ function renderRail(d){
       <button class="r-act" data-ract="stats" title="Deck stats and odds"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><small>Stats</small></button>
       <button class="r-act" data-ract="print" title="Print"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg><small>Print</small></button>
     </div>`;
-  $("#foldTop").innerHTML = isPhone() ? I.foldU : I.panelL;
+  $("#foldTop").innerHTML = I.panelL;
 }

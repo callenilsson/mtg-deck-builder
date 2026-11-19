@@ -4,7 +4,6 @@
 .side-rail{display:none}
 .panel-btn{color:var(--muted)}
 .panel-btn:hover{color:var(--gold)}
-@media (min-width:821px), (orientation:landscape) and (max-height:500px){
   #sidebar{transition:width .22s ease}
   #app.side-closed #sidebar{margin-left:0;width:58px;overflow:hidden}
   #app.side-closed #sidebar>:not(.side-rail){display:none!important}
@@ -17,7 +16,6 @@
   .rd.add{border:1.5px dashed var(--gold-line);background:var(--gold-soft);font-size:18px;font-weight:700}
   #app.side-closed .side-rail{height:100%}
   #openSide,#railMenu{display:none!important}
-}
 .side-head{padding:18px 16px 12px;display:flex;align-items:center;gap:10px}
 .brand{font-family:var(--display);font-weight:700;letter-spacing:.05em;font-size:16px;white-space:nowrap;color:var(--gold);display:flex;align-items:center;gap:8px}
 .brand .ms{font-size:20px}

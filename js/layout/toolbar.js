@@ -14,8 +14,8 @@ let CARD_ZMAX = 400;
 function applyZoom(){
   const z = (+UI.zoom || 100) / 100, board = $("#board");
   board.style.removeProperty("--tile");
-  // phones: 100% = one card filling its column; elsewhere the screen's normal card size
-  const base = isPhone() ? Math.max(100, Math.floor(innerWidth / 2 - 34)) : (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tile")) || 180);
+  // phones: 100% = one card filling its column (next to the two folded side rails); elsewhere the screen's normal card size
+  const base = isPhone() ? Math.max(80, Math.floor((innerWidth - 140) / 2 - 30)) : (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tile")) || 180);
   board.style.setProperty("--tile", Math.round(base * z) + "px");
   $("#top").style.setProperty("--tile", Math.round(base * z) + "px");
   const sz = `(max-width:820px) 46vw, ${Math.round(base * z)}px`;
