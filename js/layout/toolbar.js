@@ -23,7 +23,8 @@ function applyZoom(){
   $("#zoomVal").textContent = Math.round(z * 100) + "%";
   const zr = $("#zoom"); if (zr){ zr.max = CARD_ZMAX; zr.value = UI.zoom; }
   // the biggest useful size: a card as wide as its column (bigger can't show)
-  const g = [...document.querySelectorAll("#board .grid")].find(x => x.clientWidth), gw = g ? g.clientWidth - (parseFloat(getComputedStyle(g).paddingLeft) || 0) - (parseFloat(getComputedStyle(g).paddingRight) || 0) : 0;
+  // (the widest column counts: drag the divider to give one side more room, and its cards can grow to fill it)
+  const gw = Math.max(0, ...[...document.querySelectorAll("#board .grid")].filter(x => x.clientWidth).map(g => g.clientWidth - (parseFloat(getComputedStyle(g).paddingLeft) || 0) - (parseFloat(getComputedStyle(g).paddingRight) || 0)));
   CARD_ZMAX = gw ? Math.max(100, Math.min(400, Math.floor(gw / base * 100 / 5) * 5)) : 400;
   if (UI.zoom > CARD_ZMAX && gw){ UI.zoom = CARD_ZMAX; return applyZoom(); }
   if ($("#zoom")) $("#zoom").max = CARD_ZMAX;
