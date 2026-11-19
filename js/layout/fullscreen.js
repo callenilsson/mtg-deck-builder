@@ -21,8 +21,9 @@ function iosFullHelp(){
   C = {report: true};
   $("#confirmModal").innerHTML = `<div class="modal-body"><h2>Full screen on iPhone</h2>
     <p>iPhone doesn't let websites go full screen in Safari. Put MTG Deck Builder on your Home Screen instead: opened from there, it fills the whole screen like an app.</p>
-    <ol class="report"><li>Tap <b>Share</b> (the square with an arrow, in Safari's bar or its <b>•••</b> menu).</li>
-      <li>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+    <ol class="report"><li>Open this page in <b>Safari</b>. Chrome, Google and the browsers inside other apps (Messenger, Instagram…) can't add it on older iPhones.</li>
+      <li>Tap <b>Share</b>, the square with an arrow: at the bottom of the screen on older iPhones, or under <b>•••</b> on newer ones.</li>
+      <li><b>Scroll down</b> the list below the app icons and tap <b>Add to Home Screen</b>, then <b>Add</b>.<br><small class="note">Not in the list? At the very bottom tap <b>Edit Actions…</b> and add it with the green +.</small></li>
       <li>Open <b>Deck Builder</b> from your Home Screen.</li></ol>
     <p class="note">The first time, sign in to Google there once more. Your decks are the same, they live in Google Drive.</p>
     <div class="row"><button class="btn primary" data-c="no">OK</button></div></div>`;
