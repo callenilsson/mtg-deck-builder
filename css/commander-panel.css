@@ -76,3 +76,4 @@
   #total{grid-template-columns:1fr;grid-template-areas:"num" "lbl" "sub" "pr" "inf"}
   #total .tot-sub{justify-self:start;align-items:flex-start;margin-top:8px}
 }
+#top[hidden],#top[hidden] + #topGrip{display:none!important}

@@ -21,6 +21,7 @@ function render(){
   $(".top-actions").style.visibility = ready ? "" : "hidden";
   $("#total").style.visibility = d ? "" : "hidden";
   $(".name-wrap").hidden = !d;
+  $("#top").hidden = !d;                 // signed out or still loading: no empty commander column
   $("#top").classList.toggle("mini", (isCompact() || isPhone() ? !CMP_OPEN : !!UI.cmdMini) && ready);
   const ro = roDeck(d);
   document.body.classList.toggle("ro", ro);
