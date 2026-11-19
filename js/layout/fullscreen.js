@@ -31,7 +31,7 @@ function iosFullHelp(){
 }
 function syncFull(){
   const on = isFull(), b = $("#fsBtn");
-  if (b){ b.hidden = STANDALONE || !(fsSupported() || IOS); b.innerHTML = (on ? FSX_ICO : FS_ICO) + `<span class="tl">${on ? "Exit full screen" : "Full screen"}</span>`; b.title = on ? "Leave full screen (you can also press Esc or swipe from the top)" : "Full screen: hide the browser's address bar"; b.classList.toggle("on", on); }
+  if (b){ b.hidden = (STANDALONE && IOS) || !(fsSupported() || IOS); b.innerHTML = (on ? FSX_ICO : FS_ICO) + `<span class="tl">${on ? "Exit full screen" : "Full screen"}</span>`; b.title = on ? "Leave full screen (you can also press Esc or swipe from the top)" : "Full screen: hide the browser's address bar"; b.classList.toggle("on", on); }
   const d = cur(); if (d && d.commander) renderRail(d);
 }
 document.addEventListener("fullscreenchange", syncFull); document.addEventListener("webkitfullscreenchange", syncFull);
