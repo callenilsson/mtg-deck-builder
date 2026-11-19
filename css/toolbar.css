@@ -64,8 +64,8 @@ body.compact #tools .tool.moves .btn{flex:1;justify-content:center}
 /* toolbar beside the folded rails on a phone: drop the size slider (− / + stay), sort and filter share a row */
 #tools{container-type:inline-size;container-name:tools}
 @container tools (max-width:420px){
-  #tools .tool.size input[type=range]{display:none}
   #tools{gap:5px}
+  #tools .tool.size input[type=range]{flex:1 1 60px;min-width:40px}
 }
 @container tools (max-width:300px){
   #tools .tool.size{padding:3px 6px;gap:4px}
@@ -77,3 +77,8 @@ body.compact #tools .tool.moves .btn{flex:1;justify-content:center}
 }
 /* next to a wide-open menu on a phone the cards get only a sliver: the toolbar steps aside until there's room again */
 @container tools (max-width:200px){ #tools>*{display:none!important} }
+/* reload: small round button at the start of the toolbar */
+.tool.rl-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:999px;padding:5px 11px;flex:0 0 auto!important;font-weight:500;font-size:12px;cursor:pointer}
+.tool.rl-btn:hover{border-color:var(--gold-line);color:var(--gold)}
+.tool.rl-btn .tl{color:inherit!important}
+.tool.rl-btn .i{width:15px;height:15px}

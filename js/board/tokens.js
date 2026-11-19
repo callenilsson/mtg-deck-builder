@@ -85,4 +85,5 @@ function renderBoard(){
   $("#deckMeta").innerHTML = `${sumQ(deck)} cards · ${fmtMoney(dv.tot, dv.sym)}${pd ? ` · <span class="ph-pricey" title="${pd} cards at ${sym}${priceyTh(d)} or more">💎 ${pd}</span>` : ""}`;
   renderJump();
   renderTools(d);
+  updateZoomMax();
 }

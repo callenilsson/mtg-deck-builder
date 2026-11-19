@@ -11,24 +11,30 @@ function keepAnchors(fn){
   for (const a of anchors){ if (!a.el.isConnected) continue; const r = a.sc.getBoundingClientRect(); a.sc.scrollTop += (a.el.getBoundingClientRect().top - r.top) - a.off; }
 }
 let CARD_ZMAX = 400;
+/* The biggest useful card size: a card as wide as the widest column (bigger can't show). Runs after every board redraw. */
+function updateZoomMax(){
+  const board = $("#board"), base = parseFloat(board.style.getPropertyValue("--tile")) / ((+UI.zoom || 100) / 100);
+  // the biggest useful size: a card as wide as its column (bigger can't show)
+  // (the widest column counts: drag the divider to give one side more room, and its cards can grow to fill it)
+  const gw = Math.max(0, ...[...document.querySelectorAll("#board .grid")].filter(x => x.clientWidth).map(g => g.clientWidth - (parseFloat(getComputedStyle(g).paddingLeft) || 0) - (parseFloat(getComputedStyle(g).paddingRight) || 0)));
+  CARD_ZMAX = gw ? Math.max(100, Math.min(400, Math.floor(gw / base * 100 / 5) * 5)) : 400;
+  if (UI.zoom > CARD_ZMAX && gw){ UI.zoom = CARD_ZMAX; applyZoom(); return; }
+  if ($("#zoom")){ $("#zoom").max = CARD_ZMAX; $("#zoom").value = UI.zoom; }
+  document.querySelectorAll("[data-zstep]").forEach(b => { b.disabled = +b.dataset.zstep < 0 ? UI.zoom <= 20 : UI.zoom >= CARD_ZMAX; b.title = b.disabled && +b.dataset.zstep > 0 ? "Cards already fill their column" : ""; });
+}
 function applyZoom(){
   const z = (+UI.zoom || 100) / 100, board = $("#board");
   board.style.removeProperty("--tile");
-  // phones: 100% = one card filling its column (next to the two folded side rails); elsewhere the screen's normal card size
-  const base = isPhone() ? Math.max(80, Math.floor((innerWidth - 140) / 2 - 30)) : (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tile")) || 180);
+  // phones: 100% = a card about 70% as wide as its column (next to the folded side rails), so the slider can grow it
+  // until it fills the column (further when the divider gives that side more room); elsewhere the screen's normal size
+  const base = isPhone() ? Math.max(64, Math.floor(((innerWidth - 140) / 2 - 30) * .7)) : (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tile")) || 180);
   board.style.setProperty("--tile", Math.round(base * z) + "px");
   $("#top").style.setProperty("--tile", Math.round(base * z) + "px");
   const sz = `(max-width:820px) 46vw, ${Math.round(base * z)}px`;
   document.querySelectorAll("img[sizes]").forEach(im => im.sizes = sz);
   $("#zoomVal").textContent = Math.round(z * 100) + "%";
   const zr = $("#zoom"); if (zr){ zr.max = CARD_ZMAX; zr.value = UI.zoom; }
-  // the biggest useful size: a card as wide as its column (bigger can't show)
-  // (the widest column counts: drag the divider to give one side more room, and its cards can grow to fill it)
-  const gw = Math.max(0, ...[...document.querySelectorAll("#board .grid")].filter(x => x.clientWidth).map(g => g.clientWidth - (parseFloat(getComputedStyle(g).paddingLeft) || 0) - (parseFloat(getComputedStyle(g).paddingRight) || 0)));
-  CARD_ZMAX = gw ? Math.max(100, Math.min(400, Math.floor(gw / base * 100 / 5) * 5)) : 400;
-  if (UI.zoom > CARD_ZMAX && gw){ UI.zoom = CARD_ZMAX; return applyZoom(); }
-  if ($("#zoom")) $("#zoom").max = CARD_ZMAX;
-  document.querySelectorAll("[data-zstep]").forEach(b => { b.disabled = +b.dataset.zstep < 0 ? UI.zoom <= 20 : UI.zoom >= CARD_ZMAX; b.title = b.disabled && +b.dataset.zstep > 0 ? "Cards already fill their column" : ""; });
+  updateZoomMax();
 }
 let zoomRaf = 0;
 

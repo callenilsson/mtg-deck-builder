@@ -38,7 +38,7 @@ for (const [k, p] of Object.entries(PANE)){
     want = Math.round(Math.max(p.min, Math.min(grab.max, grab.w + (e.clientX - grab.x) / grab.scale)));
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; splitFlip(() => { UI[p.key] = want; applyPanes(); }); });
   });
-  const end = () => { if (!on) return; on = false; g.classList.remove("on"); document.body.classList.remove("pane-resizing"); saveUI(); const d = cur(); if (d && d.commander) renderRail(d); };
+  const end = () => { if (!on) return; on = false; g.classList.remove("on"); document.body.classList.remove("pane-resizing"); saveUI(); updateZoomMax(); const d = cur(); if (d && d.commander) renderRail(d); };
   g.addEventListener("pointerup", end); g.addEventListener("pointercancel", end);
   g.addEventListener("dblclick", () => { splitFlip(() => { delete UI[p.key]; applyPanes(); }); saveUI(); });
 }
@@ -54,7 +54,7 @@ function applySplit(){ $("#board").style.setProperty("--sp", (UI.split * 100).to
     want = Math.max(.15, Math.min(.85, (e.clientX - r.left) / r.width));
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; const v = want; splitFlip(() => { UI.split = v; applySplit(); }); });
   });
-  const end = () => { if (!on) return; on = false; sp.classList.remove("on"); document.body.classList.remove("splitting"); saveUI(); };
+  const end = () => { if (!on) return; on = false; sp.classList.remove("on"); document.body.classList.remove("splitting"); saveUI(); updateZoomMax(); };
   sp.addEventListener("pointerup", end); sp.addEventListener("pointercancel", end);
   sp.addEventListener("dblclick", () => { UI.split = .5; applySplit(); saveUI(); });
 })();

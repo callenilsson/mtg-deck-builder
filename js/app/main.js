@@ -145,5 +145,13 @@ initScrollBars();
 installNudge();
 load();
 render();
+applyZoom();             // again now that the menus and board have their real sizes
 renderDrive(); initGoogle();
 idb.loadAll().then(() => { if (IMG.size) render(); });
+/* Reload button: the installed app has no browser reload, and pulling down only works at the very top.
+   Waits while changes are still being saved to Drive, and always loads the newest version. */
+$("#reloadBtn").addEventListener("click", async () => {
+  if (DS.status === "pending" || (DS.busy && DS.canEdit)){ toast("Saving your changes first… try again in a moment"); return; }
+  let b = null; try { if (location.protocol === "https:") b = await latestBuild(); } catch {}
+  if (b) location.replace(freshUrl(b)); else location.reload();
+});
