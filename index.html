@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="build" content="20261119223418">
+<meta name="build" content="20261119223638">
 <title>MTG Deck Builder</title>
 <!-- Home Screen app: iPhone opens it without Safari's bars -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,21 +18,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mana-font@1.17.0/css/mana.min.css">
-<link rel="stylesheet" href="css/base.css?v=20261119223418">
-<link rel="stylesheet" href="css/sidebar.css?v=20261119223418">
-<link rel="stylesheet" href="css/buttons.css?v=20261119223418">
-<link rel="stylesheet" href="css/header.css?v=20261119223418">
-<link rel="stylesheet" href="css/stats.css?v=20261119223418">
-<link rel="stylesheet" href="css/test-hand.css?v=20261119223418">
-<link rel="stylesheet" href="css/stats-charts.css?v=20261119223418">
-<link rel="stylesheet" href="css/toolbar.css?v=20261119223418">
-<link rel="stylesheet" href="css/board.css?v=20261119223418">
-<link rel="stylesheet" href="css/modals.css?v=20261119223418">
-<link rel="stylesheet" href="css/card-view.css?v=20261119223418">
-<link rel="stylesheet" href="css/dialogs.css?v=20261119223418">
-<link rel="stylesheet" href="css/responsive.css?v=20261119223418">
-<link rel="stylesheet" href="css/commander-panel.css?v=20261119223418">
-<link rel="stylesheet" href="css/interface-size.css?v=20261119223418">
+<link rel="stylesheet" href="css/base.css?v=20261119223638">
+<link rel="stylesheet" href="css/sidebar.css?v=20261119223638">
+<link rel="stylesheet" href="css/buttons.css?v=20261119223638">
+<link rel="stylesheet" href="css/header.css?v=20261119223638">
+<link rel="stylesheet" href="css/stats.css?v=20261119223638">
+<link rel="stylesheet" href="css/test-hand.css?v=20261119223638">
+<link rel="stylesheet" href="css/stats-charts.css?v=20261119223638">
+<link rel="stylesheet" href="css/toolbar.css?v=20261119223638">
+<link rel="stylesheet" href="css/board.css?v=20261119223638">
+<link rel="stylesheet" href="css/modals.css?v=20261119223638">
+<link rel="stylesheet" href="css/card-view.css?v=20261119223638">
+<link rel="stylesheet" href="css/dialogs.css?v=20261119223638">
+<link rel="stylesheet" href="css/responsive.css?v=20261119223638">
+<link rel="stylesheet" href="css/commander-panel.css?v=20261119223638">
+<link rel="stylesheet" href="css/interface-size.css?v=20261119223638">
 </head>
 <body>
 <div id="app">
@@ -84,7 +84,6 @@
     <div class="pane-grip" id="topGrip" title="Drag to resize. Double-click to reset." aria-hidden="true"></div>
 
     <div id="tools" hidden>
-      <button class="tool fs-btn" id="fsBtn" hidden></button>
       <div class="tool size" title="Card size on this screen. Double-click the number to reset."><span class="tl">Card size</span><span class="tl-ico z-ico" aria-hidden="true"></span><button class="pm" data-zstep="-5" aria-label="Smaller cards">−</button><input type="range" id="zoom" min="20" max="400" step="5" value="100" aria-label="Card size"><button class="pm" data-zstep="5" aria-label="Bigger cards">+</button><output id="zoomVal">100%</output></div>
       <div class="tool size ui" title="Size of menus, text and buttons (not the cards). Double-click the number to reset."><span class="tl">Interface</span><span class="tl-ico a-ico" aria-hidden="true">Aa</span><button class="pm" data-ustep="-5" aria-label="Smaller interface">−</button><output id="uiZoomVal">100%</output><button class="pm" data-ustep="5" aria-label="Bigger interface">+</button></div>
       <label class="tool"><span class="tl">Sort</span><select id="sortSel">
@@ -129,44 +128,44 @@
 <!-- Decks embedded by older saved files (also used by the test harness). -->
 <script id="embedded-decks" type="application/json">{"version":2,"savedAt":0,"decks":{}}</script>
 <!-- Scripts run in this order and share one global scope (see CLAUDE.md). -->
-<script src="js/core/util.js?v=20261119223418"></script>
-<script src="js/core/prefs.js?v=20261119223418"></script>
-<script src="js/core/images.js?v=20261119223418"></script>
-<script src="js/data/scryfall.js?v=20261119223418"></script>
-<script src="js/data/prices.js?v=20261119223418"></script>
-<script src="js/data/edhrec.js?v=20261119223418"></script>
-<script src="js/data/decks.js?v=20261119223418"></script>
-<script src="js/board/flip.js?v=20261119223418"></script>
-<script src="js/board/scroll-bars.js?v=20261119223418"></script>
-<script src="js/app/render.js?v=20261119223418"></script>
-<script src="js/app/deck-list.js?v=20261119223418"></script>
-<script src="js/stats/stats.js?v=20261119223418"></script>
-<script src="js/stats/roles.js?v=20261119223418"></script>
-<script src="js/stats/odds.js?v=20261119223418"></script>
-<script src="js/stats/creature-types.js?v=20261119223418"></script>
-<script src="js/board/suggestions.js?v=20261119223418"></script>
-<script src="js/board/tiles.js?v=20261119223418"></script>
-<script src="js/board/tokens.js?v=20261119223418"></script>
-<script src="js/board/jump.js?v=20261119223418"></script>
-<script src="js/board/card-actions.js?v=20261119223418"></script>
-<script src="js/board/hover.js?v=20261119223418"></script>
-<script src="js/board/drag.js?v=20261119223418"></script>
-<script src="js/layout/panels.js?v=20261119223418"></script>
-<script src="js/board/clicks.js?v=20261119223418"></script>
-<script src="js/layout/toolbar.js?v=20261119223418"></script>
-<script src="js/modals/add-cards.js?v=20261119223418"></script>
-<script src="js/card-view/state.js?v=20261119223418"></script>
-<script src="js/card-view/flights.js?v=20261119223418"></script>
-<script src="js/card-view/coverflow.js?v=20261119223418"></script>
-<script src="js/card-view/editor.js?v=20261119223418"></script>
-<script src="js/card-view/save.js?v=20261119223418"></script>
-<script src="js/modals/confirm.js?v=20261119223418"></script>
-<script src="js/modals/pdf.js?v=20261119223418"></script>
-<script src="js/data/files.js?v=20261119223418"></script>
-<script src="js/data/drive.js?v=20261119223418"></script>
-<script src="js/stats/test-hand.js?v=20261119223418"></script>
-<script src="js/layout/fullscreen.js?v=20261119223418"></script>
-<script src="js/layout/windows.js?v=20261119223418"></script>
-<script src="js/app/main.js?v=20261119223418"></script>
+<script src="js/core/util.js?v=20261119223638"></script>
+<script src="js/core/prefs.js?v=20261119223638"></script>
+<script src="js/core/images.js?v=20261119223638"></script>
+<script src="js/data/scryfall.js?v=20261119223638"></script>
+<script src="js/data/prices.js?v=20261119223638"></script>
+<script src="js/data/edhrec.js?v=20261119223638"></script>
+<script src="js/data/decks.js?v=20261119223638"></script>
+<script src="js/board/flip.js?v=20261119223638"></script>
+<script src="js/board/scroll-bars.js?v=20261119223638"></script>
+<script src="js/app/render.js?v=20261119223638"></script>
+<script src="js/app/deck-list.js?v=20261119223638"></script>
+<script src="js/stats/stats.js?v=20261119223638"></script>
+<script src="js/stats/roles.js?v=20261119223638"></script>
+<script src="js/stats/odds.js?v=20261119223638"></script>
+<script src="js/stats/creature-types.js?v=20261119223638"></script>
+<script src="js/board/suggestions.js?v=20261119223638"></script>
+<script src="js/board/tiles.js?v=20261119223638"></script>
+<script src="js/board/tokens.js?v=20261119223638"></script>
+<script src="js/board/jump.js?v=20261119223638"></script>
+<script src="js/board/card-actions.js?v=20261119223638"></script>
+<script src="js/board/hover.js?v=20261119223638"></script>
+<script src="js/board/drag.js?v=20261119223638"></script>
+<script src="js/layout/panels.js?v=20261119223638"></script>
+<script src="js/board/clicks.js?v=20261119223638"></script>
+<script src="js/layout/toolbar.js?v=20261119223638"></script>
+<script src="js/modals/add-cards.js?v=20261119223638"></script>
+<script src="js/card-view/state.js?v=20261119223638"></script>
+<script src="js/card-view/flights.js?v=20261119223638"></script>
+<script src="js/card-view/coverflow.js?v=20261119223638"></script>
+<script src="js/card-view/editor.js?v=20261119223638"></script>
+<script src="js/card-view/save.js?v=20261119223638"></script>
+<script src="js/modals/confirm.js?v=20261119223638"></script>
+<script src="js/modals/pdf.js?v=20261119223638"></script>
+<script src="js/data/files.js?v=20261119223638"></script>
+<script src="js/data/drive.js?v=20261119223638"></script>
+<script src="js/stats/test-hand.js?v=20261119223638"></script>
+<script src="js/layout/install.js?v=20261119223638"></script>
+<script src="js/layout/windows.js?v=20261119223638"></script>
+<script src="js/app/main.js?v=20261119223638"></script>
 </body>
 </html>

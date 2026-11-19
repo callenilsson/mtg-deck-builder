@@ -43,12 +43,6 @@
 .r-act .i{width:18px;height:18px}
 .r-act.gold{border-color:var(--gold-line);background:var(--gold-soft);color:var(--gold)}
 .r-act .card-plus-ico{width:15px;height:20px;font-size:13px}
-.tool.fs-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:999px;padding:5px 11px;flex:none;font-weight:500;font-size:12px;cursor:pointer}
-.tool.fs-btn:hover{border-color:var(--gold-line);color:var(--gold)}
-.fs-btn .tl{color:inherit!important}
-.fs-btn .i{width:15px;height:15px}
-.tool.fs-btn.on{color:#1b1407;background:var(--gold);border-color:var(--gold)}
-.fs-btn[hidden]{display:none}
 /* compact: touch screens held sideways, unfolded foldables, small tablets */
 body.compact #top.mini{width:76px;padding:8px 6px;overflow-y:auto;scrollbar-width:none}
 @media (max-height:500px){ body.compact #top.mini #rail{gap:4px} body.compact #top.mini .r-tot b{font-size:16px} body.compact #top.mini .r-tot span{display:none} body.compact #top.mini .r-thumb img{width:38px} body.compact #top.mini #railMenu,body.compact #top.mini #railOpen{height:30px!important} .r-acts{gap:3px;margin-top:4px;padding-top:4px} .r-act{height:40px;width:48px} }

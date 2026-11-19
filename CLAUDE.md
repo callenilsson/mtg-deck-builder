@@ -26,7 +26,7 @@ https://callenilsson.github.io/mtg-deck-builder/ (GitHub Pages serves `main` as-
 | Board: tiles/sort/filter, tokens, drag, clicks, FLIP, touch scroll bars | js/board/* |
 | Stats: info bubbles, curve, roles, odds, color balance, types | js/stats/* |
 | Test hand + 1,000-game simulation | js/stats/test-hand.js |
-| Panels/splitter/resizing, toolbar & zoom, full screen, stats window, scrims | js/layout/* |
+| Panels/splitter/resizing, toolbar & zoom, get-the-app (install.js), stats window, scrims | js/layout/* |
 | Add-cards window, confirm/report, PDF print | js/modals/* |
 | Card view: state (V), open/close flights, cover flow, art editor, save | js/card-view/* |
 | Event wiring, update check, startup | js/app/main.js |

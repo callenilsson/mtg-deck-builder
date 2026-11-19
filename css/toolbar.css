@@ -30,7 +30,6 @@
   #tools .tl{display:none}
   #tools .tl-ico{display:inline-grid;place-items:center;flex:none;color:var(--gold)}
   #tools .tl-ico.a-ico{font-size:12px}
-  #tools .tool.fs-btn{flex:0 0 auto;padding:5px 9px}
   #tools .tool.size{flex:1 1 auto;justify-content:center;padding:3px 8px;gap:6px;min-width:0}
   #tools .tool.size:not(.ui){flex:3 1 200px}
   #tools .tool.size input{flex:1 1 40px;width:auto;min-width:36px}
@@ -48,7 +47,6 @@ body.compact #tools>*{flex:1 1 auto;min-width:0}
 body.compact #tools .tools-gap{display:none}
 body.compact #tools .tl{display:none}
 body.compact #tools .tl-ico{display:inline-grid;place-items:center;flex:none;color:var(--gold)}
-body.compact #tools .tool.fs-btn{flex:0 0 auto}
 body.compact #tools .tool.size{flex:1 1 auto;justify-content:center;min-width:0}
 body.compact #tools .tool.size:not(.ui){flex:3 1 200px}
 body.compact #tools .tool.size input{flex:1 1 40px;width:auto;min-width:36px}

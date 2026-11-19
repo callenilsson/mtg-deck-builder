@@ -97,7 +97,7 @@ $("#rail").addEventListener("click", e => {
   if (e.target.closest("#railOpen")){ setMini(false); return; }
   const ra = e.target.closest("[data-ract]");
   if (ra){ const k = ra.dataset.ract;
-    if (k === "add") $("#addAny").click(); else if (k === "hand") openHand(); else if (k === "stats") openStats(); else if (k === "print") openPdf(); else if (k === "fs") toggleFull();
+    if (k === "add") $("#addAny").click(); else if (k === "hand") openHand(); else if (k === "stats") openStats(); else if (k === "print") openPdf();
     return; }
   if (e.target.closest("#railMenu")){ S.sidebarOpen = !S.sidebarOpen; S.sideTouched = true; if (S.sidebarOpen && isPhone()) CMP_OPEN = false; save(false); render(); return; }
   const th = e.target.closest("[data-cmd]"); if (th){ if (isPhone() || isCompact()) setMini(false); else openDetail({kind: "commander"}, th); }
@@ -143,7 +143,6 @@ setInterval(() => checkForUpdate(false), 10 * 60 * 1000);
 applyZoom(); applySplit(); applyUiZoom();
 initScrollBars();
 installNudge();
-setTimeout(syncFull, 0);
 load();
 render();
 renderDrive(); initGoogle();
